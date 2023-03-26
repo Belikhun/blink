@@ -1,7 +1,4 @@
 <?php
-namespace Router;
-
-use GeneralException;
 
 /**
  * Route.php
@@ -15,22 +12,27 @@ use GeneralException;
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
+namespace Router;
+
+use GeneralException;
+
 class Route {
 	/**
 	 * All the verbs for this route.
-	 * @var String[]
+	 * @var string[]
 	 */
 	public $verbs;
 
 	/**
 	 * Route URI
-	 * @var	String
+	 * @var	string
 	 */
 	public $uri;
 
 	/**
 	 * Callback action for this route if matched
-	 * @var	String|Callable
+	 * @var	string|callable
 	 */
 	public $action;
 
@@ -43,9 +45,9 @@ class Route {
 	/**
 	 * Construct a new Route object
 	 * 
-     * @param  Array			$verbs
-     * @param  String			$uri
-     * @param  String|Callable	$action
+     * @param  array			$verbs
+     * @param  string			$uri
+     * @param  string|callable	$action
 	 */
 	public function __construct($verbs, $uri, $action) {
 		$this -> verbs = $verbs;
@@ -57,7 +59,7 @@ class Route {
 	 * Call to the action of this Route. Return the result
 	 * of the callback
 	 * 
-	 * @param	String[]	$args
+	 * @param	string[]	$args
 	 * @return	mixed
 	 */
 	public function callback(Array $args) {

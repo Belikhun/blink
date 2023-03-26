@@ -1,4 +1,5 @@
 <?php
+
 /**
  * File.php
  * 
@@ -11,6 +12,9 @@
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
+use Blink\Exception\FileInstanceNotFound;
+
 class File {
 	public static String $ROOT;
 
@@ -172,7 +176,7 @@ class File {
 
 	/**
 	 * Process uploaded file then save it into FS and DB.
-	 * @param	Array	$file	File object from `$_FILES`
+	 * @param	array	$file	File object from `$_FILES`
 	 * @return	\File
 	 */
 	public static function processFile($file) {
@@ -217,7 +221,7 @@ class File {
 	/**
 	 * Process a file record from the DB
 	 *
-	 * @param	Object	$record
+	 * @param	object	$record
 	 * @return	\File
 	 */
 	public static function processRecord($record) {
@@ -236,7 +240,7 @@ class File {
 	/**
 	 * Process a bunch of records object returned by DB
 	 *
-	 * @param	Object[]	$records
+	 * @param	object[]	$records
 	 * @return	File[]
 	 */
 	public static function processRecords($records) {

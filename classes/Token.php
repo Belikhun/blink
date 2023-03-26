@@ -16,7 +16,7 @@ class Token {
 	/** @var int */
 	public $id;
 	
-	/** @var String */
+	/** @var string */
 	public $token;
 
 	/** @var int */
@@ -25,7 +25,7 @@ class Token {
 	/** @var int */
 	public $expire;
 
-	/** @var String */
+	/** @var string */
 	public $username;
 
 	public function __construct(
@@ -73,7 +73,7 @@ class Token {
 	/**
 	 * Get usable token. Will always return a valid token.
 	 * 
-	 * @param	String	$username
+	 * @param	string	$username
 	 * @return	\Token
 	 */
 	public static function get(String $username) {
@@ -94,7 +94,7 @@ class Token {
 	/**
 	 * Create a new token for the specified user.
 	 * 
-	 * @param	String	$username
+	 * @param	string	$username
 	 * @return	\Token
 	 */
 	public static function createToken(String $username) {
@@ -116,7 +116,7 @@ class Token {
 
 	/**
 	 * Process token record from database.
-	 * @param	Object	$record
+	 * @param	object	$record
 	 * @return	\Token
 	 */
 	public static function processRecord($record) {

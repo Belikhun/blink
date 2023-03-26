@@ -25,13 +25,13 @@ class SQLite3 extends \DB {
 	
 	/**
 	 * Database data base path
-	 * @var	String
+	 * @var	string
 	 */
 	public $path;
 	
 	/**
 	 * Database file name
-	 * @var	String
+	 * @var	string
 	 */
 	public $file = "database.db";
 
@@ -167,11 +167,11 @@ class SQLite3 extends \DB {
 	/**
 	 * Execute a SQL query.
 	 * 
-	 * @param	String		$sql	The query
-	 * @param	Array		$params
+	 * @param	string		$sql	The query
+	 * @param	array		$params
 	 * @param	int			$from
 	 * @param	int			$limit
-	 * @return	Object|Array|int	Array of rows object in select mode, inserted record
+	 * @return	object|array|int	Array of rows object in select mode, inserted record
 	 * 								id in insert mode, and number of affected row
 	 * 								in update mode.
 	 */

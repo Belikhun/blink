@@ -12,28 +12,29 @@
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
 class API {
 	/**
 	 * Request method
-	 * @var String
+	 * @var string
 	 */
 	public $method;
 
 	/**
 	 * Route path
-	 * @var String
+	 * @var string
 	 */
 	public $path;
 
 	/**
 	 * Current API .php file being processed
-	 * @var String
+	 * @var string
 	 */
 	public $file;
 
 	/**
 	 * Arguments passed into this API by router.
-	 * @var Array
+	 * @var array
 	 */
 	public $args;
 

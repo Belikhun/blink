@@ -30,7 +30,7 @@ abstract class DB {
 	 * This function might need some additional arguments
 	 * based on type of drivers used.
 	 * 
-	 * @param	Array	$options	Arguments to pass into connect
+	 * @param	array	$options	Arguments to pass into connect
 	 * 								function. This will vary based on
 	 * 								each sql drivers.
 	 */
@@ -39,11 +39,11 @@ abstract class DB {
 	/**
 	 * Execute a SQL query.
 	 * 
-	 * @param	String		$sql	The query
-	 * @param	Array		$params
+	 * @param	string		$sql	The query
+	 * @param	array		$params
 	 * @param	int			$from
 	 * @param	int			$limit
-	 * @return	Object|Array|int	Array of rows object in select mode, inserted record
+	 * @return	object|array|int	Array of rows object in select mode, inserted record
 	 * 								id in insert mode, and number of affected row
 	 * 								in update mode.
 	 */
@@ -57,8 +57,8 @@ abstract class DB {
 	/**
      * Returns the SQL WHERE conditions.
 	 * 
-     * @param	Array	$conditions		The conditions to build the where clause.
-     * @return	Array	An array list containing sql 'where' part and 'params'.
+     * @param	array	$conditions		The conditions to build the where clause.
+     * @return	array	An array list containing sql 'where' part and 'params'.
      */
 	public static function whereClause(Array $conditions) {
 		$conditions = is_null($conditions)
@@ -126,14 +126,14 @@ abstract class DB {
 	 * Get a number of records as an array of objects where
 	 * all the given conditions met.
 	 * 
-	 * @param	String		$table		The table to select from.
-	 * @param	Array		$conditions	"field" => "value" with AND in between,
+	 * @param	string		$table		The table to select from.
+	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).
-	 * @param	String		$sort		A valid ORDER BY value.
-	 * @param	String		$fields		A valid SELECT value.
-	 * @return	Object[]
+	 * @param	string		$sort		A valid ORDER BY value.
+	 * @param	string		$fields		A valid SELECT value.
+	 * @return	object[]
 	 */
 	public function records(
 		String $table,
@@ -168,14 +168,14 @@ abstract class DB {
 	 * Get a single database record as an object where all
 	 * the given conditions met.
 	 * 
-	 * @param	String		$table		The table to select from.
-	 * @param	Array		$conditions	"field" => "value" with AND in between,
+	 * @param	string		$table		The table to select from.
+	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).
-	 * @param	String		$fields		A valid SELECT value.
-	 * @param	String		$sort		A valid ORDER BY value.
-	 * @return	Object|null
+	 * @param	string		$fields		A valid SELECT value.
+	 * @param	string		$sort		A valid ORDER BY value.
+	 * @return	object|null
 	 */
 	public function record(
 		String $table,
@@ -198,8 +198,8 @@ abstract class DB {
      * If the return ID isn't required, then this just reports success as true/false.
      * $data is an object containing needed data
 	 * 
-     * @param	String			$table		The database table to be inserted into
-     * @param	Object|Array	$object		A data object with values for one or more fields in the record
+     * @param	string			$table		The database table to be inserted into
+     * @param	object|array	$object		A data object with values for one or more fields in the record
      * @return	int				new id
      */
 	public function insert(String $table, Array|Object $object) {
@@ -237,8 +237,8 @@ abstract class DB {
 	/**
 	 * Update an record from database.
 	 * 
-	 * @param	String			$table		The database table to be inserted into
-     * @param	Object|Array	$object		A data object with values for one or more fields in the record
+	 * @param	string			$table		The database table to be inserted into
+     * @param	object|array	$object		A data object with values for one or more fields in the record
      * @return	bool
 	 */
 	public function update(String $table, Array|Object $object) {
@@ -283,8 +283,8 @@ abstract class DB {
 	 * Test whether a record exists in a table where all
 	 * the given conditions met.
 	 * 
-	 * @param	String		$table		The table to select from.
-	 * @param	Array		$conditions	"field" => "value" with AND in between,
+	 * @param	string		$table		The table to select from.
+	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).
@@ -301,8 +301,8 @@ abstract class DB {
 	/**
 	 * Count the records in a table which match a particular WHERE clause.
 	 * 
-	 * @param	String		$table		The table to select from.
-	 * @param	Array		$conditions	"field" => "value" with AND in between,
+	 * @param	string		$table		The table to select from.
+	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).
@@ -323,8 +323,8 @@ abstract class DB {
 	 * Delete the records from a table where all the given conditions met.
      * If conditions not specified, table is truncated.
 	 * 
-	 * @param	String		$table		The table to select from.
-	 * @param	Array		$conditions	"field" => "value" with AND in between,
+	 * @param	string		$table		The table to select from.
+	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).

@@ -41,7 +41,7 @@ class Cache {
 		);
 
 		try {
-			/** @var Array */
+			/** @var array */
 			$this -> data = $this -> stream -> read(TYPE_SERIALIZED);
 		} catch(Throwable) {
 			// Discard file and create new one.
@@ -58,7 +58,7 @@ class Cache {
 	 * Validate Cache Age.
 	 * Return `true` if cache lifetime is within set age.
 	 * 
-	 * @return Boolean
+	 * @return	bool
 	 */
 	public function validate() {
 		return (time() - $this -> data -> time) < $this -> data -> age;

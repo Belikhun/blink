@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ConfigStore.php
  * 
@@ -73,7 +74,7 @@ class Store {
 	/** @var FileIO */
 	public static $CONFIG_FILE;
 
-	/** @var String */
+	/** @var string */
 	public static $CONFIG_PATH;
 
 	public static function init() {
@@ -83,7 +84,7 @@ class Store {
 
 	/**
 	 * Get all configuration names
-	 * @return String[]
+	 * @return string[]
 	 */
 	protected static function names() {
 		$names = Array();
@@ -99,7 +100,7 @@ class Store {
 
 	/**
 	 * Get config object.
-	 * @return Object
+	 * @return object
 	 */
 	public static function config() {
 		$object = new stdClass;

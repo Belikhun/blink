@@ -18,19 +18,19 @@ date_default_timezone_set("Asia/Ho_Chi_Minh");
 
 /**
  * Server's base path.
- * @var	String
+ * @var	string
  */
 define("BASE_PATH", str_replace("\\", "/", $_SERVER["DOCUMENT_ROOT"]));
 
 /**
  * Server's data path.
- * @var	String
+ * @var	string
  */
 define("DATA_ROOT", BASE_PATH . "/data");
 
 /**
  * Core base path.
- * @var	String
+ * @var	string
  */
 define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME)));
 
@@ -80,7 +80,17 @@ foreach ($configProps as $prop) {
 	}
 }
 
-require_once "libs.php";
+// Include BaseException class and it's child.
+require_once CORE_ROOT . "/Exception/BaseException.php";
+foreach (glob(CORE_ROOT . "/Exception/*.php") as $filename) {
+	if (str_ends_with($filename, "BaseException.php"))
+		continue;
+
+	require_once $filename;
+}
+
+// We can safely include our main library now.
+require_once CORE_ROOT . "/libs.php";
 
 // Include optional files and classes definition
 // in the includes / classes directory.
@@ -118,7 +128,7 @@ if (file_exists(BASE_PATH . "/setup.php"))
 
 /**
  * Current requested path
- * @var String
+ * @var string
  */
 $PATH = $_GET["path"];
 unset($_GET["path"]);

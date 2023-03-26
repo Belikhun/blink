@@ -15,19 +15,19 @@
 class URL {
 	/**
      * The current URL.
-     * @var String
+     * @var string
      */
 	public String $url = "";
 
     /**
      * Scheme, ex.: http, https
-     * @var String
+     * @var string
      */
     protected String $scheme = "";
 
     /**
      * Hostname.
-     * @var String
+     * @var string
      */
     protected String $host = "";
 
@@ -39,33 +39,33 @@ class URL {
 
     /**
      * Username for http auth.
-     * @var String
+     * @var string
      */
     protected String $user = "";
 
     /**
      * Password for http auth.
-     * @var String
+     * @var string
      */
     protected $pass = "";
 
     /**
      * Script path.
-     * @var String
+     * @var string
      */
     protected $path = "";
 
     /**
      * Url parameters as associative array.
-     * @var String[]
+     * @var string[]
      */
     public $params = Array();
 
 	/**
 	 * Construct a new url with params.
 	 *
-	 * @param	String|\URL			$url
-	 * @param	String[]|Object		$params
+	 * @param	string|\URL			$url
+	 * @param	string[]|object		$params
 	 */
 	public function __construct($url, $params = []) {
 		if ($url instanceof \URL) {
@@ -100,8 +100,8 @@ class URL {
     /**
      * Add an array of params to the params for this url.
      *
-     * @param	Array	$params		Defaults to null. If null then returns all params.
-     * @return	Array	Array of params for this url.
+     * @param	array	$params		Defaults to null. If null then returns all params.
+     * @return	array	Array of params for this url.
      * @throws	CodingError
      */
     public function params(Array $params = null) {
@@ -132,8 +132,8 @@ class URL {
      * Can be called as either `remove_params("param1", "param2")`
      * or `remove_params(array("param1", "param2"))`.
      *
-     * @param	String[]|String $params
-     * @return	Array			New url parameters.
+     * @param	string[]|string $params
+     * @return	array			New url parameters.
      */
     public function removeParams($params = null) {
         if (!is_array($params))
@@ -200,7 +200,7 @@ class URL {
 
     /**
      * Returns url without parameters, everything before "?".
-     * @return	String
+     * @return	string
      */
     public function uri() {
         $uri = $this -> scheme
@@ -220,7 +220,7 @@ class URL {
 
     /**
      * Sets the scheme for the URI (the bit before ://)
-     * @param	String	$scheme
+     * @param	string	$scheme
      */
     public function setScheme(String $scheme) {
         // See http://www.ietf.org/rfc/rfc3986.txt part 3.1.

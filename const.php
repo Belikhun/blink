@@ -14,7 +14,7 @@
 
 /**
  * Host name, based on user's request.
- * @var	String
+ * @var	string
  */
 define("HOST", $_SERVER["HTTP_HOST"]);
 

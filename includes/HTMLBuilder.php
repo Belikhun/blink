@@ -17,11 +17,11 @@ class HTMLBuilder {
 	/**
 	 * Build da HTML
 	 *
-	 * @param String	$tag
-	 * @param Array		$attributes
-	 * @param String	$content
-	 * @param bool		$end			Append end tag
-	 * @return String
+	 * @param	string		$tag
+	 * @param	array		$attributes
+	 * @param	string		$content
+	 * @param	bool		$end			Append end tag
+	 * @return	string
 	 * 
 	 * @version 1.0
 	 * @author Belikhun <belivipro9x99@gmail.com>

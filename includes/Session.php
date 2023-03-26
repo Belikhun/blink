@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Session.php
  * 
@@ -11,6 +12,7 @@
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
 class Session {
 	/**
 	 * Session lifespan. Default to 1 day.
@@ -20,7 +22,7 @@ class Session {
 
 	/**
 	 * Current active username in session.
-	 * @var	String
+	 * @var	string
 	 */
 	public static $username;
 
@@ -33,7 +35,7 @@ class Session {
 	/**
 	 * Store logout token user need to perform
 	 * logout.
-	 * @var String
+	 * @var string
 	 */
 	public static $logoutToken;
 
@@ -45,7 +47,9 @@ class Session {
 
 		if (session_status() !== PHP_SESSION_ACTIVE) {
 			ini_set("session.gc_maxlifetime", self::$lifetime);
-			session_set_cookie_params(self::$lifetime);
+			session_set_cookie_params(Array(
+				"lifetime" => self::$lifetime
+			));
 
 			session_start();
 			setcookie(session_name(), session_id(), time() + self::$lifetime, "/");
@@ -63,7 +67,7 @@ class Session {
 
 	/**
 	 * Start session using token string.
-	 * @param	String	$token
+	 * @param	string	$token
 	 */
 	public static function token(String $token) {
 		$token = \Token::getToken($token);

@@ -1,7 +1,5 @@
 <?php
 
-use Router\Route;
-
 /**
  * Router.php
  * 
@@ -14,6 +12,9 @@ use Router\Route;
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
+use Router\Route;
+
 class Router {
 	/**
 	 * All routes for this router.
@@ -23,7 +24,7 @@ class Router {
 
 	/**
 	* All of the verbs supported by the router.
-	* @var	String[]
+	* @var	string[]
 	*/
 	public static $verbs = Array("GET", "POST", "PATCH", "DELETE");
 
@@ -36,8 +37,8 @@ class Router {
 	/**
 	* Register a new GET route with the router.
 	*
-	* @param  String			$uri
-	* @param  String|Callable	$action
+	* @param  string			$uri
+	* @param  string|callable	$action
 	*/
 	public static function GET($uri, $action, $priority = 0) {
 		return Router::match("GET", $uri, $action, $priority);
@@ -46,8 +47,8 @@ class Router {
 	/**
 	* Register a new POST route with the router.
 	*
-	* @param  String			$uri
-	* @param  String|Callable	$action
+	* @param  string			$uri
+	* @param  string|callable	$action
 	*/
     public static function POST($uri, $action, $priority = 0) {
 		return Router::match("POST", $uri, $action, $priority);
@@ -56,8 +57,8 @@ class Router {
 	/**
 	* Register a new PATCH route with the router.
 	*
-	* @param  String			$uri
-	* @param  String|Callable	$action
+	* @param  string			$uri
+	* @param  string|callable	$action
 	*/
     public static function PATCH($uri, $action, $priority = 0) {
 		return Router::match("PATCH", $uri, $action, $priority);
@@ -66,8 +67,8 @@ class Router {
 	/**
 	* Register a new DELETE route with the router.
 	*
-	* @param  String			$uri
-	* @param  String|Callable	$action
+	* @param  string			$uri
+	* @param  string|callable	$action
 	*/
     public static function DELETE($uri, $action, $priority = 0) {
 		return Router::match("DELETE", $uri, $action, $priority);
@@ -77,8 +78,8 @@ class Router {
 	* Register a new route with the router that
 	* match every methods.
 	*
-	* @param  String			$uri
-	* @param  String|Callable	$action
+	* @param  string			$uri
+	* @param  string|callable	$action
 	*/
     public static function ANY($uri, $action, $priority = 0) {
 		return Router::match(self::$verbs, $uri, $action, $priority);
@@ -87,9 +88,9 @@ class Router {
 	/**
 	* Register a new route with the given verbs.
 	*
-	* @param  Array|String		$methods
-	* @param  String			$uri
-	* @param  String|Callable	$action
+	* @param  array|string		$methods
+	* @param  string			$uri
+	* @param  string|callable	$action
 	* @return \Router\Route
 	*/
 	public static function match($methods, $uri, $action, $priority = 0) {
@@ -109,8 +110,8 @@ class Router {
 
 	/**
 	 * Handle the requested path.
-	 * @param	String	$path
-	 * @param	String	$method
+	 * @param	string	$path
+	 * @param	string	$method
 	 */
 	public static function route(String $path, String $method) {
 		$args = Array();
@@ -143,8 +144,8 @@ class Router {
 
 	/**
 	 * Parse URI to array of tokens
-	 * @param      String		$uri
-	 * @return     String[]
+	 * @param      string		$uri
+	 * @return     string[]
 	 */
 	private static function uriTokens(String $uri) {
 		return explode("/", str_replace("\\", "/", $uri));
@@ -153,7 +154,7 @@ class Router {
 	/**
 	 * Check if Route match current URI
 	 * @param      \Router\Route  $route
-	 * @param      String         $path
+	 * @param      string         $path
 	 * @return     bool
 	 */
 	private static function isRouteMatch(Route $route, String $path, Array &$args = Array()) {

@@ -16,25 +16,25 @@
 class Page {
 	/**
 	 * Arguments passed into this page by router.
-	 * @var Array
+	 * @var array
 	 */
 	public $args;
 
 	/**
 	 * Page folder location.
-	 * @var String
+	 * @var string
 	 */
 	public $location;
 
 	/**
 	 * List of js file to include.
-	 * @var Array
+	 * @var array
 	 */
 	public $jsFiles;
 
 	/**
 	 * List of css file to include.
-	 * @var Array
+	 * @var array
 	 */
 	public $cssFiles;
 
@@ -66,8 +66,8 @@ class Page {
 
 	/**
 	 * Validate path for included file.
-	 * @param	String	$path
-	 * @return	Bool
+	 * @param	string	$path
+	 * @return	bool
 	 */
 	private function validatePath(&$path) {
 		$real = realpath($path);
@@ -90,14 +90,14 @@ class Page {
 	 * Include js file provided by path. Return false when
 	 * target path is invalid or file does not exist.
 	 * 
-	 * @param	String		$path		Path of js file to include.
+	 * @param	string		$path		Path of js file to include.
 	 * Directory base at folder containing current page.php
 	 * 
-	 * @param	String		$object		Object name to call init() function.
-	 * @param	String[]	$params		Params will be set to $object.params
+	 * @param	string		$object		Object name to call init() function.
+	 * @param	string[]	$params		Params will be set to $object.params
 	 * @param	int			$priority	Init priority
 	 * 
-	 * @return	Bool
+	 * @return	bool
 	 */
 	public function js($path, String $object = null, Array $params = [], int $priority = 0) {
 		if ($path[0] === "/") {
@@ -176,10 +176,10 @@ class Page {
 	 * Include css file provided by path. Return false when
 	 * target path is invalid or file does not exist.
 	 * 
-	 * @param	String	$path	Path of css file to include.
+	 * @param	string	$path	Path of css file to include.
 	 * Directory base at folder containing current page.php
 	 * 
-	 * @return	Bool
+	 * @return	bool
 	 */
 	public function css($path) {
 		if ($path[0] === "/") {

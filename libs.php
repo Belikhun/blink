@@ -1,4 +1,5 @@
 <?php
+
 /**
  * libs.php
  * 
@@ -12,149 +13,9 @@
  * See LICENSE in the project root for license information.
  */
 
+use Blink\Exception\JSONDecodeError;
 
 require_once "const.php";
-
-//* ========================== Exception classes ==========================
-
-class GeneralException extends Exception {
-	/**
-	 * Error Code
-	 * @var	int
-	 */
-	public $code;
-
-	/**
-	 * Error Description/Message
-	 * @var	string
-	 */
-	public $description;
-
-	/**
-	 * HTTP Status Code
-	 * @var	int
-	 */
-	public $status;
-
-	/**
-	 * Optional Error Data
-	 * @var	array|stdClass
-	 */
-	public $data;
-
-	/**
-	 * Exception class designed for detailed error report.
-	 * 
-	 * @param	int					$code			Error Code
-	 * @param	string				$description	Error Description/Message
-	 * @param	int					$status			HTTP Status Code
-	 * @param	array|stdClass		$data			Optional Error Data
-	 */
-	public function __construct(int $code, string $description, int $status = 500, array|stdClass $data = null) {
-		$this -> code = $code;
-		$this -> description = $description;
-		$this -> status = $status;
-		$this -> data = $data;
-		parent::__construct($description, $code);
-
-		$this -> data["file"] = getRelativePath(parent::getFile());
-		$this -> data["line"] = parent::getLine();
-		$this -> data["trace"] = parent::getTrace();
-	}
-
-	public function __toString() {
-		return "HTTP {$this -> status} ({$this -> code}) ". get_class($this) .": {$this -> description}";
-	}
-}
-
-class JSONDecodeError extends GeneralException {
-	public function __construct(String $file, String $message, $data) {
-		$file = getRelativePath($file);
-		parent::__construct(INVALID_JSON, "json_decode({$file}): {$message}", 500, Array( "file" => $file, "data" => $data ));
-	}
-}
-
-class UnserializeError extends GeneralException {
-	public function __construct(String $file, String $message, $data) {
-		$file = getRelativePath($file);
-		$message = str_replace("unserialize(): ", "", $message);
-
-		parent::__construct(47, "unserialize({$file}): {$message}", 500, Array( "file" => $file, "data" => $data ));
-	}
-}
-
-class MissingParam extends GeneralException {
-	public function __construct(String $param) {
-		parent::__construct(MISSING_PARAM, "missing required param: $param", 400, Array( "param" => $param ));
-	}
-}
-
-class FileNotFound extends GeneralException {
-	public function __construct(String $path) {
-		parent::__construct(FILE_MISSING, "File \"$path\" does not exist on this server.", 404, Array( "path" => $path ));
-	}
-}
-
-class IllegalAccess extends GeneralException {
-	public function __construct(String $message = null) {
-		parent::__construct(ACCESS_DENIED, $message ?: "You don't have permission to access this resource.", 403);
-	}
-}
-
-class SQLError extends GeneralException {
-	public function __construct(int $code, String $description, String $query = null) {
-		parent::__construct(SQL_ERROR, $description, 500, Array(
-			"code" => $code,
-			"description" => $description,
-			"query" => $query
-		));
-	}
-}
-
-class CodingError extends GeneralException {
-	public function __construct($message) {
-		parent::__construct(CODING_ERROR, $message, 500);
-	}
-}
-
-class UserNotFound extends GeneralException {
-	public function __construct(Array $field) {
-		$key = array_key_first($field);
-		$value = $field[$key];
-
-		parent::__construct(USER_NOT_FOUND, "Cannot find user with $key = $value", 404, $field);
-	}
-}
-
-class NotLoggedIn extends GeneralException {
-	public function __construct() {
-		parent::__construct(NOT_LOGGED_IN, "You are not logged in. Maybe your session expired?", 403);
-	}
-}
-
-class RouteArgumentMismatch extends GeneralException {
-	public function __construct(\Router\Route $route, $message) {
-		parent::__construct(DATA_TYPE_MISMATCH, $message, 400, (Array) $route);
-	}
-}
-
-class InvalidToken extends GeneralException {
-	public function __construct() {
-		parent::__construct(INVALID_TOKEN, "The token supplied is invalid or does not exist.", 403);
-	}
-}
-
-class TokenExpired extends GeneralException {
-	public function __construct() {
-		parent::__construct(TOKEN_EXPIRED, "The token supplied is expired.", 403);
-	}
-}
-
-class InvalidURL extends GeneralException {
-	public function __construct(String $url) {
-		parent::__construct(INVALID_URL, "The URL \"$url\" is invalid!", 400);
-	}
-}
 
 //* ========================== Function definitions ==========================
 
@@ -188,10 +49,10 @@ class StopClock {
  * This function will throw an error if there is problem
  * while parsing json data.
  * 
- * @param	String	$json	JSON String
- * @param	String	$path	(Optional) Provide json file path to show in the error message
+ * @param	string	$json	JSON String
+ * @param	string	$path	(Optional) Provide json file path to show in the error message
  * @throws	JSONDecodeError
- * @return	Array|Object
+ * @return	array|object
  */
 function safeJSONParsing(String $json, String $path = "", bool $assoc = false) {
 	// Temporary disable `NOTICE` error reporting
@@ -212,8 +73,8 @@ function safeJSONParsing(String $json, String $path = "", bool $assoc = false) {
 /**
  * Generate slug from supplied text.
  *
- * @param	String	$text
- * @return	String
+ * @param	string	$text
+ * @return	string
  */
 function slugify($text) {
 	$rules = <<<'RULES'
@@ -388,7 +249,7 @@ function cleanParam($param, $type) {
  * format of provided type.
  * 
  * @param	mixed		$value		Value to check
- * @param	String		$type		Value type
+ * @param	string		$type		Value type
  * @param	bool		$throw		Throw an exception or just return false?
  * 
  * @return	bool
@@ -503,9 +364,9 @@ function getHeader(string $name, $type = TYPE_TEXT, $default = null) {
 /**
  * Set Content-Type header using file extension
  * 
- * @param	String	$ext		File extension
- * @param	String	$charset
- * @return	String|null
+ * @param	string	$ext		File extension
+ * @param	string	$charset
+ * @return	string|null
  */
 function contentType(String $ext, String $charset = "utf-8") {
 	$mimet = Array(
@@ -591,7 +452,7 @@ function expireHeader($time) {
  * Return new path relative to webserver"s
  * root path
  * 
- * @return	String
+ * @return	string
  */
 function getRelativePath(String $fullPath, String $separator = "/", String $base = BASE_PATH) {
 	$search = preg_replace("/(\\\\|\/)/m", $separator, $base);
@@ -625,7 +486,7 @@ function getClientIP() {
  * Return Human Readable Size
  * 
  * @param	int		$bytes		Size in byte
- * @return	String	Readable Size
+ * @return	string	Readable Size
  */
 function convertSize(int $bytes) {
 	$sizes = array("B", "KB", "MB", "GB", "TB");
@@ -666,7 +527,7 @@ class FileWithPriority {
  * reading big files and performing a regex match with a large
  * string take a lot of time.
  *
- * @param	String		$pattern	Pattern relative to web root.
+ * @param	string		$pattern	Pattern relative to web root.
  * @return	FileWithPriority[]
  */
 function globFilesPriority($pattern, int $flags = 0) {
@@ -696,7 +557,7 @@ function globFilesPriority($pattern, int $flags = 0) {
  * Glob files and sort them by priority defined by
  * `@priority` in comment doc. Return cached data if possible.
  *
- * @param	String		$pattern	Pattern relative to web root.
+ * @param	string		$pattern	Pattern relative to web root.
  * @return	FileWithPriority[]
  */
 function globFilesPriorityCached($pattern, int $flags = 0) {
@@ -715,7 +576,7 @@ function globFilesPriorityCached($pattern, int $flags = 0) {
 /**
  * Redirect to target URL.
  *
- * @param	String|\URL		$url
+ * @param	string|\URL		$url
  * @return	void
  */
 function redirect($url) {
@@ -729,7 +590,7 @@ function redirect($url) {
 /**
  * Render soucre code of a file to a friendly format.
  * 
- * @param	String	$file	Path to file to be rendered.
+ * @param	string	$file	Path to file to be rendered.
  * @param	int		$line	Line number that will be highlighted.
  * @param	int		$count	Number of lines will be rendered.
  */
@@ -780,9 +641,9 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 /**
  * Fast file get content with metric recording.
  * 
- * @param	String		$path		Path to file
- * @param	String		$default	Default value
- * @return	String|null				File content or default value if failed.
+ * @param	string		$path		Path to file
+ * @param	string		$default	Default value
+ * @return	string|null				File content or default value if failed.
  */
 function fileGet(String $path, $default = null): String|null {
 	$metric = new \Metric\File("r", "text", $path);
@@ -800,8 +661,8 @@ function fileGet(String $path, $default = null): String|null {
 /**
  * Fast file put content with metric recording.
  * 
- * @param	String		$path		Path to file
- * @param	String		$content	File content
+ * @param	string		$path		Path to file
+ * @param	string		$content	File content
  * @return	int|null				Bytes written or null if write failed.
  */
 function filePut(String $path, $content): int|null {
@@ -858,8 +719,8 @@ class FileIO {
 	 * Read file
 	 * type: text/json/serialize
 	 * 
-	 * @param	String	$type	File data type
-	 * @return	String|Array|Object
+	 * @param	string	$type	File data type
+	 * @return	string|array|object|mixed
 	 *
 	 */
 	public function read($type = TYPE_TEXT) {
@@ -929,8 +790,8 @@ class FileIO {
 	 * Write data to file
 	 * type: text/json/serialize
 	 * 
-	 * @param	String|Array|Object		$data		Data to write
-	 * @param	String					$type		File data type
+	 * @param	string|array|object		$data		Data to write
+	 * @param	string					$type		File data type
 	 * @return
 	 *
 	 */
@@ -975,12 +836,12 @@ class FileIO {
  * Print out response data, set some header
  * and stop script execution!
  * 
- * @param	Int				$code			Response code
- * @param	String			$description	Response description
- * @param	Int				$HTTPStatus		Response HTTP status code
- * @param	Array|Object	$data			Response data (optional)
- * @param	Bool|Mixed		$hashData		To hash the data/Data to hash
- * @return	Void
+ * @param	int				$code			Response code
+ * @param	string			$description	Response description
+ * @param	int				$HTTPStatus		Response HTTP status code
+ * @param	array|object	$data			Response data (optional)
+ * @param	bool|mixed		$hashData		To hash the data/Data to hash
+ * @return	void
  *
  */
 function stop(Int $code = 0, String $description = "", Int $status = 200, $data = Array(), $hashData = false) {

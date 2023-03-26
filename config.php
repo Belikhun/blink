@@ -23,7 +23,7 @@ class ConfigPathProperty {}
 class CoreConfig {
 	/**
 	 * Page title
-	 * @var String
+	 * @var string
 	 */
 	public static String	$APP_NAME = "My Web App";
 
