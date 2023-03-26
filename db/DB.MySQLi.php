@@ -1,6 +1,11 @@
 <?php
 
-namespace DB;
+namespace Blink\DB;
+
+use Blink\DB;
+use Blink\DB\Exception\SQLError;
+use Blink\Exception\BaseException;
+use Blink\Exception\CodingError;
 
 /**
  * DB.MySQLi.php
@@ -14,7 +19,7 @@ namespace DB;
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-class MySQLi extends \DB {
+class MySQLi extends DB {
 	/** @var mysqli */
 	public $mysqli;
 
@@ -75,14 +80,14 @@ class MySQLi extends \DB {
 		else if (str_starts_with($sql, SQL_TRUNCATE))
 			$mode = SQL_TRUNCATE;
 		else
-			throw new \CodingError("\$DB -> execute(): cannot detect sql execute mode");
+			throw new CodingError("\$DB -> execute(): cannot detect sql execute mode");
 
 		$from = max($from, 0);
 		$limit = max($limit, 0);
 
 		if ($from || $limit) {
 			if ($mode !== SQL_SELECT)
-				throw new \CodingError("\$DB -> execute(): \$from and \$limit can only be used in SELECT mode!");
+				throw new CodingError("\$DB -> execute(): \$from and \$limit can only be used in SELECT mode!");
 
 			if ($limit < 1)
 				$limit = "18446744073709551615";
@@ -100,7 +105,7 @@ class MySQLi extends \DB {
 		try {
 			$stmt = $this -> mysqli -> prepare($sql);
 		} catch(\mysqli_sql_exception $e) {
-			throw new \SQLError(
+			throw new SQLError(
 				$e -> getCode(),
 				$e -> getMessage(),
 				$sql
@@ -108,7 +113,7 @@ class MySQLi extends \DB {
 		}
 
 		if ($stmt === false) {
-			throw new \SQLError(
+			throw new SQLError(
 				$this -> mysqli -> errno,
 				$this -> mysqli -> error,
 				$sql
@@ -124,7 +129,7 @@ class MySQLi extends \DB {
 
 		// Check for error
 		if ($stmt -> errno) {
-			throw new \SQLError(
+			throw new SQLError(
 				$this -> mysqli -> errno,
 				$this -> mysqli -> error,
 				$sql
@@ -176,7 +181,7 @@ class MySQLi extends \DB {
 				return $affected;
 			
 			default:
-				throw new \GeneralException(UNKNOWN_ERROR, "\$DB -> execute(): Something went really wrong!", 500);
+				throw new BaseException(UNKNOWN_ERROR, "\$DB -> execute(): Something went really wrong!", 500);
 		}
 	}
 }

@@ -52,8 +52,8 @@ class CoreConfig {
 
 	public static Array		$INCLUDES = Array(
 		CORE_ROOT . "/includes",
-		CORE_ROOT . "/classes/Metric",
-		CORE_ROOT . "/classes"
+		CORE_ROOT . "/classes",
+		CORE_ROOT . "/db/Exception"
 	);
 
 	public static bool		$PRODUCTION = false;

@@ -1,4 +1,5 @@
 <?php
+use Blink\Exception\MissingParam;
 
 /**
  * API.php

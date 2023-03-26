@@ -13,6 +13,7 @@
  * See LICENSE in the project root for license information.
  */
 
+use Blink\Exception\BaseException;
 use Router\Route;
 
 class Router {
@@ -99,7 +100,7 @@ class Router {
 
 		foreach ($methods as $method)
 			if (!in_array($method, Router::$verbs))
-				throw new GeneralException(-1, "HTTP Method \"{$method}\" is not supported!");
+				throw new BaseException(-1, "HTTP Method \"{$method}\" is not supported!");
 
 		$route = new Route($methods, $uri, $action);
 		$route -> priority = $priority;
@@ -139,7 +140,7 @@ class Router {
 		}
 
 		if (!$found)
-			throw new GeneralException(ROUTE_NOT_FOUND, "Cannot find route for {$method} \"$path\"", 404);
+			throw new BaseException(ROUTE_NOT_FOUND, "Cannot find route for {$method} \"$path\"", 404);
 	}
 
 	/**

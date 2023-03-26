@@ -13,11 +13,14 @@
  * See LICENSE in the project root for license information.
  */
 
+use Blink\Exception\BaseException;
+use Blink\Exception\FileWriteError;
+use Blink\Exception\InvalidValue;
 use Blink\Exception\JSONDecodeError;
+use Blink\Exception\MissingParam;
+use Blink\Exception\UnserializeError;
 
 require_once "const.php";
-
-//* ========================== Function definitions ==========================
 
 if (!function_exists("getallheaders")) {
 	function getallheaders() {
@@ -197,7 +200,7 @@ function cleanUTF8($value) {
  */
 function cleanParam($param, $type) {
 	if (is_array($param) || is_object($param))
-		throw new GeneralException(-1, "cleanParam(): this function does not accept array or object!");
+		throw new BaseException(-1, "cleanParam(): this function does not accept array or object!");
 
 	switch ($type) {
 		case TYPE_INT:
@@ -239,7 +242,7 @@ function cleanParam($param, $type) {
 			return safeJSONParsing($param, "cleanParam", true);
 
 		default:
-			throw new GeneralException(-1, "cleanParam(): unknown param type: $type", 400);
+			throw new BaseException(-1, "cleanParam(): unknown param type: $type", 400);
 	}
 }
 
@@ -286,7 +289,7 @@ function validate($value, $type, $throw = true) {
 			break;
 
 		default:
-			throw new GeneralException(-1, "validate(): unknown param type: $type", 400);
+			throw new BaseException(-1, "validate(): unknown param type: $type", 400);
 	}
 
 	if (!$valid) {
@@ -588,6 +591,26 @@ function redirect($url) {
 }
 
 /**
+ * Loop through all files inside a folder, recursively.
+ * 
+ * @param	string	$path
+ * @param	string	$extension
+ * @return	\Generator<\SplFileInfo>
+ */
+function getFiles(String $path, String $extension = "*") {
+	$di = new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS);
+	$ri = new RecursiveIteratorIterator($di);
+	$extension = strtolower($extension);
+
+	foreach ($ri as $file) {
+		if ($extension !== "*" && strtolower($file -> getExtension()) !== $extension)
+			continue;
+
+		yield $file;
+	}
+}
+
+/**
  * Render soucre code of a file to a friendly format.
  * 
  * @param	string	$file	Path to file to be rendered.
@@ -695,11 +718,17 @@ class FileIO {
 	}
 
 	public function fos(String $path, String $mode) {
+		$dirname = dirname($path);
+
+		// Create parent folder if not exist yet.
+		if (!is_dir($dirname))
+			mkdir($dirname, 0777, true);
+
 		$this -> stream = fopen($path, $mode);
 
 		if (!$this -> stream) {
 			$e = error_get_last();
-			throw new GeneralException(
+			throw new BaseException(
 				8,
 				"FileIO -> fos(): [". $e["type"] ."]: "
 					. $e["message"] . " tại "
@@ -731,7 +760,7 @@ class FileIO {
 				$tries++;
 
 				if ($tries >= $this -> maxTry) {
-					throw new GeneralException(
+					throw new BaseException(
 						46,
 						"FileIO -> read(): Read Timeout: Không có quyền đọc file "
 							. basename($this -> path) ." sau $tries lần thử",
@@ -744,7 +773,9 @@ class FileIO {
 			}
 		}
 
-		$metric = new \Metric\File("r", $type, $this -> path);
+		if (class_exists("\Metric\File"))
+			$metric = new \Metric\File("r", $type, $this -> path);
+
 		$this -> fos($this -> path, "r");
 
 		if (filesize($this -> path) > 0)
@@ -753,7 +784,9 @@ class FileIO {
 			$data = null;
 
 		$this -> fcs();
-		$metric -> time(!empty($data) ? mb_strlen($data, "utf-8") : -1);
+
+		if (isset($metric))
+			$metric -> time(!empty($data) ? mb_strlen($data, "utf-8") : -1);
 
 		switch ($type) {
 			case TYPE_JSON:
@@ -769,7 +802,7 @@ class FileIO {
 					error_reporting(0);
 					$data = (!empty($data)) ? unserialize($data) : false;
 					error_reporting(E_ALL);
-				} catch(Throwable $e) {
+				} catch (Throwable $e) {
 					// pass
 				}
 
@@ -803,15 +836,15 @@ class FileIO {
 				$tries++;
 
 				if ($tries >= $this -> maxTry)
-					throw new GeneralException(46, "FileIO -> write(): Write Timeout: Không có quyền ghi vào file ". basename($this -> path) ." sau $tries lần thử", 500, Array(
-						"path" => $this -> path
-					));
+					throw new FileWriteError($this -> path, $tries);
 
 				usleep(200000);
 			}
 		}
 
-		$metric = new \Metric\File($mode, $type, $this -> path);
+		if (class_exists("\Metric\File"))
+			$metric = new \Metric\File($mode, $type, $this -> path);
+		
 		$this -> fos($this -> path, $mode);
 
 		switch ($type) {
@@ -826,7 +859,10 @@ class FileIO {
 
 		fwrite($this -> stream, $data);
 		$this -> fcs();
-		$metric -> time(mb_strlen($data, "utf-8"));
+
+		if (isset($metric))
+			$metric -> time(mb_strlen($data, "utf-8"));
+
 		return true;
 	}
 }
@@ -880,7 +916,9 @@ function stop(Int $code = 0, String $description = "", Int $status = 200, $data 
 		"status" => $status,
 		"description" => $description,
 		"caller" => "{$caller}()",
-		"user" => \Session::$username,
+		"user" => class_exists("Session", false)
+			? \Session::$username
+			: null,
 		"data" => $data,
 		"hash" => $hash,
 		"runtime" => $runtime -> stop(),
@@ -926,8 +964,6 @@ function stop(Int $code = 0, String $description = "", Int $status = 200, $data 
 	die();
 }
 
-//* ========================== Error handling ==========================
-
 function printErrorPage(Array $data, Bool $redirect = false) {
 	$_SESSION["lastError"] = $data;
 
@@ -955,41 +991,3 @@ function printErrorPage(Array $data, Bool $redirect = false) {
 			require BASE_PATH . "/error.php";
 	}
 }
-
-if (!isset($runtime))
-	$runtime = new StopClock();
-
-//! Error Handler
-function errorHandler(Int $code, String $text, String $file, Int $line) {
-	// Diacard all output buffer to avoid garbage html.
-	while (ob_get_level())
-		ob_end_clean();
-	
-	$errorData = Array(
-		"code" => $code,
-		"description" => $text,
-		"file" => getRelativePath($file),
-		"line" => $line,
-	);
-
-	stop(-1, "Error Occurred: ". $text, 500, $errorData);
-}
-
-//! Exception Handler
-function exceptionHandler($e) {
-	// Discard all output buffer to avoid garbage html.
-	while (ob_get_level())
-		ob_end_clean();
-
-	if ($e instanceof GeneralException)
-		stop($e -> code, $e, $e -> status, $e -> data);
-	else {
-		stop(-1, get_class($e) ." [{$e -> getCode()}]: {$e -> getMessage()}", 500, Array(
-			"file" => getRelativePath($e -> getFile()),
-			"line" => $e -> getLine()
-		));
-	}
-}
-
-set_exception_handler("exceptionHandler");
-set_error_handler("errorHandler", E_ALL);

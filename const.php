@@ -61,6 +61,8 @@ define("INVALID_HASH", 207);
 define("MAX_LENGTH_EXCEEDED", 208);
 define("INVALID_URL", 209);
 define("FILE_INSTANCE_NOT_FOUND", 209);
+define("FILE_READ_ERROR", 210);
+define("FILE_WRITE_ERROR", 211);
 
 define("ACCESS_DENIED", 300);
 define("LOGGED_IN", 301);

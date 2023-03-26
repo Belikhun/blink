@@ -15,6 +15,7 @@
 
 namespace Config;
 
+use Blink\Exception\CodingError;
 use CONFIG;
 use FileIO;
 use stdClass;
@@ -37,7 +38,7 @@ class StoreGroup {
 		String $description = null
 	) {
 		if (!property_exists("CONFIG", $name))
-			throw new \CodingError("\Config\StoreGroup::define($name): config does not exist!");
+			throw new CodingError("\Config\StoreGroup::define($name): config does not exist!");
 
 		$this -> items[] = new StoreItem(
 			$name,
@@ -114,7 +115,7 @@ class Store {
 
 	public static function set(String $name, $value) {
 		if (!property_exists("CONFIG", $name))
-			throw new \CodingError("\Config\Store::set($name): config does not exist!");
+			throw new CodingError("\Config\Store::set($name): config does not exist!");
 
 		CONFIG::$$name = $value;
 	}

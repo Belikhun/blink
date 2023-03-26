@@ -1,5 +1,11 @@
 <?php
 
+namespace Blink;
+use Blink\DB\Exception\InvalidSQLDriver;
+use Blink\DB\Exception\SQLDriverNotFound;
+use Blink\Exception\CodingError;
+use CONFIG;
+
 /**
  * db.abstract.php
  * 
@@ -245,7 +251,7 @@ abstract class DB {
 		$object = (Array) $object;
 
 		if (empty($object["id"]))
-			throw new \CodingError("\$DB -> update(): id field must be specified");
+			throw new CodingError("\$DB -> update(): id field must be specified");
 
 		$id = $object["id"];
 		unset($object["id"]);
@@ -366,7 +372,7 @@ function initializeDB() {
 	 * Global Database Instance. Initialized based on type of
 	 * SQL driver specified in config.
 	 * 
-	 * @var \DB
+	 * @var \Blink\DB
 	 */
 	global $DB;
 
@@ -378,9 +384,9 @@ function initializeDB() {
 
 	if (file_exists($DB_DRIVER_PATH)) {
 		require_once $DB_DRIVER_PATH;
-		$className = "\\DB\\" . CONFIG::$DB_DRIVER;
+		$className = "Blink\\DB\\" . CONFIG::$DB_DRIVER;
 
-		if (!class_exists($className) || !in_array("DB", class_parents($className)))
+		if (!class_exists($className) || !in_array("Blink\\DB", class_parents($className)))
 			throw new InvalidSQLDriver(CONFIG::$DB_DRIVER);
 
 		$DB = new $className();

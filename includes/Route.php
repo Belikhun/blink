@@ -1,5 +1,10 @@
 <?php
 
+namespace Router;
+
+use Blink\Exception\BaseException;
+use Blink\Exception\RouteArgumentMismatch;
+
 /**
  * Route.php
  * 
@@ -12,10 +17,6 @@
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Router;
-
-use GeneralException;
 
 class Route {
 	/**
@@ -78,16 +79,16 @@ class Route {
 						$key = array_keys($args)[((int) $matches[2]) - 1];
 						$message = str_replace($matches[1], "Value of \"$key\"", $message);
 
-						throw new \RouteArgumentMismatch($this, $message);
+						throw new RouteArgumentMismatch($this, $message);
 					}
 				}
 
 				throw $e;
 			} catch (\ArgumentCountError $e) {
-				throw new GeneralException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
+				throw new BaseException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
 			}
 		} else {
-			throw new GeneralException(ROUTE_CALLBACK_INVALID, "Callback \"{$this -> action}\" for route \"{$this -> uri}\" is missing or not callable.", 500);
+			throw new BaseException(ROUTE_CALLBACK_INVALID, "Callback \"{$this -> action}\" for route \"{$this -> uri}\" is missing or not callable.", 500);
 		}
 	}
 

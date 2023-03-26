@@ -1,4 +1,6 @@
 <?php
+use Blink\Exception\InvalidToken;
+use Blink\Exception\TokenExpired;
 
 /**
  * Token.php

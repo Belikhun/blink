@@ -1,4 +1,6 @@
 <?php
+use Blink\Exception\InvalidURL;
+use Blink\Exception\CodingError;
 
 /**
  * URL.php

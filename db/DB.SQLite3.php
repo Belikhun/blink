@@ -1,8 +1,12 @@
 <?php
 
-namespace DB;
-use DatabaseNotUpgraded;
-use GeneralException;
+namespace Blink\DB;
+
+use Blink\DB;
+use Blink\DB\Exception\DatabaseNotUpgraded;
+use Blink\DB\Exception\SQLError;
+use Blink\Exception\BaseException;
+use Blink\Exception\CodingError;
 
 /**
  * DB.SQLite3.php
@@ -16,7 +20,7 @@ use GeneralException;
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-class SQLite3 extends \DB {
+class SQLite3 extends DB {
 	/**
 	 * Database instance
 	 * @var SQLite3
@@ -125,7 +129,7 @@ class SQLite3 extends \DB {
 			/**
 			 * SQLite3 instance, only available when performing
 			 * an database upgrade!
-			 * @var \DB\SQLite3
+			 * @var \Blink\DB\SQLite3
 			 */
 			global $SQLiDB;
 			$SQLiDB = $this;
@@ -152,7 +156,7 @@ class SQLite3 extends \DB {
 				continue;
 
 			if (!$this -> instance -> exec($content)) {
-				throw new \SQLError(
+				throw new SQLError(
 					$this -> instance -> lastErrorCode(),
 					$this -> instance -> lastErrorMsg(),
 					$content
@@ -195,14 +199,14 @@ class SQLite3 extends \DB {
 		else if (str_starts_with($sql, SQL_TRUNCATE))
 			$mode = SQL_TRUNCATE;
 		else
-			throw new \CodingError("\$DB -> execute(): cannot detect sql execute mode");
+			throw new CodingError("\$DB -> execute(): cannot detect sql execute mode");
 
 		$from = max($from, 0);
 		$limit = max($limit, 0);
 
 		if ($from || $limit) {
 			if ($mode !== SQL_SELECT)
-				throw new \CodingError("\$DB -> execute(): \$from and \$limit can only be used in SELECT mode!");
+				throw new CodingError("\$DB -> execute(): \$from and \$limit can only be used in SELECT mode!");
 
 			if ($limit < 1)
 				$limit = "18446744073709551615";
@@ -213,7 +217,7 @@ class SQLite3 extends \DB {
 		$stmt = $this -> instance -> prepare($sql);
 
 		if ($stmt === false) {
-			throw new \SQLError(
+			throw new SQLError(
 				$this -> instance -> lastErrorCode(),
 				$this -> instance -> lastErrorMsg(),
 				$sql
@@ -229,7 +233,7 @@ class SQLite3 extends \DB {
 
 		// Check for error
 		if ($res === false) {
-			throw new \SQLError(
+			throw new SQLError(
 				$this -> instance -> lastErrorCode(),
 				$this -> instance -> lastErrorMsg(),
 				$sql
@@ -280,7 +284,7 @@ class SQLite3 extends \DB {
 				return $affected;
 			
 			default:
-				throw new \GeneralException(UNKNOWN_ERROR, "\$DB -> execute(): Something went really wrong!", 500);
+				throw new BaseException(UNKNOWN_ERROR, "\$DB -> execute(): Something went really wrong!", 500);
 		}
 	}
 }

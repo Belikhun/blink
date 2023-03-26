@@ -1,5 +1,8 @@
 <?php
 
+use Blink\Exception\FileNotFound;
+use Blink\Exception\MissingParam;
+
 /**
  * Page.php
  * 
@@ -13,6 +16,7 @@
  * Copyright (C) 2018-2022 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
 class Page {
 	/**
 	 * Arguments passed into this page by router.

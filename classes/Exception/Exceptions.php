@@ -39,25 +39,9 @@ class MissingParam extends BaseException {
 	}
 }
 
-class FileNotFound extends BaseException {
-	public function __construct(String $path) {
-		parent::__construct(FILE_MISSING, "File \"$path\" does not exist on this server.", 404, Array( "path" => $path ));
-	}
-}
-
 class IllegalAccess extends BaseException {
 	public function __construct(String $message = null) {
 		parent::__construct(ACCESS_DENIED, $message ?: "You don't have permission to access this resource.", 403);
-	}
-}
-
-class SQLError extends BaseException {
-	public function __construct(int $code, String $description, String $query = null) {
-		parent::__construct(SQL_ERROR, $description, 500, Array(
-			"code" => $code,
-			"description" => $description,
-			"query" => $query
-		));
 	}
 }
 
@@ -115,29 +99,5 @@ class InvalidValue extends BaseException {
 class MaxLengthExceeded extends BaseException {
 	public function __construct(String $field, int $max) {
 		parent::__construct(MAX_LENGTH_EXCEEDED, "$field không được vượt quá $max kí tự!", 400);
-	}
-}
-
-class FileInstanceNotFound extends BaseException {
-	public function __construct(String $hash) {
-		parent::__construct(FILE_INSTANCE_NOT_FOUND, "Không tồn tại tệp với mã $hash trong cơ sở dữ liệu!", 404);
-	}
-}
-
-class SQLDriverNotFound extends BaseException {
-	public function __construct(String $name) {
-		parent::__construct(SQL_DRIVER_NOT_FOUND, "Không tồn tại driver SQL với tên \"$name\"!", 500);
-	}
-}
-
-class InvalidSQLDriver extends BaseException {
-	public function __construct(String $name) {
-		parent::__construct(INVALID_SQL_DRIVER, "Driver SQL \"$name\" không hợp lệ! Có thể driver này chưa được định nghĩa hoặc chưa kế thừa từ \"\\DB\"!", 500);
-	}
-}
-
-class DatabaseNotUpgraded extends BaseException {
-	public function __construct(int $version, int $target) {
-		parent::__construct(DATABASE_NOT_UPGRADED, "Cơ sở dữ liệu chưa được cập nhật! Phiên bản hiện tại là $version nhưng phiên bản của cấu trúc bảng là $target. Vui lòng cập nhật lại đoạn mã nâng cấp của bạn!", 500);
 	}
 }

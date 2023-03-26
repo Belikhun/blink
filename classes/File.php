@@ -13,6 +13,7 @@
  * See LICENSE in the project root for license information.
  */
 
+use Blink\Exception\BaseException;
 use Blink\Exception\FileInstanceNotFound;
 
 class File {
@@ -186,12 +187,12 @@ class File {
 			case UPLOAD_ERR_OK:
 				break;
 			case UPLOAD_ERR_NO_FILE:
-				throw new GeneralException(41, "No file sent!", 400);
+				throw new BaseException(41, "No file sent!", 400);
 			case UPLOAD_ERR_INI_SIZE:
 			case UPLOAD_ERR_FORM_SIZE:
-				throw new GeneralException(42, "File limit exceeded!", 400);
+				throw new BaseException(42, "File limit exceeded!", 400);
 			default:
-				throw new GeneralException(-1, "Unknown error while handing file upload!", 500);
+				throw new BaseException(-1, "Unknown error while handing file upload!", 500);
 		}
 
 		$hash = hash_file("md5", $file["tmp_name"]);

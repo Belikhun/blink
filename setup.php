@@ -81,8 +81,8 @@ foreach ($configProps as $prop) {
 }
 
 // Include BaseException class and it's child.
-require_once CORE_ROOT . "/Exception/BaseException.php";
-foreach (glob(CORE_ROOT . "/Exception/*.php") as $filename) {
+require_once CORE_ROOT . "/classes/Exception/BaseException.php";
+foreach (glob(CORE_ROOT . "/classes/Exception/*.php") as $filename) {
 	if (str_ends_with($filename, "BaseException.php"))
 		continue;
 
@@ -91,15 +91,25 @@ foreach (glob(CORE_ROOT . "/Exception/*.php") as $filename) {
 
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";
+require_once CORE_ROOT . "/handlers.php";
+
+/**
+ * Clock for tracking runtime since request started.
+ * @var StopClock
+ */
+global $runtime;
+
+if (!isset($runtime))
+	$runtime = new StopClock();
 
 // Include optional files and classes definition
 // in the includes / classes directory.
+require_once CORE_ROOT . "/classes/Cache.php";
+require_once CORE_ROOT . "/classes/CacheData.php";
 foreach (CONFIG::$INCLUDES as $include) {
 	if (!is_dir($include))
 		continue;
 
-	foreach (glob("$include/*.php") as $filename)
-		require_once $filename;
 }
 
 if (!class_exists("User"))

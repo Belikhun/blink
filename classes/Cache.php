@@ -13,6 +13,8 @@
  * See LICENSE in the project root for license information.
  */
 class Cache {
+	const NO_EXPIRE = -1;
+
 	public static String $CACHE_LOCATION;
 	public String $id;
 	public \Cache\Data $data;
@@ -61,7 +63,8 @@ class Cache {
 	 * @return	bool
 	 */
 	public function validate() {
-		return (time() - $this -> data -> time) < $this -> data -> age;
+		return ($this -> data -> age === Cache::NO_EXPIRE)
+			|| (time() - $this -> data -> time) < $this -> data -> age;
 	}
 
 	public function getData() {

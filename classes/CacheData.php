@@ -14,12 +14,10 @@
 
 namespace Cache;
 
-define("CACHE_AGE_INF", -1);
-
 class Data {
 	public String $id;
 
-	public int $age = CACHE_AGE_INF;
+	public int $age = \Cache::NO_EXPIRE;
 
 	public int $time = 0;
 

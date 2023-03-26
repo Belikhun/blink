@@ -1,4 +1,7 @@
 <?php
+use Blink\Exception\BaseException;
+use Blink\Exception\FileNotFound;
+use Blink\Exception\IllegalAccess;
 /**
  * Image.php
  * 
@@ -55,17 +58,17 @@ class Image {
 			case UPLOAD_ERR_OK:
 				break;
 			case UPLOAD_ERR_NO_FILE:
-				throw new GeneralException(41, "No file sent!", 400);
+				throw new BaseException(41, "No file sent!", 400);
 			case UPLOAD_ERR_INI_SIZE:
 			case UPLOAD_ERR_FORM_SIZE:
-				throw new GeneralException(42, "File limit exceeded!", 400);
+				throw new BaseException(42, "File limit exceeded!", 400);
 			default:
-				throw new GeneralException(-1, "Unknown error while handing file upload!", 500);
+				throw new BaseException(-1, "Unknown error while handing file upload!", 500);
 		}
 
 		$extension = pathinfo($file["name"], PATHINFO_EXTENSION);
 		if (!in_array($extension, CONFIG::$IMAGE_ALLOW)) {
-			throw new GeneralException(
+			throw new BaseException(
 				INVALID_FILE,
 				"Không chấp nhận loại tệp!",
 				400,
@@ -74,7 +77,7 @@ class Image {
 		}
 
 		if ($file["size"] > CONFIG::$IMAGE_SIZE) {
-			throw new GeneralException(42, "Tệp quá lớn!", 400, Array(
+			throw new BaseException(42, "Tệp quá lớn!", 400, Array(
 				"size" => $file["size"],
 				"max" => CONFIG::$IMAGE_SIZE
 			));
