@@ -13,7 +13,121 @@
  * See LICENSE in the project root for license information.
  */
 
-$styles = (new FileIO(CORE_ROOT . "/error.css")) -> read();
+$data = null;
+$status = 200;
+$statusText = "OK";
+$description = "Everything is good and dandy!";
+
+if (isset($_SERVER["REDIRECT_STATUS"]))
+	$status = $_SERVER["REDIRECT_STATUS"];
+elseif (isset($_GET["status"]))
+	$status = trim($_GET["status"]);
+
+if (!empty($_SESSION["LAST_ERROR"])) {
+	$data = $_SESSION["LAST_ERROR"];
+	$status = $data["status"];
+}
+
+switch ($status) {
+	case 400:
+		$statusText = "HTTP\BadRequest";
+		$description = "The request cannot be fulfilled due to bad syntax.";
+		break;
+	
+	case 401:
+		$statusText = "HTTP\Unauthorized";
+		$description = "Authentication is required and has failed or has not yet been provided.";
+		break;
+	
+	case 403:
+		$statusText = "HTTP\Forbidden";
+		$description = "Hey, Thats illegal! You are not allowed to access this resource!";
+		break;
+	
+	case 404:
+		$statusText = "HTTP\NotFound";
+		$description = "Không thể tìm thấy tài nguyên này trên máy chủ.";
+		break;
+	
+	case 405:
+		$statusText = "HTTP\MethodNotAllowed";
+		$description = "A request method is not supposed for the requested resource.";
+		break;
+	
+	case 406:
+		$statusText = "HTTP\NotAcceptable";
+		$description = "The requested resource is capable of generating only content not acceptable according to the Accept headers sent in the request.";
+		break;
+	
+	case 408:
+		$statusText = "HTTP\RequestTimeout";
+		$description = "The client did not produce a request within the time that the server was prepared to wait.";
+		break;
+	
+	case 414:
+		$statusText = "HTTP\URITooLong";
+		$description = "The URI provided was too long for the server to process.";
+		break;
+	
+	case 429:
+		$statusText = "HTTP\TooManyRequest";
+		$description = "Hey, you! Yes you. Why you spam here?";
+		break;
+	
+	case 500:
+		$statusText = "HTTP\InternalServerError";
+		$description = "The server did an oopsie";
+		break;
+	
+	case 502:
+		$statusText = "HTTP\BadGateway";
+		$description = "The server received an invalid response while trying to carry out the request.";
+		break;
+	
+	default:
+		$statusText = "HTTP\SampleText";
+		$description = "Much strangery page, Such magically error, wow";
+		break;
+}
+
+$statusColor = "green";
+$sticker = "/core/public/stickers/sticker-default.webm";
+
+if ($status >= 400 && $status < 500) {
+	$statusColor = "yellow";
+	$sticker = "/core/public/stickers/sticker-40x.webm";
+} else if ($status >= 500 && $status < 600) {
+	$statusColor = "red";
+	$sticker = "/core/public/stickers/sticker-50x.webm";
+}
+
+$exception = null;
+
+/** @var BacktraceFrame[] */
+$stacktrace = Array();
+
+if (!empty($data)) {
+	$description = $data["description"];
+
+	if (!empty($data["exception"])) {
+		$exception = $data["exception"];
+		$stacktrace = $exception["stacktrace"];
+	}
+}
+
+http_response_code($status);
+
+function icon($name) {
+	switch ($name) {
+		case "server":
+			echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M64 80c-8.8 0-16 7.2-16 16V258c5.1-1.3 10.5-2 16-2H448c5.5 0 10.9 .7 16 2V96c0-8.8-7.2-16-16-16H64zM48 320v96c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V320c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zM0 320V96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V320v96c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V320zm280 48a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm120-24a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>';
+			break;
+
+		case "blink":
+			echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M160 256C160 202.1 202.1 160 256 160C309 160 352 202.1 352 256C352 309 309 352 256 352C202.1 352 160 309 160 256zM512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256zM256 48C141.1 48 48 141.1 48 256C48 370.9 141.1 464 256 464C370.9 464 464 370.9 464 256C464 141.1 370.9 48 256 48z"/></svg>';
+			break;
+	}
+}
 
 ?>
 
@@ -23,46 +137,150 @@ $styles = (new FileIO(CORE_ROOT . "/error.css")) -> read();
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>An Critical Error Occured!!!</title>
-
-		<style><?php echo $styles; ?></style>
+		<link rel="stylesheet" href="/core/public/default.css">
+		<link rel="stylesheet" href="/core/public/error.css">
+		<title><?php echo (!empty($exception) ? $exception["class"] : $statusText) . ": {$description}"; ?></title>
 	</head>
 
 	<body>
-		<div class="note">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-				<path d="M459.1 52.4L442.6 6.5C440.7 2.6 436.5 0 432.1 0s-8.5 2.6-10.4 6.5L405.2 52.4l-46 16.8c-4.3 1.6-7.3 5.9-7.2 10.4c0 4.5 3 8.7 7.2 10.2l45.7 16.8 16.8 45.8c1.5 4.4 5.8 7.5 10.4 7.5s8.9-3.1 10.4-7.5l16.5-45.8 45.7-16.8c4.2-1.5 7.2-5.7 7.2-10.2c0-4.6-3-8.9-7.2-10.4L459.1 52.4zm-132.4 53c-12.5-12.5-32.8-12.5-45.3 0l-2.9 2.9C256.5 100.3 232.7 96 208 96C93.1 96 0 189.1 0 304S93.1 512 208 512s208-93.1 208-208c0-24.7-4.3-48.5-12.2-70.5l2.9-2.9c12.5-12.5 12.5-32.8 0-45.3l-80-80zM200 192c-57.4 0-104 46.6-104 104v8c0 8.8-7.2 16-16 16s-16-7.2-16-16v-8c0-75.1 60.9-136 136-136h8c8.8 0 16 7.2 16 16s-7.2 16-16 16h-8z"/>
-			</svg>
+		<div id="app">
+			<header>
 
-			<div class="inner">
-				<h2>Một lỗi nghiêm trọng đã xảy ra!</h2>
+			</header>
 
-				<?php if (!empty($_SESSION["lastError"])) {
-					$error = $_SESSION["lastError"];
-					$data = $error["data"];
+			<div class="content">
+				<div id="details" class="flex flex-col panel">
+					<div class="flex flex-row top">
+						<video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video>
+	
+						<span class="block exception flex-g1">
+							<div class="flex flex-row align-center justify-between flex-wrap top">
+								<span class="badges flex flex-row align-center flex-wrap">
+									<span class="badge status" data-color="<?php echo $statusColor; ?>">
+										<?php echo $_SERVER["SERVER_PROTOCOL"]; ?>
+										<b><?php echo $status; ?></b>
+									</span>
+	
+									<?php if (!empty($exception)) { ?>
+										<span class="badge class"><?php echo $exception["class"]; ?></span>
+									<?php } ?>
+								</span>
+	
+								<span class="versions flex flex-row align-center">
+									<span>
+										<span class="wider">PHP</span>
+										<?php echo phpversion(); ?>
+									</span>
+	
+									<span>
+										<?php echo icon("server"); ?>
+										<?php echo $_SERVER["SERVER_SOFTWARE"]; ?>
+									</span>
+	
+									<span>
+										<?php echo icon("blink"); ?>
+										<?php echo CONFIG::$BLINK_VERSION; ?>
+									</span>
+								</span>
+							</div>
+	
+							<div class="description"><?php echo $description; ?></div>
+						</span>
+					</div>
+				</div>
 
-					$detail = "<b>Lỗi [". $error["code"] ."]:</b> <sr>". $error["description"] ."</sr>";
-					?>
+				<?php if (!empty($stacktrace)) { ?>
+					<div id="stacktrace" class="flex flex-row panel">
+						<span class="flex flex-col flex-g0 left">
+							<div class="header">
+								<b>Frames</b>
+							</div>
+							
+							<div class="frames">
+								<?php
+								$firstframe = false;
 
-					<div class="error"><?php echo $detail; ?></div>
+								foreach ($stacktrace as $i => $trace) {
+									$attrs = Array(
+										"class" => ["frame", "flex", "flex-col", "text-sm"],
+										"toggle-id" => $trace -> getID(),
+										"toggle-name" => "stacktrace"
+									);
 
-					<?php if (isset($data["file"]) && isset($data["line"])) {
-						renderSourceCode(BASE_PATH . $data["file"], $data["line"], 20);
-					} ?>
+									if (!empty($trace -> file)) {
+										$attrs["toggle-id"] = $trace -> getID();
+										$attrs["toggle-name"] = "stacktrace";
 
-					<?php if (isset($data["trace"])) {
-						foreach ($data["trace"] as $trace)
-							renderSourceCode($trace["file"], $trace["line"], 10);
-					} ?>
+										if (!$firstframe) {
+											$attrs["toggle-default"] = true;
+											$attrs["class"][] = "active";
+											$firstframe = true;
+										}
 
-					<details>
-						<summary><b>FULL ERROR DATA</b></summary>
-						<pre><?php echo json_encode($error, JSON_PRETTY_PRINT); ?></pre>
-					</details>
-				<?php } else { ?>
-					<div>Sorry! But that's all we know.</div>
+										echo HTMLBuilder::startDIV($attrs);
+
+										echo HTMLBuilder::div(
+											Array( "class" => "path" ),
+											$trace -> file . "<code>:{$trace -> line}</code>");
+									} else {
+										echo HTMLBuilder::startDIV(Array(
+											"class" => "frame flex flex-col text-sm"
+										));
+									}
+
+									echo HTMLBuilder::div(Array(
+										"class" => "font-semibold"
+									), $trace -> getCallString());
+
+									echo HTMLBuilder::endDIV();
+								}
+							?></div>
+						</span>
+
+						<span class="flex flex-col flex-g1 viewer">
+							<?php
+							$firstframe = false;
+
+							foreach ($stacktrace as $trace) {
+								if (empty($trace -> file))
+									continue;
+
+								$attrs = Array(
+									"class" => ["flex", "flex-col", "view"],
+									"toggle-target" => $trace -> getID()
+								);
+
+								if (!$firstframe) {
+									$attrs["class"][] = "active";
+									$firstframe = true;
+								}
+
+								echo HTMLBuilder::startDIV($attrs);
+
+								echo HTMLBuilder::startDIV(Array(
+									"class" => "header text-sm font-semibold"
+								));
+								
+								echo HTMLBuilder::a(
+									"vscode://file/" . urlencode($trace -> getFullPath() . ":{$trace -> line}"),
+									$trace -> getFullPath() . "<code>:{$trace -> line}</code>",
+									Array( "class" => "open-file" )
+								);
+
+								echo HTMLBuilder::endDIV();
+
+								echo renderSourceCode($trace -> getFullPath(), $trace -> line, 27);
+
+								echo HTMLBuilder::endDIV();
+							}
+						?></span>
+					</div>
 				<?php } ?>
 			</div>
+
+			<pre><?php var_dump($data); ?></pre>
 		</div>
+
+		<script src="/core/public/error.js"></script>
 	</body>
 </html>

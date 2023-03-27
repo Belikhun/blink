@@ -29,6 +29,7 @@ class CoreConfig {
 
 	public static int		$SESSION_LIFETIME = 86400;
 	public static int		$TOKEN_LIFETIME = 86400;
+	public static String	$BLINK_VERSION = "1.0.0";
 
 
 	public static String	$DB_DRIVER = "MySQLi";

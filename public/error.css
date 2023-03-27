@@ -1,0 +1,258 @@
+/**
+ * error.css
+ * 
+ * Generic error page styles.
+ * 
+ * @author    Belikhun
+ * @since     2.0.0
+ * @license   https://tldrlegal.com/license/mit-license MIT
+ * 
+ * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * See LICENSE in the project root for license information.
+ */
+
+body {
+	position: relative;
+	display: block;
+	margin: 0;
+	width: 100vw;
+	height: 100svh;
+	overflow: hidden;
+	tab-size: 4;
+
+	font-family:	ui-sans-serif, system-ui, -apple-system, Segoe UI,
+					Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif,
+					BlinkMacSystemFont, Helvetica Neue, Arial, Apple Color Emoji,
+					Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+	
+	font-size: 16px;
+    line-height: 1.5;
+	color: var(--text-primary);
+	font-feature-settings: "calt" 0;
+	background-color: var(--background-color);
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg width='30' height='30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.227 0c.687 0 1.227.54 1.227 1.227s-.54 1.227-1.227 1.227S0 1.914 0 1.227.54 0 1.227 0z' fill='rgba(0,0,0,0.07)'/%3E%3C/svg%3E");
+}
+
+header {
+	height: 80px;
+}
+
+#app {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+}
+
+#app > .content {
+	display: block;
+	width: 100%;
+	max-width: var(--max-width);
+	margin: auto;
+	padding: 0 40px;
+	box-sizing: border-box;
+}
+
+.panel {
+	background-color: var(--panel-color);
+	box-shadow: 
+		rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+		rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+		rgba(107, 114, 128, 0.2) 0px 25px 50px -12px;
+
+	border-radius: 8px;
+	margin-bottom: 40px;
+	overflow: hidden;
+}
+
+#details > div {
+	position: relative;
+}
+
+#details > div > video {
+	width: auto;
+	height: 96px;
+	margin: 32px 0 0 40px;
+	aspect-ratio: 1 / 1;
+	border-radius: 8px;
+}
+
+#details > div > .block {
+	padding: 32px 40px;
+}
+
+#details > .top > .exception > .top > .badges > .badge {
+	position: relative;
+	flex-shrink: 0;
+	margin-right: 16px;
+	margin-bottom: 8px;
+	padding: 4px 16px;
+	border-radius: 6px;
+	background-color: var(--badge-background);
+}
+
+#details > .top > .exception > .top > .badges > .badge.status {
+	padding-left: 32px;
+
+	--badge-color: gray;
+}
+
+#details > .top > .exception > .top > .badges > .badge.status::before {
+	content: "";
+	position: absolute;
+	width: 8px;
+	height: 8px;
+	top: calc(50% - 4px);
+	left: 16px;
+
+	background-color: var(--badge-color);
+	box-shadow: 0px 0px 6px 1px var(--badge-color);
+	border-radius: 50%;
+}
+
+#details > .top > .exception > .top > .badges > .badge.status[data-color="red"] {
+	--badge-background: rgba(255, 190, 190, 0.2);
+	--badge-color: rgb(255, 67, 83);
+}
+
+#details > .top > .exception > .top > .badges > .badge.status[data-color="yellow"] {
+	--badge-background: rgba(255, 200, 80, 0.2);
+	--badge-color: rgb(255, 181, 21);
+}
+
+#details > .top > .exception > .top > .badges > .badge.status[data-color="green"] {
+	--badge-background: rgba(92, 253, 100, 0.2);
+	--badge-color: rgb(10, 214, 20);
+}
+
+#details > .top > .exception > .top > .badges > .badge.class {
+	font-family: "Consolas";
+	font-weight: bold;
+}
+
+#details > .top > .exception > .top > .versions {
+	font-size: .875rem;
+	line-height: 1.25rem;
+	color: var(--text-secondary);
+}
+
+#details > .top > .exception > .top > .versions > span {
+	display: inline-flex;
+	flex-direction: row;
+	align-items: center;
+	margin-left: 16px;
+	margin-bottom: 8px;
+	gap: 6px;
+}
+
+#details > .top > .exception > .top > .versions > span > svg {
+	height: 14px;
+	width: 14px;
+	fill: var(--text-secondary);
+}
+
+#details > .top > .exception > .description {
+	margin: 8px 0 16px;
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+#stacktrace {
+	display: grid;
+	grid-template-columns: 33.33% 66.66%;
+	grid-template-rows: 1fr;
+	height: 920px;
+	overflow: hidden;
+}
+
+#stacktrace > .left {
+	border-right: 1px solid var(--border-color);
+}
+
+#stacktrace > .left > .header {
+	display: flex;
+	align-items: center;
+	height: 64px;
+	padding: 16px 40px;
+	box-sizing: border-box;
+	border-bottom: 1px solid var(--border-color);
+}
+
+#stacktrace > .left > .frames {
+	flex-grow: 1;
+	overflow: auto;
+	-webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 4rem), transparent);
+}
+
+#stacktrace > .left > .frames::-webkit-scrollbar {
+	display: none;
+}
+
+#stacktrace > .left > .frames > .frame {
+	padding: 16px 40px;
+	border-bottom: 1px solid var(--border-color);
+}
+
+#stacktrace > .left > .frames > .frame[toggle-id] {
+	cursor: pointer;
+}
+
+#stacktrace > .left > .frames > .frame[toggle-id]:hover {
+	background-color: var(--background-red-1);
+}
+
+#stacktrace > .left > .frames > .frame[toggle-id].active {
+	color: var(--text-alternate);
+	background-color: var(--background-red);
+}
+
+#stacktrace > .left > .frames > .frame:last-child {
+	margin-bottom: 40px;
+}
+
+#stacktrace > .viewer > .view {
+	display: none;
+	width: 100%;
+	height: 100%;
+}
+
+#stacktrace > .viewer > .view.active {
+	display: flex;
+}
+
+#stacktrace > .viewer > .view > .header {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-grow: 0;
+	flex-shrink: 0;
+
+	height: 64px;
+	padding: 0 40px;
+	box-sizing: border-box;
+}
+
+#stacktrace > .viewer > .view > .header > .open-file {
+	color: var(--text-secondary);
+	text-decoration: none;
+}
+
+#stacktrace > .viewer > .view > .header > .open-file:hover {
+	text-decoration: underline;
+}
+
+#stacktrace > .viewer > .view > .sourceCode {
+	flex-grow: 1;
+}
+
+@media screen and (max-width: 1000px) {
+	:root {
+		--max-width: 700px;
+	}
+
+	#details > .top > .exception > .top > .versions > span {
+		margin-left: unset;
+		margin-right: 16px;
+	}
+}

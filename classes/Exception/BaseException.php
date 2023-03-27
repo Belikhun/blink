@@ -26,19 +26,37 @@ class BaseException extends \Exception {
 	 * Error Description/Message
 	 * @var	string
 	 */
-	public $description;
+	public String $description;
 
 	/**
 	 * HTTP Status Code
 	 * @var	int
 	 */
-	public $status;
+	public int $status;
 
 	/**
 	 * Optional Error Data
 	 * @var	array|\stdClass
 	 */
 	public $data;
+
+	/**
+	 * Optional Error Data
+	 * @var	string
+	 */
+	public String $file;
+
+	/**
+	 * Optional Error Data
+	 * @var	int
+	 */
+	public int $line;
+
+	/**
+	 * Optional Error Data
+	 * @var	\BacktraceFrame[]
+	 */
+	public Array $trace;
 
 	/**
 	 * Exception class designed for detailed error report.
@@ -55,9 +73,9 @@ class BaseException extends \Exception {
 		$this -> data = $data;
 		parent::__construct($description, $code);
 
-		$this -> data["file"] = getRelativePath(parent::getFile());
-		$this -> data["line"] = parent::getLine();
-		$this -> data["trace"] = parent::getTrace();
+		$this -> file = getRelativePath(parent::getFile());
+		$this -> line = parent::getLine();
+		$this -> trace = processBacktrace(parent::getTrace());
 	}
 
 	public function __toString() {

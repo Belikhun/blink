@@ -458,8 +458,14 @@ function expireHeader($time) {
  * @return	string
  */
 function getRelativePath(String $fullPath, String $separator = "/", String $base = BASE_PATH) {
-	$search = preg_replace("/(\\\\|\/)/m", $separator, $base);
-	$subject = preg_replace("/(\\\\|\/)/m", $separator, $fullPath);
+	if ($separator === "/") {
+		$search = BASE_PATH;
+		$subject = str_replace("\\", "/", $fullPath);
+	} else {
+		$search = preg_replace("/(\\\\|\/)/m", $separator, $base);
+		$subject = preg_replace("/(\\\\|\/)/m", $separator, $fullPath);
+	}
+
 	return str_replace($search, "", $subject);
 }
 
@@ -618,7 +624,7 @@ function getFiles(String $path, String $extension = "*") {
  * @param	int		$count	Number of lines will be rendered.
  */
 function renderSourceCode(String $file, int $line, int $count = 10) {
-	$content = (new FileIO($file)) -> read();
+	$content = htmlspecialchars((new FileIO($file)) -> read());
 	$lines = explode("\n", $content);
 
 	$from = $line - floor($count / 2);
@@ -639,25 +645,64 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 			$from = 0;
 	}
 
-	echo HTMLBuilder::startDIV(Array( "class" => "sourceCode" ));
-	echo HTMLBuilder::div(Array( "class" => "file" ), getRelativePath($file) . ":$line");
+	// Only get the part we need.
+	$lines = array_slice($lines, $from, $to - $from + 1);
+	$content = implode("\n", $lines);
 
-	for ($i = $from; $i <= $to; $i++) {
+	// Keywords regex
+	$keywords = Array(	"try", "catch", "return", "public", "protected", "private", "static", "include_once",
+						"include", "require_once", "require", "global", "if", "else", "use", "throw",
+						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break" );
+	$re = '/(^|[\t\n\(\! ])(' . implode("|", $keywords) . ')(?=[\t\n\(\{\:\; ])/mi';
+	$content = preg_replace($re, '$1<span class="sc-keyword">$2</span>', $content);
+
+	// Function regex
+	$re = '/([\t\n\( ]|^)(function)(?=[\t\n\(\{ ])/mi';
+	$content = preg_replace($re, '$1<span class="sc-function">$2</span>', $content);
+		
+	// Class name regex
+	$re = '/(^| |\()([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\{\:\- ]|$)/m';
+	$content = preg_replace($re, '$1<span class="sc-class">$2</span>$3', $content);
+
+	// String
+	$re = '/(&quot;(.*)&quot;|\'(.*)\')/mU';
+	$content = preg_replace($re, '<span class="sc-string">$1</span>', $content);
+
+	// Variables
+	$re = '/(\$[a-zA-Z0-9_]+)/m';
+	$content = preg_replace($re, '<span class="sc-variable">$1</span>', $content);
+
+	// Functions
+	$re = '/([a-zA-Z0-9_]+)(\()/m';
+	$content = preg_replace($re, '<span class="sc-function-name">$1</span>$2', $content);
+
+	// Comments
+	$re = '/([\t ]|^)(\/\/|\*|\/\*\*)(.*)$/m';
+	$content = preg_replace($re, '$1<span class="sc-comment">$2$3</span>', $content);
+	
+	// PHP tag
+	$content = str_replace("&lt;?php", '<span class="sc-meta">&lt;?php</span>', $content);
+	$content = str_replace("?&gt;", '<span class="sc-meta">?&gt;</span>', $content);
+
+	$lines = explode("\n", $content);
+	$numHtml = "";
+	$lineHtml = "";
+
+	for ($i = 0; $i < count($lines); $i++) {
 		$code = trim($lines[$i], "\n\r");
 		$classes = Array( "line" );
 
 		// Index start from 0, but file's line start from 1
-		if ($i == $line - 1)
+		if ($i == $line - $from - 1)
 			$classes[] = "current";
 
-		echo HTMLBuilder::startDIV(Array( "class" => $classes ));
-		?>
-		<span class="num"><?php echo $i + 1; ?></span>
-		<code><?php echo htmlspecialchars($code); ?></code>
-		<?php
-		echo HTMLBuilder::endDIV();
+		$numHtml .= HTMLBuilder::div(Array( "class" => $classes ), $from + $i + 1);
+		$lineHtml .= HTMLBuilder::div(Array( "class" => $classes ), "<span>{$code}</span>");
 	}
 
+	echo HTMLBuilder::startDIV(Array( "class" => "sourceCode" ));
+	echo HTMLBuilder::span(Array( "class" => "nums" ), $numHtml);
+	echo HTMLBuilder::build("code", Array( "class" => "lines" ), $lineHtml);
 	echo HTMLBuilder::endDIV();
 }
 
@@ -868,44 +913,197 @@ class FileIO {
 }
 
 /**
+ * Check if an array is sequential.
+ * An array is considered sequential if it has consecutive integer keys starting from zero.
  *
+ * @param	array	$array The array to check.
+ * @return	bool	Returns true if the array is sequential, false otherwise.
+ */
+function isSequential($array) {
+	$count = count($array);
+
+	for ($i = 0; $i < $count; $i++)
+		if (!isset($array[$i]))
+			return false;
+
+	return true;
+}
+
+/**
+ * Generate Random Number
+ * @param	int|float		$min		Minimum Random Number
+ * @param	int|float		$max		Maximum Random Number
+ * @param   bool			$toInt		To return an Integer Value
+ * @return	int|float		Generated number
+ */
+function randBetween($min, $max, bool $toInt = true) {
+	$rand = (float) (mt_rand() / mt_getrandmax());
+
+	return $toInt
+		? intval($rand * ($max - $min + 1) + $min)
+		: ($rand * ($max - $min) + $min);
+}
+
+define("RAND_CHARSET_TEXT", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+define("RAND_CHARSET_HEX", "0123456789abcdef");
+
+/**
+ * Generate Random String
+ * @param	int			$len		Length of the randomized string
+ * @param	string		$charset	Charset
+ * @return	string		Generated String
+ */
+function randString(int $len = 16, String $charset = RAND_CHARSET_TEXT) {
+	$randomString = "";
+	$charsetLength = strlen($charset);
+
+	for ($i = 0; $i < $len; $i++) {
+		$p = randBetween(0, $charsetLength - 1, true);
+		$randomString .= $charset[$p];
+	}
+
+	return $randomString;
+}
+
+/**
+ * Trim a string if it's too long and add ellipsis after it.
+ *
+ * @param	string	$string	The string to be trimmed.
+ * @param	int		$maxLen	The maximum length of the string before it's trimmed.
+ * @return	string	The trimmed string with ellipsis added after it.
+ */
+function trimString(String $string, int $maxLen) {
+	if (strlen($string) <= $maxLen)
+		return $string;
+	
+	$string = substr($string, 0, $maxLen);
+	$string = rtrim($string, " .,;:-");
+	$string .= "...";
+	return $string;
+}
+
+function backtrace(int $limit = 0) {
+	$data = debug_backtrace(0, $limit);
+	return processBacktrace($data);
+}
+
+/**
+ * Process backtrace data returned from {@link debug_backtrace()}
+ * or {@link Exception::getTrace()}
+ * 
+ * @param	array	$data
+ * @return	BacktraceFrame[]
+ */
+function processBacktrace($data) {
+	$frames = Array();
+
+	foreach ($data as $item) {
+		$frame = new BacktraceFrame($item["function"]);
+		$frames[] = $frame;
+
+		foreach ([ "file", "line", "class", "type" ] as $key) {
+			if (empty($item[$key]))
+				continue;
+			
+			if ($key === "file")
+				$item[$key] = getRelativePath($item[$key]);
+
+			$frame -> {$key} = $item[$key];
+		}
+
+		if (empty($item["args"]))
+			continue;
+
+		foreach ($item["args"] as $arg) {
+			if (is_string($arg)) {
+				if (strlen($arg) > 5 && realpath($arg))
+					$arg = getRelativePath($arg);
+			} else if (is_object($arg)) {
+				$arg = get_class($arg);
+
+				if (method_exists($arg, "__toString"))
+					$arg = [ $arg, (String) $arg ];
+			} else if (is_array($arg)) {
+				$count = count($arg);
+
+				if (isSequential($arg)) {
+					$arg = $count > 0
+						? "[ ...({$count})... ]"
+						: "[]";
+				} else {
+					$arg = $count > 0
+						? "{ ...({$count})... }"
+						: "{}";
+				}
+			}
+
+			$frame -> args[] = $arg;
+		}
+	}
+	
+	return $frames;
+}
+
+/**
  * Print out response data, set some header
  * and stop script execution!
  * 
- * @param	int				$code			Response code
- * @param	string			$description	Response description
- * @param	int				$HTTPStatus		Response HTTP status code
- * @param	array|object	$data			Response data (optional)
- * @param	bool|mixed		$hashData		To hash the data/Data to hash
+ * @param	int						$code			Response code
+ * @param	string					$description	Response description
+ * @param	int						$HTTPStatus		Response HTTP status code
+ * @param	array|object|\Exception	$data			Response data (optional)
+ * @param	bool|mixed				$hashData		To hash the data/Data to hash
  * @return	void
- *
  */
-function stop(Int $code = 0, String $description = "", Int $status = 200, $data = Array(), $hashData = false) {
+function stop(
+	int $code = 0,
+	String $description = "",
+	int $status = 200,
+	array|object $data = Array(),
+	$hashData = false
+) {
 	global $runtime;
-	$hash = is_bool($hashData) ? ($hashData ? md5(serialize($data)) : null) : md5(serialize($hashData));
 
-	$debug = null;
+	$hash = null;
+	$exceptionData = null;
 	$caller = "hidden";
+	$exception = null;
 
-	if (!CONFIG::$PRODUCTION) {
-		$traces = debug_backtrace();
-		array_shift($traces);
-	
-		$from = Array();
-	
-		if (isset($traces[0])) {
-			$from = $traces[0];
-			$caller = isset($from["class"])
-				? $from["class"] . ($from["type"] === "::" ? "::" : " {$from["type"]} ") . $from["function"]
-				: $from["function"];
+	if ($data instanceof Exception) {
+		$exception = $data;
+		$stacktrace = null;
+		$file = getRelativePath($exception -> getFile());
+
+		if (class_exists("CONFIG") && !CONFIG::$PRODUCTION) {
+			$stacktrace = processBacktrace($exception -> getTrace());
+
+			if ($stacktrace[0] -> file !== $file) {
+				$trace = new BacktraceFrame("[top]");
+				$trace -> file = $file;
+				$trace -> line = $exception -> getLine();
+				array_unshift($stacktrace, $trace);
+			}
+
+			$caller = $stacktrace[0] -> getCallString();
 		}
 
-		$debug = Array(
-			"caller" => $caller,
-			"file" => isset($from["file"]) ? $from["file"] : null,
-			"line" => isset($from["line"]) ? $from["line"] : null,
-			"stacktrace" => $traces
+		$exceptionData = Array(
+			"class" => get_class($exception),
+			"file" => $file,
+			"line" => $exception -> getLine(),
+			"stacktrace" => $stacktrace
 		);
+
+		$data = ($data instanceof BaseException)
+			? $data -> data
+			: null;
+	}
+
+	if (is_bool($hashData)) {
+		if ($hashData && (is_array($data) || $data instanceof stdClass))
+			$hash = md5(serialize($data));
+	} else {
+		$hash = md5(serialize($hashData));
 	}
 
 	// Remove absolute path
@@ -916,13 +1114,13 @@ function stop(Int $code = 0, String $description = "", Int $status = 200, $data 
 		"status" => $status,
 		"description" => $description,
 		"caller" => "{$caller}()",
-		"user" => class_exists("Session", false)
+		"user" => class_exists("Session", true)
 			? \Session::$username
 			: null,
 		"data" => $data,
 		"hash" => $hash,
 		"runtime" => $runtime -> stop(),
-		"debug" => $debug
+		"exception" => $exceptionData
 	);
 
 	// Set the HTTP status code
@@ -965,7 +1163,7 @@ function stop(Int $code = 0, String $description = "", Int $status = 200, $data 
 }
 
 function printErrorPage(Array $data, Bool $redirect = false) {
-	$_SESSION["lastError"] = $data;
+	$_SESSION["LAST_ERROR"] = $data;
 
 	// print "<!-- OUTPUT STOPPED HERE -->\n";
 	// print "<!-- ERROR DETAILS: ". json_encode($data, JSON_PRETTY_PRINT) ." -->\n";

@@ -15,39 +15,34 @@
 namespace Blink\Handlers;
 use Blink\Exception\BaseException;
 
-function errorHandler(Int $code, String $text, String $file, Int $line) {
+function errorHandler(int $code, String $text, String $file, int $line) {
 	// Diacard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
 	
-	$errorData = Array(
-		"code" => $code,
-		"description" => $text,
-		"file" => getRelativePath($file),
-		"line" => $line,
-	);
+	$error = new BaseException(1000 + $code, $text);
+	$error -> file = $file;
+	$error -> file = getRelativePath($file);
+	$error -> line = $line;
 
-	stop(-1, "Error Occurred: ". $text, 500, $errorData);
+	stop($error -> code, $error -> description, 500, $error);
 }
 
-function exceptionHandler($e) {
+function exceptionHandler(\Exception $e) {
 	// Discard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
 
 	if ($e instanceof BaseException)
-		stop($e -> code, $e, $e -> status, $e -> data);
-	else {
-		stop(-1, get_class($e) ." [{$e -> getCode()}]: {$e -> getMessage()}", 500, Array(
-			"file" => getRelativePath($e -> getFile()),
-			"line" => $e -> getLine()
-		));
-	}
+		stop($e -> code, $e -> description, $e -> status, $e);
+	
+	stop(1000 + $e -> getCode(), $e -> getMessage(), 500, $e);
 }
 
-global $AUTOLOAD_DATA, $AUTOLOAD_MAP;
+global $AUTOLOAD_DATA, $AUTOLOAD_MAP, $AUTOLOADED;
 $AUTOLOAD_DATA = Array();
 $AUTOLOAD_MAP = Array();
+$AUTOLOADED = Array();
 
 function updateAutoloadData() {
 	global $AUTOLOAD_DATA, $AUTOLOAD_MAP;
@@ -62,14 +57,16 @@ function updateAutoloadData() {
 		$files = getFiles($include, "php");
 
 		foreach ($files as $file) {
-			$path = str_replace("\\", "/", $file -> getPathname());
-			$path = str_replace(BASE_PATH, "", $path);
+			$path = getRelativePath($file -> getPathname());
 			$hash = md5($path);
 
 			if (!empty($AUTOLOAD_MAP[$hash]))
 				continue;
 
-			$content = file_get_contents(($path[0] === "/") ? BASE_PATH . $path : $path);
+			$content = file_get_contents(($path[0] === "/" && !str_starts_with($path, BASE_PATH))
+				? BASE_PATH . $path
+				: $path);
+			
 			$namespace = "";
 			$classes = Array();
 
@@ -122,14 +119,19 @@ function saveAutoloadData() {
 }
 
 function autoloadClass(String $class) {
-	global $AUTOLOAD_DATA;
+	global $AUTOLOAD_DATA, $AUTOLOADED;
 
 	if (empty($AUTOLOAD_DATA))
 		getAutoloadData();
 
 	if (!empty($AUTOLOAD_DATA[$class])) {
 		$item = $AUTOLOAD_DATA[$class];
-		require_once ($item["path"][0] === "/") ? BASE_PATH . $item["path"] : $item["path"];
+
+		require_once ($item["path"][0] === "/" && !str_starts_with($item["path"], BASE_PATH))
+			? BASE_PATH . $item["path"]
+			: $item["path"];
+
+		$AUTOLOADED[] = $item;
 		return;
 	}
 	

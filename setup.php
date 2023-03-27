@@ -37,6 +37,12 @@ define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME))
 require_once CORE_ROOT . "/const.php";
 require_once CORE_ROOT . "/config.php";
 
+if (!file_exists(BASE_PATH . "/.htaccess")) {
+	copy(CORE_ROOT . "/defaults/index.htaccess", BASE_PATH . "/.htaccess");
+	header("Location: /", true);
+	die();
+}
+
 if (!file_exists(BASE_PATH . "/config.define.php")) {
 	require_once CORE_ROOT . "/abstracts/Config.php";
 } else {
@@ -80,6 +86,9 @@ foreach ($configProps as $prop) {
 	}
 }
 
+if (!file_exists(DATA_ROOT . "/.htaccess"))
+	copy(CORE_ROOT . "/defaults/data.htaccess", DATA_ROOT . "/.htaccess");
+
 // Include BaseException class and it's child.
 require_once CORE_ROOT . "/classes/Exception/BaseException.php";
 foreach (glob(CORE_ROOT . "/classes/Exception/*.php") as $filename) {
@@ -101,16 +110,6 @@ global $runtime;
 
 if (!isset($runtime))
 	$runtime = new StopClock();
-
-// Include optional files and classes definition
-// in the includes / classes directory.
-require_once CORE_ROOT . "/classes/Cache.php";
-require_once CORE_ROOT . "/classes/CacheData.php";
-foreach (CONFIG::$INCLUDES as $include) {
-	if (!is_dir($include))
-		continue;
-
-}
 
 if (!class_exists("User"))
 	require_once CORE_ROOT . "/abstracts/User.php";

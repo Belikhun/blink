@@ -1,0 +1,213 @@
+/**
+ * default.css
+ * 
+ * Default styles for blink.
+ * 
+ * @author    Belikhun
+ * @since     2.0.0
+ * @license   https://tldrlegal.com/license/mit-license MIT
+ * 
+ * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * See LICENSE in the project root for license information.
+ */
+
+:root {
+	--background-color: #E5E7EB;
+	--panel-color: white;
+	--text-primary: #1f2937;
+	--text-secondary: #6b7280;
+	--text-alternate: white;
+	--badge-background: #f1f1f3;
+	--border-color: #e5e7eb;
+
+	--background-green: #8EE4BA;
+	--background-red: #DD524C;
+	--background-red-1: rgba(239, 68, 68, 0.1);
+	--background-red-2: rgba(239, 68, 68, 0.2);
+	--background-red-3: rgba(239, 68, 68, 0.3);
+	--max-width: 1300px;
+}
+
+.sourceCode {
+	position: relative;
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+
+	margin: unset;
+	padding: unset;
+	box-sizing: border-box;
+	overflow: auto;
+
+	font-family: "Consolas";
+	font-size: 15px;
+	font-weight: bold;
+	line-height: 1.5em;
+	color: var(--text-secondary);
+
+	--line-height: 30px;
+}
+
+.sourceCode > .nums {
+	position: sticky;
+	left: 0;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--panel-color);
+	z-index: 1;
+}
+
+.sourceCode > .nums > .line {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	flex-shrink: 0;
+	
+	min-width: 40px;
+	height: var(--line-height);
+	padding: 0 8px;
+	box-sizing: border-box;
+	user-select: none;
+	border-right: 1px solid var(--border-color);
+	text-align: right;
+}
+
+.sourceCode > .nums > .line.current {
+	background-color: var(--background-red-3);
+	border-right-color: var(--background-red-3);
+}
+
+.sourceCode > .lines {
+	position: relative;
+	display: block;
+	flex-grow: 1;
+	flex-shrink: 0;
+}
+
+.sourceCode > .lines > .line {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	
+	height: var(--line-height);
+	padding: 0 8px;
+	box-sizing: border-box;
+
+	text-align: left;
+	white-space: pre;
+	tab-size: 4;
+}
+
+.sourceCode > .lines > .line.current {
+	background-color: var(--background-red-2);
+}
+
+.sourceCode > .lines > .line:hover {
+	background-color: var(--background-red-1);
+}
+
+.sourceCode > .lines > .line .sc-keyword {
+	color: #dc2626;
+	font-style: italic;
+}
+
+.sourceCode > .lines > .line .sc-function {
+	color: #8b5cf6;
+}
+
+.sourceCode > .lines > .line .sc-function-name {
+	color: #0b90dd;
+	font-weight: 700;
+}
+
+.sourceCode > .lines > .line .sc-class {
+	color: #f97316;
+}
+
+.sourceCode > .lines > .line .sc-variable {
+	color: #4f46e5;
+}
+
+.sourceCode > .lines > .line .sc-meta {
+	color: #c22cfd;
+}
+
+.sourceCode > .lines > .line .sc-string,
+.sourceCode > .lines > .line .sc-string span {
+	color: #109c27;
+}
+
+.sourceCode > .lines > .line .sc-comment,
+.sourceCode > .lines > .line .sc-comment span {
+	color: #a9afbd;
+	font-style: normal;
+}
+
+.font-bold {
+	font-weight: 700;
+}
+
+.font-semibold {
+	font-weight: 600;
+}
+
+.flex {
+	display: flex;
+}
+
+.flex-row {
+	flex-direction: row;
+}
+
+.flex-col {
+	flex-direction: column;
+}
+
+.flex-g0 {
+	flex-grow: 0;
+	flex-shrink: 0;
+}
+
+.flex-g1 {
+	flex-grow: 1;
+}
+
+.flex-wrap {
+	flex-wrap: wrap;
+}
+
+.align-center {
+	align-items: center;
+}
+
+.justify-between {
+	justify-content: space-between;
+}
+
+.wider {
+	letter-spacing: .05em;
+}
+
+.text-sm {
+    font-size: .875rem;
+    line-height: 1.25rem;
+}
+
+::-webkit-scrollbar {
+    width: 15px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    box-shadow: inset 0 0 0 5px #a3a3a3;
+    border: solid 4px transparent;
+	border-radius: 32px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    box-shadow: inset 0 0 0 5px #838383;
+}
