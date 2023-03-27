@@ -92,6 +92,8 @@ switch ($status) {
 
 $statusColor = "green";
 $sticker = "/core/public/stickers/sticker-default.webm";
+$tipTitle = "sample tip";
+$tipContent = "maybe it will help";
 
 if ($status >= 400 && $status < 500) {
 	$statusColor = "yellow";
@@ -126,6 +128,10 @@ function icon($name) {
 		case "blink":
 			echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M160 256C160 202.1 202.1 160 256 160C309 160 352 202.1 352 256C352 309 309 352 256 352C202.1 352 160 309 160 256zM512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256zM256 48C141.1 48 48 141.1 48 256C48 370.9 141.1 464 256 464C370.9 464 464 370.9 464 256C464 141.1 370.9 48 256 48z"/></svg>';
 			break;
+
+		case "close":
+			echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"/></svg>';
+			break;
 	}
 }
 
@@ -149,11 +155,11 @@ function icon($name) {
 			</header>
 
 			<div class="content">
-				<div id="details" class="flex flex-col panel">
-					<div class="flex flex-row top">
+				<div id="details" class="panel">
+					<div class="flex flex-row flex-g1 info">
 						<video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video>
 	
-						<span class="block exception flex-g1">
+						<span class="flex-g1 block exception">
 							<div class="flex flex-row align-center justify-between flex-wrap top">
 								<span class="badges flex flex-row align-center flex-wrap">
 									<span class="badge status" data-color="<?php echo $statusColor; ?>">
@@ -187,6 +193,19 @@ function icon($name) {
 							<div class="description"><?php echo $description; ?></div>
 						</span>
 					</div>
+
+					<?php if (!empty($tipTitle)) { ?>
+						<div class="flex flex-row flex-g0 tips active" toggle-target="tip1">
+							<div class="block tip">
+								<div class="title"><?php echo $tipTitle; ?></div>
+								<div class="content"><?php echo $tipContent; ?></div>
+							</div>
+
+							<div class="close active" toggle-id="tip1">
+								<?php echo icon("close"); ?>
+							</div>
+						</div>
+					<?php } ?>
 				</div>
 
 				<?php if (!empty($stacktrace)) { ?>
@@ -202,9 +221,7 @@ function icon($name) {
 
 								foreach ($stacktrace as $i => $trace) {
 									$attrs = Array(
-										"class" => ["frame", "flex", "flex-col", "text-sm"],
-										"toggle-id" => $trace -> getID(),
-										"toggle-name" => "stacktrace"
+										"class" => ["frame", "flex", "flex-col", "align-start", "text-sm"]
 									);
 
 									if (!empty($trace -> file)) {
@@ -218,19 +235,56 @@ function icon($name) {
 										}
 
 										echo HTMLBuilder::startDIV($attrs);
+										$badges = Array();
+
+										if ($trace -> isVendor()) {
+											$badges[] = HTMLBuilder::div(
+												Array( "class" => "badge vendor" ),
+												"vendor"
+											);
+										}
+
+										if ($trace -> fault) {
+											$badges[] = HTMLBuilder::div(
+												Array( "class" => "badge fault" ),
+												"fault"
+											);
+										}
+
+										if (!empty($badges)) {
+											echo HTMLBuilder::div(
+												Array( "class" => "badges" ),
+												implode("", $badges)
+											);
+										}
 
 										echo HTMLBuilder::div(
 											Array( "class" => "path" ),
 											$trace -> file . "<code>:{$trace -> line}</code>");
 									} else {
-										echo HTMLBuilder::startDIV(Array(
-											"class" => "frame flex flex-col text-sm"
-										));
+										echo HTMLBuilder::startDIV($attrs);
 									}
 
 									echo HTMLBuilder::div(Array(
 										"class" => "font-semibold"
 									), $trace -> getCallString());
+
+									foreach ($trace -> args as $i => $arg) {
+										$prefix = "args[{$i}] = ";
+
+										if (is_array($arg)) {
+											echo HTMLBuilder::code(
+												Array( "class" => "arg" ),
+												"$prefix <b>{$arg[0]}</b> " . htmlspecialchars($arg[1])
+											);
+
+											continue;
+										}
+
+										echo HTMLBuilder::code(
+											Array( "class" => "arg" ),
+											htmlspecialchars($prefix . $arg));
+									}
 
 									echo HTMLBuilder::endDIV();
 								}
@@ -263,7 +317,7 @@ function icon($name) {
 								
 								echo HTMLBuilder::a(
 									"vscode://file/" . urlencode($trace -> getFullPath() . ":{$trace -> line}"),
-									$trace -> getFullPath() . "<code>:{$trace -> line}</code>",
+									$trace -> file . "<code>:{$trace -> line}</code>",
 									Array( "class" => "open-file" )
 								);
 

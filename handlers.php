@@ -15,7 +15,14 @@
 namespace Blink\Handlers;
 use Blink\Exception\BaseException;
 
-function errorHandler(int $code, String $text, String $file, int $line) {
+global $ERROR_STACK;
+
+/** @var \Exception[] */
+$ERROR_STACK = Array();
+
+function ErrorHandler(int $code, String $text, String $file, int $line) {
+	global $ERROR_STACK;
+
 	// Diacard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
@@ -25,13 +32,18 @@ function errorHandler(int $code, String $text, String $file, int $line) {
 	$error -> file = getRelativePath($file);
 	$error -> line = $line;
 
+	$ERROR_STACK[] = $error;
 	stop($error -> code, $error -> description, 500, $error);
 }
 
-function exceptionHandler(\Exception $e) {
+function ExceptionHandler(\Throwable $e) {
+	global $ERROR_STACK;
+
 	// Discard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
+
+	$ERROR_STACK[] = $e;
 
 	if ($e instanceof BaseException)
 		stop($e -> code, $e -> description, $e -> status, $e);
@@ -147,6 +159,6 @@ function autoloadClass(String $class) {
 	}
 }
 
-set_exception_handler("Blink\\Handlers\\exceptionHandler");
-set_error_handler("Blink\\Handlers\\errorHandler", E_ALL);
+set_exception_handler("Blink\\Handlers\\ExceptionHandler");
+set_error_handler("Blink\\Handlers\\ErrorHandler", E_ALL);
 spl_autoload_register("Blink\\Handlers\\autoloadClass");

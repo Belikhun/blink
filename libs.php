@@ -592,6 +592,11 @@ function redirect($url) {
 	if ($url instanceof \URL)
 		$url = $url -> out(false);
 
+	if (headers_sent()) {
+		echo "<script>location.href = `/error?redirect=true`;</script>";
+		die();
+	}
+
 	header("Location: $url");
 	die();
 }
@@ -991,11 +996,17 @@ function backtrace(int $limit = 0) {
  * Process backtrace data returned from {@link debug_backtrace()}
  * or {@link Exception::getTrace()}
  * 
- * @param	array	$data
+ * @param	\Throwable|array	$data
  * @return	BacktraceFrame[]
  */
 function processBacktrace($data) {
+	$exception = null;
 	$frames = Array();
+
+	if ($data instanceof \Throwable) {
+		$exception = $data;
+		$data = $exception -> getTrace();
+	}
 
 	foreach ($data as $item) {
 		$frame = new BacktraceFrame($item["function"]);
@@ -1021,8 +1032,12 @@ function processBacktrace($data) {
 			} else if (is_object($arg)) {
 				$arg = get_class($arg);
 
-				if (method_exists($arg, "__toString"))
-					$arg = [ $arg, (String) $arg ];
+				if ($arg instanceof \Throwable)
+					$arg = [ $arg, $arg -> getMessage() ];
+				else if (method_exists($arg, "__toString"))
+					$arg = [ $arg, (string) $arg ];
+			} else if (is_bool($arg)) {
+				$arg = $arg ? "true" : "false";
 			} else if (is_array($arg)) {
 				$count = count($arg);
 
@@ -1040,6 +1055,19 @@ function processBacktrace($data) {
 			$frame -> args[] = $arg;
 		}
 	}
+
+	if (!empty($exception)) {
+		$file = getRelativePath($exception -> getFile());
+		$line = $exception -> getLine();
+
+		if ($file && $line && $frames[0] -> file !== $file && $frames[0] -> line !== $line) {
+			// Add missing top frame.
+			$trace = new BacktraceFrame("[top]");
+			$trace -> file = $file;
+			$trace -> line = $exception -> getLine();
+			array_unshift($frames, $trace);
+		}
+	}
 	
 	return $frames;
 }
@@ -1051,7 +1079,7 @@ function processBacktrace($data) {
  * @param	int						$code			Response code
  * @param	string					$description	Response description
  * @param	int						$HTTPStatus		Response HTTP status code
- * @param	array|object|\Exception	$data			Response data (optional)
+ * @param	array|object|\Throwable	$data			Response data (optional)
  * @param	bool|mixed				$hashData		To hash the data/Data to hash
  * @return	void
  */
@@ -1062,29 +1090,42 @@ function stop(
 	array|object $data = Array(),
 	$hashData = false
 ) {
-	global $runtime;
+	global $runtime, $ERROR_STACK;
 
 	$hash = null;
 	$exceptionData = null;
 	$caller = "hidden";
 	$exception = null;
 
-	if ($data instanceof Exception) {
+	if ($data instanceof Throwable) {
 		$exception = $data;
 		$stacktrace = null;
 		$file = getRelativePath($exception -> getFile());
 
 		if (class_exists("CONFIG") && !CONFIG::$PRODUCTION) {
-			$stacktrace = processBacktrace($exception -> getTrace());
+			$stacktrace = ($exception instanceof BaseException)
+				? $exception -> trace
+				: processBacktrace($exception);
 
-			if ($stacktrace[0] -> file !== $file) {
-				$trace = new BacktraceFrame("[top]");
-				$trace -> file = $file;
-				$trace -> line = $exception -> getLine();
-				array_unshift($stacktrace, $trace);
-			}
-
+			$stacktrace[0] -> fault = true;
 			$caller = $stacktrace[0] -> getCallString();
+
+			if (!empty($ERROR_STACK)) {
+				foreach (array_reverse($ERROR_STACK) as $error) {
+					if ($error == $exception)
+						continue;
+
+					$pstacks = ($error instanceof BaseException)
+						? $error -> trace
+						: processBacktrace($error);
+
+					$pstacks[0] -> fault = true;
+
+					// Add to current stack one by one.
+					foreach ($pstacks as $stack)
+						$stacktrace[] = $stack;
+				}
+			}
 		}
 
 		$exceptionData = Array(
@@ -1137,7 +1178,7 @@ function stop(
 			}
 
 			if ($status >= 300 || $code !== 0)
-				printErrorPage($output, headers_sent());
+				renderErrorPage($output, headers_sent());
 
 			break;
 		
@@ -1162,30 +1203,51 @@ function stop(
 	die();
 }
 
-function printErrorPage(Array $data, Bool $redirect = false) {
+function renderErrorPage(Array $data, bool $redirect = false) {
 	$_SESSION["LAST_ERROR"] = $data;
 
-	// print "<!-- OUTPUT STOPPED HERE -->\n";
-	// print "<!-- ERROR DETAILS: ". json_encode($data, JSON_PRETTY_PRINT) ." -->\n";
-	// print "<!-- BEGIN ERROR PAGE -->\n";
+	if (isset($data["status"]))
+		$_SERVER["REDIRECT_STATUS"] = $data["status"];
 
-	if (!file_exists(BASE_PATH . "/error.php")) {
-		require_once(CORE_ROOT . "/error.php");
+	// The built in error handler has epically failed. Fallback to
+	// printing to page directly.
+	if (defined("BUILTIN_ERROR_HANDING")) {
+		echo "<pre>";
+		echo "Code: " . $data["code"] . "\n";
+		echo "Description: " . $data["description"] . "\n";
+		echo "Backtrace: ";
+		debug_print_backtrace();
+		echo "Data: ";
+		var_dump($data);
+		echo "</pre>";
 		die();
 	}
-	
-	if ($redirect && !defined("ERROR_NO_REDIRECT")) {
-		if (headers_sent()) {
-			// Use javascript to redirect instead.
-			echo "<script>location.href = `/error?redirect=true`;</script>";
-		} else {
-			header("Location: /error?redirect=true");
-		}
-	} else {
-		if (isset($data["status"]))
-			$_SERVER["REDIRECT_STATUS"] = $data["status"];
-		
-		if (file_exists(BASE_PATH . "/error.php"))
+
+	if (file_exists(BASE_PATH . "/error.php") && !defined("CUSTOM_ERROR_HANDING")) {
+		if ($redirect && !defined("ERROR_NO_REDIRECT"))
+			redirect("/error?redirect=true");
+
+		define("CUSTOM_ERROR_HANDING", true);
+
+		try {
 			require BASE_PATH . "/error.php";
+			die();
+		} catch (Throwable $e) {
+			try {
+				\Blink\Handlers\ExceptionHandler($e);
+				die();
+			} catch (Throwable $e) {
+				// Built in error page errored. Fallback to just print the error directly.
+				echo "<pre>";
+				echo $e -> __toString();
+				echo $e -> getTraceAsString();
+				echo "</pre>";
+				die();
+			}
+		}
 	}
+
+	define("BUILTIN_ERROR_HANDING", true);
+	require_once CORE_ROOT . "/error.php";
+	die();
 }

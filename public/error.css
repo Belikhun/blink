@@ -55,6 +55,9 @@ header {
 }
 
 .panel {
+	display: flex;
+	flex-direction: row;
+
 	background-color: var(--panel-color);
 	box-shadow: 
 		rgba(0, 0, 0, 0) 0px 0px 0px 0px,
@@ -82,7 +85,7 @@ header {
 	padding: 32px 40px;
 }
 
-#details > .top > .exception > .top > .badges > .badge {
+#details > .info > .exception > .top > .badges > .badge {
 	position: relative;
 	flex-shrink: 0;
 	margin-right: 16px;
@@ -92,13 +95,13 @@ header {
 	background-color: var(--badge-background);
 }
 
-#details > .top > .exception > .top > .badges > .badge.status {
+#details > .info > .exception > .top > .badges > .badge.status {
 	padding-left: 32px;
 
 	--badge-color: gray;
 }
 
-#details > .top > .exception > .top > .badges > .badge.status::before {
+#details > .info > .exception > .top > .badges > .badge.status::before {
 	content: "";
 	position: absolute;
 	width: 8px;
@@ -111,33 +114,33 @@ header {
 	border-radius: 50%;
 }
 
-#details > .top > .exception > .top > .badges > .badge.status[data-color="red"] {
+#details > .info > .exception > .top > .badges > .badge.status[data-color="red"] {
 	--badge-background: rgba(255, 190, 190, 0.2);
 	--badge-color: rgb(255, 67, 83);
 }
 
-#details > .top > .exception > .top > .badges > .badge.status[data-color="yellow"] {
+#details > .info > .exception > .top > .badges > .badge.status[data-color="yellow"] {
 	--badge-background: rgba(255, 200, 80, 0.2);
 	--badge-color: rgb(255, 181, 21);
 }
 
-#details > .top > .exception > .top > .badges > .badge.status[data-color="green"] {
+#details > .info > .exception > .top > .badges > .badge.status[data-color="green"] {
 	--badge-background: rgba(92, 253, 100, 0.2);
 	--badge-color: rgb(10, 214, 20);
 }
 
-#details > .top > .exception > .top > .badges > .badge.class {
+#details > .info > .exception > .top > .badges > .badge.class {
 	font-family: "Consolas";
 	font-weight: bold;
 }
 
-#details > .top > .exception > .top > .versions {
+#details > .info > .exception > .top > .versions {
 	font-size: .875rem;
 	line-height: 1.25rem;
 	color: var(--text-secondary);
 }
 
-#details > .top > .exception > .top > .versions > span {
+#details > .info > .exception > .top > .versions > span {
 	display: inline-flex;
 	flex-direction: row;
 	align-items: center;
@@ -146,19 +149,62 @@ header {
 	gap: 6px;
 }
 
-#details > .top > .exception > .top > .versions > span > svg {
+#details > .info > .exception > .top > .versions > span:first-child {
+	margin-left: 0;
+}
+
+#details > .info > .exception > .top > .versions > span > svg {
 	height: 14px;
 	width: 14px;
 	fill: var(--text-secondary);
 }
 
-#details > .top > .exception > .description {
+#details > .info > .exception > .description {
 	margin: 8px 0 16px;
 	font-size: 1.25rem;
-	font-weight: 600;
+	font-weight: 700;
+}
+
+#details > .tips {
+	display: none;
+	width: 33.33%;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+#details > .tips.active {
+	display: flex;
+}
+
+#details > .tips > .close {
+	position: absolute;
+	display: grid;
+	top: 10px;
+	right: 10px;
+	width: 14px;
+	height: 14px;
+	padding: 4px;
+	cursor: pointer;
+}
+
+#details > .tips > .close > svg {
+	width: 100%;
+	height: 100%;
+	fill: var(--text-secondary);
+}
+
+#details > .tips > .tip {
+	flex-grow: 1;
+	background-color: var(--background-green);
+}
+
+#details > .tips > .tip > .title {
+	font-weight: 700;
+	margin-bottom: 20px;
 }
 
 #stacktrace {
+	position: relative;
 	display: grid;
 	grid-template-columns: 33.33% 66.66%;
 	grid-template-rows: 1fr;
@@ -167,12 +213,16 @@ header {
 }
 
 #stacktrace > .left {
+	height: 100%;
+    overflow: hidden;
 	border-right: 1px solid var(--border-color);
 }
 
 #stacktrace > .left > .header {
 	display: flex;
 	align-items: center;
+	flex-shrink: 0;
+
 	height: 64px;
 	padding: 16px 40px;
 	box-sizing: border-box;
@@ -181,6 +231,7 @@ header {
 
 #stacktrace > .left > .frames {
 	flex-grow: 1;
+	flex-shrink: 1;
 	overflow: auto;
 	-webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 4rem), transparent);
 }
@@ -189,9 +240,40 @@ header {
 	display: none;
 }
 
+#stacktrace > .left > .frames > .sticky-bar {
+	position: sticky;
+	top: 0;
+	height: 4px;
+	margin-top: -4px;
+	background-color: var(--background-red);
+}
+
 #stacktrace > .left > .frames > .frame {
 	padding: 16px 40px;
 	border-bottom: 1px solid var(--border-color);
+}
+
+#stacktrace > .left > .frames > .frame > .badges {
+	margin-bottom: 2px;
+}
+
+#stacktrace > .left > .frames > .frame > .badges > .badge {
+	margin-right: 4px;
+	padding: 1px 6px;
+	font-size: .85em;
+	background-color: var(--badge-background);
+	color: var(--text-primary);
+	border-radius: 4px;
+}
+
+#stacktrace > .left > .frames > .frame > .badges > .badge.fault {
+	background-color: var(--background-orange);
+	color: white;
+}
+
+#stacktrace > .left > .frames > .frame > code {
+	font-size: 0.8em;
+	color: var(--text-secondary);
 }
 
 #stacktrace > .left > .frames > .frame[toggle-id] {
@@ -207,8 +289,16 @@ header {
 	background-color: var(--background-red);
 }
 
+#stacktrace > .left > .frames > .frame[toggle-id].active > code {
+	color: white;
+}
+
 #stacktrace > .left > .frames > .frame:last-child {
 	margin-bottom: 40px;
+}
+
+#stacktrace > .viewer {
+	overflow: hidden;
 }
 
 #stacktrace > .viewer > .view {
@@ -251,8 +341,21 @@ header {
 		--max-width: 700px;
 	}
 
-	#details > .top > .exception > .top > .versions > span {
-		margin-left: unset;
-		margin-right: 16px;
+	#details {
+		flex-direction: column;
+	}
+
+	#details > .tips {
+		width: 100%;
+	}
+
+	#stacktrace {
+		grid-template-columns: 1fr;
+		grid-template-rows: 33.33% 66.66%;
+	}
+
+	#stacktrace > .left {
+		border-right: unset;
+		border-bottom: 1px solid var(--border-color);
 	}
 }

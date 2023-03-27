@@ -87,7 +87,7 @@ class Router {
     }
 
 	/**
-	* Register a new route with the given verbs.
+	* Register a new route.
 	*
 	* @param  array|string		$methods
 	* @param  string			$uri
@@ -111,6 +111,7 @@ class Router {
 
 	/**
 	 * Handle the requested path.
+	 * 
 	 * @param	string	$path
 	 * @param	string	$method
 	 */

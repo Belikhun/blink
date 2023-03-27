@@ -4,6 +4,9 @@ const toggle = {
 	/** @type {Object<string, HTMLElement>} */
 	active: {},
 
+	/** @type {HTMLElement} */
+	stickyBar: null,
+
 	init() {
 		let buttons = document.querySelectorAll(`[toggle-id]`);
 
@@ -14,6 +17,10 @@ const toggle = {
 			if (button.getAttribute("toggle-default"))
 				this.activate(button, name);
 		}
+	},
+
+	insertAfter(ref, node) {
+		ref.parentNode.insertBefore(node, ref.nextSibling);
 	},
 
 	/**
@@ -51,6 +58,15 @@ const toggle = {
 		node.classList.add("active");
 		target.classList.add("active");
 
+		if (name === "stacktrace") {
+			if (!this.stickyBar) {
+				this.stickyBar = document.createElement("div");
+				this.stickyBar.classList.add("sticky-bar");
+			}
+
+			this.insertAfter(node, this.stickyBar);
+		}
+
 		this.active[name] = node;
 	}
 }
@@ -58,6 +74,15 @@ const toggle = {
 const error = {
 	init() {
 		toggle.init();
+
+		if (window.sticker) {
+			const handler = () => {
+				window.sticker.play();
+				document.body.removeEventListener("click", handler);
+			};
+
+			document.body.addEventListener("click", handler);
+		}
 	},
 
 }

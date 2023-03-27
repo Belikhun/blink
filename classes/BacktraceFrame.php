@@ -20,16 +20,26 @@ class BacktraceFrame {
 	public ?String $type = null;
 	public String $function;
 	public Array $args = Array();
+	public bool $fault = false;
 	private ?String $id = null;
+	private ?String $fullpath = null;
 
-	public function __construct(String $function = "[unknown]") {
+	public function __construct(String $function = "[unknown]", bool $fault = false) {
 		$this -> function = $function;
+		$this -> fault = $fault;
 	}
 
 	public function getFullPath() {
-		return (!empty($this -> file) && $this -> file[0] === "/" && !str_starts_with($this -> file, BASE_PATH))
-			? BASE_PATH . $this -> file
-			: $this -> file;
+		if (empty($this -> file))
+			return null;
+
+		if (empty($this -> fullpath)) {
+			$this -> fullpath = (!empty($this -> file) && $this -> file[0] === "/" && !str_starts_with($this -> file, BASE_PATH))
+				? BASE_PATH . $this -> file
+				: $this -> file;
+		}
+
+		return $this -> fullpath;
 	}
 
 	public function getCallString() {
@@ -38,6 +48,8 @@ class BacktraceFrame {
 			$string .= ($this -> type === "::")
 				? "::{$this -> function}"
 				: " -> {$this -> function}";
+
+			return $string;
 		}
 
 		return $this -> function;
@@ -52,6 +64,16 @@ class BacktraceFrame {
 			$this -> id = randString(8, RAND_CHARSET_HEX);
 
 		return $this -> id;
+	}
+
+	public function isVendor() {
+		if (!empty($this -> file))
+			return str_starts_with($this -> getFullPath(), CORE_ROOT);
+
+		if (!empty($this -> class))
+			return str_starts_with($this -> class, "Blink");
+
+		return false;
 	}
 
 	public function __serialize() {

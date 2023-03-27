@@ -81,6 +81,10 @@ class HTMLBuilder {
 		return "</span>";
 	}
 
+	public static function code(Array $attributes = Array(), String $content = "") {
+		return self::build("code", $attributes, $content);
+	}
+
 	public static function p(String $content = "", Array $attributes = Array()) {
 		return self::build("p", $attributes, $content);
 	}

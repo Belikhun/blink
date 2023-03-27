@@ -56,7 +56,7 @@ class BaseException extends \Exception {
 	 * Optional Error Data
 	 * @var	\BacktraceFrame[]
 	 */
-	public Array $trace;
+	public Array $trace = [];
 
 	/**
 	 * Exception class designed for detailed error report.
@@ -75,7 +75,7 @@ class BaseException extends \Exception {
 
 		$this -> file = getRelativePath(parent::getFile());
 		$this -> line = parent::getLine();
-		$this -> trace = processBacktrace(parent::getTrace());
+		$this -> trace = processBacktrace($this);
 	}
 
 	public function __toString() {

@@ -21,6 +21,7 @@
 	--border-color: #e5e7eb;
 
 	--background-green: #8EE4BA;
+	--background-orange: #f39c18;
 	--background-red: #DD524C;
 	--background-red-1: rgba(239, 68, 68, 0.1);
 	--background-red-2: rgba(239, 68, 68, 0.2);
@@ -172,8 +173,20 @@
 	flex-grow: 1;
 }
 
+.flex-g2 {
+	flex-grow: 2;
+}
+
+.flex-b0 {
+	flex-basis: 0;
+}
+
 .flex-wrap {
 	flex-wrap: wrap;
+}
+
+.align-start {
+	align-items: flex-start;
 }
 
 .align-center {
