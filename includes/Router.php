@@ -9,11 +9,12 @@
  * @since     2.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
- * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
 use Blink\Exception\BaseException;
+use Blink\Exception\RouteNotFound;
 use Router\Route;
 
 class Router {
@@ -141,7 +142,7 @@ class Router {
 		}
 
 		if (!$found)
-			throw new BaseException(ROUTE_NOT_FOUND, "Cannot find route for {$method} \"$path\"", 404);
+			throw new RouteNotFound($path, $method);
 	}
 
 	/**

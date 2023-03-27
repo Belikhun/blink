@@ -17,7 +17,7 @@ class ConfigPathProperty {}
  * @since     2.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
- * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class CoreConfig {
@@ -54,7 +54,8 @@ class CoreConfig {
 	public static Array		$INCLUDES = Array(
 		CORE_ROOT . "/includes",
 		CORE_ROOT . "/classes",
-		CORE_ROOT . "/db/Exception"
+		CORE_ROOT . "/db/Exception",
+		CORE_ROOT . "/middleware"
 	);
 
 	public static bool		$PRODUCTION = false;

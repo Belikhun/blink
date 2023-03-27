@@ -9,7 +9,7 @@
  * @since     2.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
- * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
@@ -238,14 +238,14 @@ function icon($name) {
 										$badges = Array();
 
 										if ($trace -> isVendor()) {
-											$badges[] = HTMLBuilder::div(
+											$badges[] = HTMLBuilder::span(
 												Array( "class" => "badge vendor" ),
 												"vendor"
 											);
 										}
 
 										if ($trace -> fault) {
-											$badges[] = HTMLBuilder::div(
+											$badges[] = HTMLBuilder::span(
 												Array( "class" => "badge fault" ),
 												"fault"
 											);

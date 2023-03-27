@@ -9,7 +9,7 @@
  * @since     2.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
- * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
@@ -38,13 +38,13 @@ require_once CORE_ROOT . "/const.php";
 require_once CORE_ROOT . "/config.php";
 
 if (!file_exists(BASE_PATH . "/.htaccess")) {
-	copy(CORE_ROOT . "/defaults/index.htaccess", BASE_PATH . "/.htaccess");
+	copy(CORE_ROOT . "/htaccess/index.htaccess", BASE_PATH . "/.htaccess");
 	header("Location: /", true);
 	die();
 }
 
 if (!file_exists(BASE_PATH . "/config.define.php")) {
-	require_once CORE_ROOT . "/abstracts/Config.php";
+	require_once CORE_ROOT . "/defaults/Config.php";
 } else {
 	require_once BASE_PATH . "/config.define.php";
 }
@@ -87,7 +87,7 @@ foreach ($configProps as $prop) {
 }
 
 if (!file_exists(DATA_ROOT . "/.htaccess"))
-	copy(CORE_ROOT . "/defaults/data.htaccess", DATA_ROOT . "/.htaccess");
+	copy(CORE_ROOT . "/htaccess/data.htaccess", DATA_ROOT . "/.htaccess");
 
 // Include BaseException class and it's child.
 require_once CORE_ROOT . "/classes/Exception/BaseException.php";
@@ -112,7 +112,7 @@ if (!isset($runtime))
 	$runtime = new StopClock();
 
 if (!class_exists("User"))
-	require_once CORE_ROOT . "/abstracts/User.php";
+	require_once CORE_ROOT . "/defaults/User.php";
 
 // Initialize config store.
 if (file_exists(BASE_PATH . "/config.store.php")) {

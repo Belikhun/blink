@@ -9,7 +9,7 @@
  * @since     2.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
- * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
@@ -1030,12 +1030,12 @@ function processBacktrace($data) {
 				if (strlen($arg) > 5 && realpath($arg))
 					$arg = getRelativePath($arg);
 			} else if (is_object($arg)) {
-				$arg = get_class($arg);
-
 				if ($arg instanceof \Throwable)
-					$arg = [ $arg, $arg -> getMessage() ];
+					$arg = [ get_class($arg), $arg -> getMessage() ];
 				else if (method_exists($arg, "__toString"))
-					$arg = [ $arg, (string) $arg ];
+					$arg = [ get_class($arg), (string) $arg ];
+				else
+					$arg = get_class($arg);
 			} else if (is_bool($arg)) {
 				$arg = $arg ? "true" : "false";
 			} else if (is_array($arg)) {
@@ -1050,6 +1050,8 @@ function processBacktrace($data) {
 						? "{ ...({$count})... }"
 						: "{}";
 				}
+			} else if ($arg === null) {
+				$arg = "[NULL]";
 			}
 
 			$frame -> args[] = $arg;

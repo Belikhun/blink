@@ -8,12 +8,14 @@
  * @since     2.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
- * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
 namespace Blink\Handlers;
 use Blink\Exception\BaseException;
+use Blink\Middleware\Exception\ClassNotDefined;
+use Blink\Middleware\Exception\InvalidDefinition;
 
 global $ERROR_STACK;
 
@@ -130,8 +132,51 @@ function saveAutoloadData() {
 	file_put_contents(DATA_ROOT . "/autoload.data", serialize($AUTOLOAD_DATA));
 }
 
+function middleware(String $class) {
+	$name = explode("\\", $class);
+	$name = end($name);
+
+	$corePath = CORE_ROOT . "/middleware/{$name}.php";
+	$default = CORE_ROOT . "/defaults/middleware/{$name}.php";
+	$appPath = BASE_PATH . "/middleware/{$name}.php";
+	$parent = "Blink\\Middleware\\{$name}";
+
+	// Verify if this class has been defined in core.
+	if (!file_exists($corePath))
+		return false;
+
+	if (file_exists($appPath)) {
+		require_once $appPath;
+	} else {
+		if (!file_exists($default)) {
+			// Create new default file for this class.
+			$content = file_get_contents(CORE_ROOT . "/defaults/middleware/.template");
+			$content = str_replace("{{NAME}}", $name, $content);
+			$content = "<?php\n{$content}";
+			file_put_contents($default, $content);
+		}
+
+		require_once $default;
+	}
+
+	// Make sure the class have been included and defined correctly.
+	if (!class_exists($class))
+		throw new ClassNotDefined($class);
+
+	if (!in_array("Blink\\Middleware\\{$name}", class_parents($class, false)))
+		throw new InvalidDefinition($class, $parent);
+
+	return true;
+}
+
 function autoloadClass(String $class) {
 	global $AUTOLOAD_DATA, $AUTOLOADED;
+
+	if (str_starts_with($class, "Middleware")) {
+		// Process middleware class include.
+		if (middleware($class))
+			return;
+	}
 
 	if (empty($AUTOLOAD_DATA))
 		getAutoloadData();

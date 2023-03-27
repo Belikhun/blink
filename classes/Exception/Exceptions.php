@@ -9,7 +9,7 @@
  * @since     2.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
- * Copyright (C) 2018-2022 Belikhun. All right reserved
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
@@ -63,12 +63,6 @@ class UserNotFound extends BaseException {
 class NotLoggedIn extends BaseException {
 	public function __construct() {
 		parent::__construct(NOT_LOGGED_IN, "You are not logged in. Maybe your session expired?", 403);
-	}
-}
-
-class RouteArgumentMismatch extends BaseException {
-	public function __construct(\Router\Route $route, $message) {
-		parent::__construct(DATA_TYPE_MISMATCH, $message, 400, (Array) $route);
 	}
 }
 
