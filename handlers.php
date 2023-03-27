@@ -14,6 +14,7 @@
 
 namespace Blink\Handlers;
 use Blink\Exception\BaseException;
+use Blink\Exception\RuntimeError;
 use Blink\Middleware\Exception\ClassNotDefined;
 use Blink\Middleware\Exception\InvalidDefinition;
 
@@ -29,7 +30,7 @@ function ErrorHandler(int $code, String $text, String $file, int $line) {
 	while (ob_get_level())
 		ob_end_clean();
 	
-	$error = new BaseException(1000 + $code, $text);
+	$error = new RuntimeError(1000 + $code, $text);
 	$error -> file = $file;
 	$error -> file = getRelativePath($file);
 	$error -> line = $line;
@@ -145,6 +146,10 @@ function middleware(String $class) {
 	if (!file_exists($corePath))
 		return false;
 
+	// Include the base class first to avoid error in the.
+	// future.
+	require_once $corePath;
+
 	if (file_exists($appPath)) {
 		require_once $appPath;
 	} else {
@@ -169,6 +174,21 @@ function middleware(String $class) {
 	return true;
 }
 
+function callMiddleware($class) {
+	if (!class_exists("Blink\\Middleware", false))
+		require_once CORE_ROOT . "/middleware/Middleware.php";
+
+	if (\Blink\Middleware::disabled())
+		return false;
+
+	try {
+		return \Middleware\Autoload::load($class);
+	} catch (\Throwable $e) {
+		\Blink\Middleware::disable();
+		throw $e;
+	}
+}
+
 function autoloadClass(String $class) {
 	global $AUTOLOAD_DATA, $AUTOLOADED;
 
@@ -177,6 +197,9 @@ function autoloadClass(String $class) {
 		if (middleware($class))
 			return;
 	}
+
+	if (callMiddleware($class))
+		return;
 
 	if (empty($AUTOLOAD_DATA))
 		getAutoloadData();

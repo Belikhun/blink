@@ -89,15 +89,6 @@ foreach ($configProps as $prop) {
 if (!file_exists(DATA_ROOT . "/.htaccess"))
 	copy(CORE_ROOT . "/htaccess/data.htaccess", DATA_ROOT . "/.htaccess");
 
-// Include BaseException class and it's child.
-require_once CORE_ROOT . "/classes/Exception/BaseException.php";
-foreach (glob(CORE_ROOT . "/classes/Exception/*.php") as $filename) {
-	if (str_ends_with($filename, "BaseException.php"))
-		continue;
-
-	require_once $filename;
-}
-
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";

@@ -92,8 +92,8 @@ switch ($status) {
 
 $statusColor = "green";
 $sticker = "/core/public/stickers/sticker-default.webm";
-$tipTitle = "sample tip";
-$tipContent = "maybe it will help";
+$tipTitle = null;
+$tipContent = null;
 
 if ($status >= 400 && $status < 500) {
 	$statusColor = "yellow";
@@ -114,24 +114,36 @@ if (!empty($data)) {
 	if (!empty($data["exception"])) {
 		$exception = $data["exception"];
 		$stacktrace = $exception["stacktrace"];
+
+		if (!defined("DISABLE_HANDLERS")) {
+			try {
+				if (!empty($exception["class"]))
+					list($tipTitle, $tipContent) = \Handlers::errorPageHint($exception["class"], $exception["data"]);
+			} catch (\Throwable $e) {
+				define("DISABLE_HANDLERS", true);
+				throw $e;
+			}
+		}
 	}
 }
 
 http_response_code($status);
 
-function icon($name) {
-	switch ($name) {
-		case "server":
-			echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M64 80c-8.8 0-16 7.2-16 16V258c5.1-1.3 10.5-2 16-2H448c5.5 0 10.9 .7 16 2V96c0-8.8-7.2-16-16-16H64zM48 320v96c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V320c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zM0 320V96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V320v96c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V320zm280 48a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm120-24a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>';
-			break;
-
-		case "blink":
-			echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M160 256C160 202.1 202.1 160 256 160C309 160 352 202.1 352 256C352 309 309 352 256 352C202.1 352 160 309 160 256zM512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256zM256 48C141.1 48 48 141.1 48 256C48 370.9 141.1 464 256 464C370.9 464 464 370.9 464 256C464 141.1 370.9 48 256 48z"/></svg>';
-			break;
-
-		case "close":
-			echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"/></svg>';
-			break;
+if (!function_exists("ep_icon")) {
+	function ep_icon($name) {
+		switch ($name) {
+			case "server":
+				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M64 80c-8.8 0-16 7.2-16 16V258c5.1-1.3 10.5-2 16-2H448c5.5 0 10.9 .7 16 2V96c0-8.8-7.2-16-16-16H64zM48 320v96c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V320c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zM0 320V96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V320v96c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V320zm280 48a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm120-24a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>';
+				break;
+	
+			case "blink":
+				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M160 256C160 202.1 202.1 160 256 160C309 160 352 202.1 352 256C352 309 309 352 256 352C202.1 352 160 309 160 256zM512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256zM256 48C141.1 48 48 141.1 48 256C48 370.9 141.1 464 256 464C370.9 464 464 370.9 464 256C464 141.1 370.9 48 256 48z"/></svg>';
+				break;
+	
+			case "close":
+				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"/></svg>';
+				break;
+		}
 	}
 }
 
@@ -179,12 +191,12 @@ function icon($name) {
 									</span>
 	
 									<span>
-										<?php echo icon("server"); ?>
+										<?php echo ep_icon("server"); ?>
 										<?php echo $_SERVER["SERVER_SOFTWARE"]; ?>
 									</span>
 	
 									<span>
-										<?php echo icon("blink"); ?>
+										<?php echo ep_icon("blink"); ?>
 										<?php echo CONFIG::$BLINK_VERSION; ?>
 									</span>
 								</span>
@@ -202,7 +214,7 @@ function icon($name) {
 							</div>
 
 							<div class="close active" toggle-id="tip1">
-								<?php echo icon("close"); ?>
+								<?php echo ep_icon("close"); ?>
 							</div>
 						</div>
 					<?php } ?>
@@ -288,7 +300,10 @@ function icon($name) {
 
 									echo HTMLBuilder::endDIV();
 								}
-							?></div>
+								?>
+							
+								<div class="space"></div>
+							</div>
 						</span>
 
 						<span class="flex flex-col flex-g1 viewer">

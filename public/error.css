@@ -293,8 +293,8 @@ header {
 	color: white;
 }
 
-#stacktrace > .left > .frames > .frame:last-child {
-	margin-bottom: 40px;
+#stacktrace > .left > .frames > .space {
+	height: 40px;
 }
 
 #stacktrace > .viewer {

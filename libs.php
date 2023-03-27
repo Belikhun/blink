@@ -18,6 +18,7 @@ use Blink\Exception\FileWriteError;
 use Blink\Exception\InvalidValue;
 use Blink\Exception\JSONDecodeError;
 use Blink\Exception\MissingParam;
+use Blink\Exception\RuntimeError;
 use Blink\Exception\UnserializeError;
 
 require_once "const.php";
@@ -629,7 +630,12 @@ function getFiles(String $path, String $extension = "*") {
  * @param	int		$count	Number of lines will be rendered.
  */
 function renderSourceCode(String $file, int $line, int $count = 10) {
-	$content = htmlspecialchars((new FileIO($file)) -> read());
+	if (!file_exists($file)) {
+		echo "<code>File does not exits: {$file}</code>";
+		return;
+	}
+
+	$content = htmlspecialchars(file_get_contents($file));
 	$lines = explode("\n", $content);
 
 	$from = $line - floor($count / 2);
@@ -1058,7 +1064,7 @@ function processBacktrace($data) {
 		}
 	}
 
-	if (!empty($exception)) {
+	if (!empty($exception) && !($exception instanceof RuntimeError)) {
 		$file = getRelativePath($exception -> getFile());
 		$line = $exception -> getLine();
 
@@ -1102,6 +1108,7 @@ function stop(
 	if ($data instanceof Throwable) {
 		$exception = $data;
 		$stacktrace = null;
+		$additionalData = null;
 		$file = getRelativePath($exception -> getFile());
 
 		if (class_exists("CONFIG") && !CONFIG::$PRODUCTION) {
@@ -1130,10 +1137,14 @@ function stop(
 			}
 		}
 
+		if ($exception instanceof BaseException)
+			$additionalData = $exception -> data;
+
 		$exceptionData = Array(
 			"class" => get_class($exception),
 			"file" => $file,
 			"line" => $exception -> getLine(),
+			"data" => $additionalData,
 			"stacktrace" => $stacktrace
 		);
 
@@ -1205,25 +1216,24 @@ function stop(
 	die();
 }
 
+function printException(Throwable $e) {
+	$lines = Array();
+
+	$lines[] = get_class($e);
+	$lines[] = "";
+	$lines[] = $e -> getMessage();
+	$lines[] = "Stacktrace:";
+	$lines[] = $e -> getTraceAsString();
+
+	echo "<pre>" . implode("\n", $lines) . "</pre>";
+	die();
+}
+
 function renderErrorPage(Array $data, bool $redirect = false) {
 	$_SESSION["LAST_ERROR"] = $data;
 
 	if (isset($data["status"]))
 		$_SERVER["REDIRECT_STATUS"] = $data["status"];
-
-	// The built in error handler has epically failed. Fallback to
-	// printing to page directly.
-	if (defined("BUILTIN_ERROR_HANDING")) {
-		echo "<pre>";
-		echo "Code: " . $data["code"] . "\n";
-		echo "Description: " . $data["description"] . "\n";
-		echo "Backtrace: ";
-		debug_print_backtrace();
-		echo "Data: ";
-		var_dump($data);
-		echo "</pre>";
-		die();
-	}
 
 	if (file_exists(BASE_PATH . "/error.php") && !defined("CUSTOM_ERROR_HANDING")) {
 		if ($redirect && !defined("ERROR_NO_REDIRECT"))
@@ -1239,17 +1249,20 @@ function renderErrorPage(Array $data, bool $redirect = false) {
 				\Blink\Handlers\ExceptionHandler($e);
 				die();
 			} catch (Throwable $e) {
-				// Built in error page errored. Fallback to just print the error directly.
-				echo "<pre>";
-				echo $e -> __toString();
-				echo $e -> getTraceAsString();
-				echo "</pre>";
-				die();
+				printException($e);
 			}
 		}
 	}
 
-	define("BUILTIN_ERROR_HANDING", true);
-	require_once CORE_ROOT . "/error.php";
-	die();
+	try {
+		require CORE_ROOT . "/error.php";
+		die();
+	} catch (Throwable $e) {
+		try {
+			\Blink\Handlers\ExceptionHandler($e);
+			die();
+		} catch (Throwable $e) {
+			printException($e);
+		}
+	}
 }
