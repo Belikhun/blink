@@ -31,13 +31,21 @@ class Handlers {
 	 * 							content can use HTML.
 	 */
 	public static function errorPageHint(String $class, $data = null): Array {
+		$title = null;
+		$content = "";
+
 		switch ($class) {
 			case \Blink\Exception\ClassNotDefined::class: {
-				
+				$className = $data["class"];
+				$file = $data["file"];
+
+				$title = "Class không tồn tại";
+				$content = "Có vẻ như bạn chưa định nghĩa class <code>{$className}</code> trong tệp <code>{$file}</code>.
+							Kiểm tra lại chính tả hoặc thêm class này nếu bạn chưa định nghĩa nó.";
 				break;
 			}
 		}
 
-		return Array( null, null );
+		return Array( $title, $content );
 	}
 }
