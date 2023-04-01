@@ -496,13 +496,17 @@ function stringify($subject) {
 	$output = "";
 
 	if (is_array($subject)) {
-		$output = Array();
+		$output = "[]";
 
-		foreach ($subject as $key => $value)
-			$output[] = "$key = " . htmlspecialchars($value);
-
-		$output = implode(", ", $output);
-		$output = "[ {$output} ]";
+		if (!empty($subject)) {
+			$output = Array();
+	
+			foreach ($subject as $key => $value)
+				$output[] = "$key = " . htmlspecialchars($value);
+	
+			$output = implode(", ", $output);
+			$output = "[ {$output} ]";
+		}
 	} else if (is_bool($subject)) {
 		$output = $subject ? "true" : "false";
 	} else if ($subject === null) {

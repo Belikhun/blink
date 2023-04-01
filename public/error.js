@@ -180,6 +180,21 @@ const error = {
 
 			document.body.addEventListener("click", handler);
 		}
+
+		let reportLink = document.querySelector(`a[data-report-link]`);
+
+		if (reportLink) {
+			let inner = reportLink.querySelector(`:scope > span`);
+			let value = reportLink.getAttribute(`data-report-link`);
+			let reset = null;
+
+			reportLink.addEventListener("click", () => {
+				navigator.clipboard.writeText(value);
+				inner.innerText = "Report Link Copied!";
+				clearTimeout(reset);
+				reset = setTimeout(() => inner.innerText = "Copy Report Link", 3000);
+			});
+		}
 	},
 
 }

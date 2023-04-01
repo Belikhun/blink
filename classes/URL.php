@@ -15,12 +15,6 @@ use Blink\Exception\CodingError;
  * See LICENSE in the project root for license information.
  */
 class URL {
-	/**
-     * The current URL.
-     * @var string
-     */
-	public String $url = "";
-
     /**
      * Scheme, ex.: http, https
      * @var string
@@ -95,7 +89,12 @@ class URL {
 		foreach ($parts as $key => $value)
 			$this -> $key = $value;
 
-		$this -> url = $url;
+		if (empty($this -> host))
+			$this -> host = getHeader("Host", TYPE_TEXT, "");
+
+		if (empty($this -> scheme))
+			$this -> scheme = "http";
+
 		$this -> params($params);
 	}
 

@@ -83,16 +83,13 @@ class BacktraceFrame {
 			"class" => $this -> class,
 			"type" => $this -> type,
 			"function" => $this -> function,
-			"args" => $this -> args
+			"args" => $this -> args,
+			"fault" => $this -> fault
 		);
 	}
 
 	public function __unserialize(array $data) {
-		$this -> file = $data["file"];
-		$this -> line = $data["line"];
-		$this -> class = $data["class"];
-		$this -> type = $data["type"];
-		$this -> function = $data["function"];
-		$this -> args = $data["args"];
+		foreach ($data as $key => $value)
+			$this -> {$key} = $value;
 	}
 }

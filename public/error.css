@@ -52,10 +52,11 @@ header > div {
 	height: 50%;
 	box-sizing: border-box;
 	background-color: var(--background-color);
-	transition: background-color 0.1s cubic-bezier(.4, 0, .2, 1);
+	transition: background-color 0.3s cubic-bezier(.4, 0, .2, 1);
 }
 
 header.scrolling > div {
+	transition-duration: 0.1s;
 	background-color: rgb(243, 244, 246);
 }
 
@@ -90,7 +91,7 @@ header > .top > .inner > span > .link {
 	align-items: center;
 	padding: 0 1.25rem;
 
-	--color: var(--text-primary);
+	--color: var(--text-secondary);
 	font-size: .75rem;
 	line-height: 1rem;
 	font-weight: 500;
@@ -109,6 +110,10 @@ header > .top > .inner > .left > .link:first-child {
 	padding-left: 0;
 }
 
+header > .top > .inner > .right > .link:last-child {
+	padding-right: 0;
+}
+
 header > .top > .inner > span > .link > svg {
 	margin-right: 0.375rem;
 	height: 12px;
@@ -120,7 +125,7 @@ header > .bottom {
 	top: 0;
 	opacity: 0;
 
-	transition-property: top, box-shadow;
+	transition-property: top, box-shadow, background-color;
 	transition-duration: .3s;
 	transition-timing-function: cubic-bezier(.4, 0, .2, 1);
 }
@@ -139,6 +144,7 @@ header.scrolling > .bottom {
 }
 
 header.details > .bottom {
+	transition-duration: .3s;
 	top: 50%;
 }
 
@@ -453,7 +459,6 @@ header > .bottom > .inner {
 	display: flex;
 	flex-direction: row;
 	align-items: flex-start;
-	margin-bottom: 30vh;
 }
 
 #context > .nav {
@@ -617,6 +622,26 @@ header > .bottom > .inner {
 
 .error-context-list > .row > .bool.false > svg {
 	fill: var(--color-red);
+}
+
+#footer.content {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-end;
+	margin-bottom: 30vh;
+
+	font-size: 0.85rem;
+	color: var(--text-secondary);
+}
+
+#footer.content > .separator {
+	font-weight: bold;
+	padding: 0 1rem;
+}
+
+#footer.content a {
+	color: inherit;
 }
 
 @media screen and (max-width: 1000px) {

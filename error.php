@@ -71,7 +71,10 @@ http_response_code($status);
 						</span>
 	
 						<span class="right">
-							
+							<a class="link" data-report-link="<?php echo $instance -> url(); ?>">
+								<?php echo ContextRenderer::icon("link"); ?>
+								<span>Copy report link</span>
+							</a>
 						</span>
 					</div>
 				</div>
@@ -281,6 +284,16 @@ http_response_code($status);
 					<?php foreach ($contexts as $group)
 						$group -> render(); ?>
 				</div>
+			</div>
+
+			<div id="footer" class="content">
+				Report ID: <?php echo $instance -> id; ?>
+
+				<span class="separator">//</span>
+
+				<span>
+					✨ <a href="<?php echo CONFIG::$BLINK_URL; ?>" target="_blank">blink</a> by Belikhun
+				</span>
 			</div>
 		</div>
 
