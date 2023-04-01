@@ -14,8 +14,14 @@ const toggle = {
 			let name = button.getAttribute("toggle-name");
 			button.addEventListener("click", () => this.activate(button, name));
 
-			if (button.getAttribute("toggle-default"))
+			if (button.getAttribute("toggle-default")) {
 				this.activate(button, name);
+
+				if (name === "stacktrace") {
+					// Keep the active fault frame in scroll view port.
+					button.parentElement.scrollTop = (button.offsetTop - button.parentElement.offsetTop) + 100;
+				}
+			}
 		}
 	},
 

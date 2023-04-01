@@ -79,7 +79,7 @@ http_response_code($status);
 				<div class="bottom">
 					<div class="inner">
 						<span class="truncate">
-							<?php echo $description; ?>
+							<?php echo htmlspecialchars($description); ?>
 						</span>
 					</div>
 				</div>
@@ -124,7 +124,7 @@ http_response_code($status);
 								</span>
 							</div>
 	
-							<div class="description"><?php echo $description; ?></div>
+							<div class="description"><?php echo htmlspecialchars($description); ?></div>
 						</span>
 					</div>
 

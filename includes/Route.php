@@ -23,19 +23,25 @@ class Route {
 	 * All the verbs for this route.
 	 * @var string[]
 	 */
-	public $verbs;
+	public Array $verbs;
 
 	/**
 	 * Route URI
 	 * @var	string
 	 */
-	public $uri;
+	public String $uri;
 
 	/**
 	 * Callback action for this route if matched
-	 * @var	string|callable
+	 * @var	string|array|callable
 	 */
 	public $action;
+
+	/**
+	 * Route additional arguments taken from request URI.
+	 * @var array
+	 */
+	public $args = Array();
 
 	/**
 	 * Route priority.
@@ -48,9 +54,9 @@ class Route {
 	 * 
      * @param  array			$verbs
      * @param  string			$uri
-     * @param  string|callable	$action
+     * @param  callable			$action
 	 */
-	public function __construct($verbs, $uri, $action) {
+	public function __construct(Array $verbs, String $uri, Callable $action) {
 		$this -> verbs = $verbs;
 		$this -> uri = $uri;
 		$this -> action = $action;
@@ -64,6 +70,8 @@ class Route {
 	 * @return	mixed
 	 */
 	public function callback(Array $args) {
+		$this -> args = $args;
+
 		if (is_callable($this -> action)) {
 			try {
 				return call_user_func_array($this -> action, $args);
@@ -88,7 +96,14 @@ class Route {
 				throw new BaseException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
 			}
 		} else {
-			throw new BaseException(ROUTE_CALLBACK_INVALID, "Callback \"{$this -> action}\" for route \"{$this -> uri}\" is missing or not callable.", 500);
+			if ($this -> action instanceof \Closure)
+				$callbackName = "Closure";
+			else if (is_array($this -> action))
+				$callbackName = implode("::", $this -> action);
+			else
+				$callbackName = (String) $this -> action;
+
+			throw new BaseException(ROUTE_CALLBACK_INVALID, "Callback [{$callbackName}] for route \"{$this -> uri}\" is missing or not callable.", 500);
 		}
 	}
 

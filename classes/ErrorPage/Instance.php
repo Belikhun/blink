@@ -26,6 +26,7 @@ class Instance {
 	public String $path = "/";
 	public String $method = "GET";
 	public ?String $protocol = null;
+	public ?String $ip = null;
 
 	/**
 	 * @var ContextGroup[]
@@ -205,8 +206,15 @@ class Instance {
 		return Array(
 			"id" => $this -> id,
 			"status" => $this -> status,
+			"path" => $this -> path,
+			"method" => $this -> method,
+			"protocol" => $this -> protocol,
+			"ip" => $this -> ip,
 			"contexts" => $this -> contexts,
-			"data" => $this -> data
+			"data" => $this -> data,
+			"php" => $this -> php,
+			"server" => $this -> server,
+			"blink" => $this -> blink
 		);
 	}
 
@@ -227,6 +235,7 @@ class Instance {
 		$instance -> path = $PATH;
 		$instance -> method = $_SERVER["REQUEST_METHOD"];
 		$instance -> protocol = $_SERVER["SERVER_PROTOCOL"];
+		$instance -> ip = getClientIP();
 		$instance -> status = !empty($data)
 			? $data["status"]
 			: (http_response_code() || 200);
@@ -243,7 +252,8 @@ class Instance {
 			"Path" => $instance -> path,
 			"Method" => $instance -> method,
 			"Status Code" => $instance -> status,
-			"Protocol" => $instance -> protocol
+			"Protocol" => $instance -> protocol,
+			"IP" => $instance -> ip
 		), "info");
 		$infoContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$request -> add($infoContext);
@@ -268,7 +278,49 @@ class Instance {
 		$bodyContext -> setRenderer([ ContextRenderer::class, "body" ]);
 		$request -> add($bodyContext);
 
+		$app = new ContextGroup("App");
+
+		$routingContext = new ContextItem("routing", "Routing", Array(
+			"Active" => !empty(\Router::$active) ? (String) \Router::$active : "[no active route]",
+			"Arguments" => !empty(\Router::$active) ? stringify(\Router::$active -> args) : "[]"
+		), "route");
+		$routingContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($routingContext);
+
+		$routes = array_map(function ($item) { return $item -> __toString(); }, \Router::getRoutes());
+		$routesContext = new ContextItem("routes", "Routes", $routes, "road");
+		$routesContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($routesContext);
+
+		$sessionContext = new ContextItem("session", "Session", Array(
+			"Lifetime" => \Session::$lifetime,
+			"Session ID" => session_id(),
+			"Username" => \Session::$username,
+			"Status" => [ "PHP_SESSION_DISABLED", "PHP_SESSION_NONE", "PHP_SESSION_ACTIVE" ][session_status()]
+		), "user-tag");
+		$sessionContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($sessionContext);
+
+		$metrics = new ContextGroup("Metrics");
+
+		$requests = array_map(function ($item) { return $item -> __toString(); }, \Metric::$requests);
+		$requestsContext = new ContextItem("requests", "Requests", $requests, "arrow-up-bucket");
+		$requestsContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$metrics -> add($requestsContext);
+
+		$queries = array_map(function ($item) { return $item -> __toString(); }, \Metric::$queries);
+		$queriesContext = new ContextItem("queries", "Queries", $queries, "database");
+		$queriesContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$metrics -> add($queriesContext);
+
+		$files = array_map(function ($item) { return $item -> __toString(); }, \Metric::$files);
+		$filesContext = new ContextItem("files", "Files", $files, "file-pen");
+		$filesContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$metrics -> add($filesContext);
+
 		$instance -> contexts[] = $request;
+		$instance -> contexts[] = $app;
+		$instance -> contexts[] = $metrics;
 
 		if (!defined("DISABLE_HANDLERS")) {
 			try {

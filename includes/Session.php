@@ -24,20 +24,20 @@ class Session {
 	 * Current active username in session.
 	 * @var	string
 	 */
-	public static $username;
+	public static $username = null;
 
 	/**
 	 * Current logged-in user.
 	 * @var \User
 	 */
-	public static $user;
+	public static $user = null;
 
 	/**
 	 * Store logout token user need to perform
 	 * logout.
 	 * @var string
 	 */
-	public static $logoutToken;
+	public static $logoutToken = null;
 
 	public static function start(String $sessionID = null) {
 		session_name("Session");
@@ -47,6 +47,7 @@ class Session {
 
 		if (session_status() !== PHP_SESSION_ACTIVE) {
 			ini_set("session.gc_maxlifetime", self::$lifetime);
+			session_cache_expire(self::$lifetime / 60);
 			session_set_cookie_params(Array(
 				"lifetime" => self::$lifetime
 			));

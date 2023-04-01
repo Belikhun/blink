@@ -492,6 +492,28 @@ function getClientIP() {
 		?? "UNKNOWN";
 }
 
+function stringify($subject) {
+	$output = "";
+
+	if (is_array($subject)) {
+		$output = Array();
+
+		foreach ($subject as $key => $value)
+			$output[] = "$key = " . htmlspecialchars($value);
+
+		$output = implode(", ", $output);
+		$output = "[ {$output} ]";
+	} else if (is_bool($subject)) {
+		$output = $subject ? "true" : "false";
+	} else if ($subject === null) {
+		$output = "[NULL]";
+	} else {
+		$output = (String) $output;
+	}
+
+	return $output;
+}
+
 /**
  * Return Human Readable Size
  * 
