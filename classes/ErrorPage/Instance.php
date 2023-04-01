@@ -296,4 +296,9 @@ class Instance {
 		$content = file_get_contents($path);
 		return unserialize($content);
 	}
+
+	public static function handle(String $id) {
+		$instance = static::get($id);
+		renderErrorPage($instance);
+	}
 }

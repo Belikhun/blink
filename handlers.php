@@ -20,12 +20,10 @@ use Blink\Middleware\Exception\InvalidDefinition;
 
 global $ERROR_STACK;
 
-/** @var \Exception[] */
+/** @var \Throwable[] */
 $ERROR_STACK = Array();
 
 function ErrorHandler(int $code, String $text, String $file, int $line) {
-	global $ERROR_STACK;
-
 	// Diacard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
@@ -35,18 +33,13 @@ function ErrorHandler(int $code, String $text, String $file, int $line) {
 	$error -> file = getRelativePath($file);
 	$error -> line = $line;
 
-	$ERROR_STACK[] = $error;
 	stop($error -> code, $error -> description, 500, $error);
 }
 
 function ExceptionHandler(\Throwable $e) {
-	global $ERROR_STACK;
-
 	// Discard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
-
-	$ERROR_STACK[] = $e;
 
 	if ($e instanceof BaseException)
 		stop($e -> code, $e -> description, $e -> status, $e);

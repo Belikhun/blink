@@ -121,6 +121,9 @@ require_once CORE_ROOT . "/db/DB.Abstract.php";
 if (class_exists("Session"))
 	\Session::start();
 
+// Add default endpoint for error page.
+Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);
+
 if (file_exists(BASE_PATH . "/setup.php"))
 	require_once BASE_PATH . "/setup.php";
 

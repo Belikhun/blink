@@ -1005,7 +1005,9 @@ function backtrace(int $limit = 0) {
  * @param	\Throwable|array	$data
  * @return	BacktraceFrame[]
  */
-function processBacktrace($data) {
+function processBacktrace($data, bool $forward = true) {
+	global $ERROR_STACK;
+
 	$exception = null;
 	$frames = Array();
 
@@ -1068,12 +1070,66 @@ function processBacktrace($data) {
 		$file = getRelativePath($exception -> getFile());
 		$line = $exception -> getLine();
 
-		if ($file && $line && $frames[0] -> file !== $file && $frames[0] -> line !== $line) {
+		if ($file && $line && ($frames[0] -> file !== $file || $frames[0] -> line !== $line)) {
 			// Add missing top frame.
-			$trace = new BacktraceFrame("[top]");
+			$trace = new BacktraceFrame("[unknown]");
 			$trace -> file = $file;
 			$trace -> line = $exception -> getLine();
+			$trace -> fault = true;
 			array_unshift($frames, $trace);
+		}
+	}
+
+	if (!empty($exception) && $forward) {
+		// Merge forward.
+		$merges = backtrace();
+		$mcount = 0;
+	
+		foreach ($merges as $merge) {
+			$check = $frames[$mcount];
+	
+			if (($merge -> file === $check -> file && $merge -> line === $check -> line)
+				|| $merge -> function === $check -> function
+			) {
+				$frames[$mcount] -> file = $merge -> file || $check -> file;
+				$frames[$mcount] -> line = $merge -> line || $check -> line;
+				$frames[$mcount] -> function = $merge -> function || $check -> function;
+				break;
+			}
+	
+			if ($mcount === 0)
+				array_unshift($frames, $merge);
+			else
+				array_splice($frames, $mcount, 0, [ $merge ] );
+			
+			$mcount += 1;
+		}
+
+		// Merge backward
+		foreach (array_reverse($ERROR_STACK) as $e) {
+			if ($e == $exception)
+				continue;
+	
+			$pstacks = processBacktrace($e, false);
+	
+			// Add to current stack one by one.
+			foreach ($pstacks as $stack) {
+				$last = $frames[count($frames) - 1];
+	
+				if ($last -> file !== $stack -> file || $last -> line !== $stack -> line)
+					$frames[] = $stack;
+			}
+		}
+	}
+
+	// Update fault points
+	foreach ($ERROR_STACK as $e) {
+		$file = getRelativePath($e -> getFile());
+		$line = $e -> getLine();
+
+		foreach ($frames as $frame) {
+			if ($frame -> file === $file && $frame -> line === $line)
+				$frame -> fault = true;
 		}
 	}
 	
@@ -1109,32 +1165,13 @@ function stop(
 		$exception = $data;
 		$stacktrace = null;
 		$additionalData = null;
+
+		$ERROR_STACK[] = $exception;
 		$file = getRelativePath($exception -> getFile());
 
 		if (class_exists("CONFIG") && !CONFIG::$PRODUCTION) {
-			$stacktrace = ($exception instanceof BaseException)
-				? $exception -> trace
-				: processBacktrace($exception);
-
-			$stacktrace[0] -> fault = true;
+			$stacktrace = processBacktrace($exception);
 			$caller = $stacktrace[0] -> getCallString();
-
-			if (!empty($ERROR_STACK)) {
-				foreach (array_reverse($ERROR_STACK) as $error) {
-					if ($error == $exception)
-						continue;
-
-					$pstacks = ($error instanceof BaseException)
-						? $error -> trace
-						: processBacktrace($error);
-
-					$pstacks[0] -> fault = true;
-
-					// Add to current stack one by one.
-					foreach ($pstacks as $stack)
-						$stacktrace[] = $stack;
-				}
-			}
 		}
 
 		if ($exception instanceof BaseException)

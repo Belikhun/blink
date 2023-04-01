@@ -75,7 +75,6 @@ class BaseException extends \Exception {
 
 		$this -> file = getRelativePath(parent::getFile());
 		$this -> line = parent::getLine();
-		$this -> trace = processBacktrace($this);
 	}
 
 	public function __toString() {

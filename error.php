@@ -1,8 +1,4 @@
 <?php
-use Blink\ErrorPage\ContextGroup;
-use Blink\ErrorPage\ContextItem;
-use Blink\ErrorPage\ContextRenderer;
-use Blink\ErrorPage\Instance;
 /**
  * error.php
  * 
@@ -16,6 +12,9 @@ use Blink\ErrorPage\Instance;
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
+use Blink\ErrorPage\ContextRenderer;
+use Blink\ErrorPage\Instance;
 
 /**
  * Current error instance.
@@ -154,7 +153,7 @@ http_response_code($status);
 							
 							<div class="frames">
 								<?php
-								$firstframe = false;
+								$foundfault = false;
 
 								foreach ($stacktrace as $i => $trace) {
 									$attrs = Array(
@@ -165,10 +164,10 @@ http_response_code($status);
 										$attrs["toggle-id"] = $trace -> getID();
 										$attrs["toggle-name"] = "stacktrace";
 
-										if (!$firstframe) {
+										if (!$foundfault && $trace -> fault) {
 											$attrs["toggle-default"] = true;
 											$attrs["class"][] = "active";
-											$firstframe = true;
+											$foundfault = true;
 										}
 
 										echo HTMLBuilder::startDIV($attrs);
@@ -233,7 +232,7 @@ http_response_code($status);
 
 						<span class="flex flex-col flex-g1 viewer">
 							<?php
-							$firstframe = false;
+							$foundfault = false;
 
 							foreach ($stacktrace as $trace) {
 								if (empty($trace -> file))
@@ -244,9 +243,9 @@ http_response_code($status);
 									"toggle-target" => $trace -> getID()
 								);
 
-								if (!$firstframe) {
+								if (!$foundfault && $trace -> fault) {
 									$attrs["class"][] = "active";
-									$firstframe = true;
+									$foundfault = true;
 								}
 
 								echo HTMLBuilder::startDIV($attrs);
