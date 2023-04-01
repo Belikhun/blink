@@ -143,6 +143,14 @@ if (!function_exists("ep_icon")) {
 			case "close":
 				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"/></svg>';
 				break;
+
+			case "stack":
+				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM64 256c0-17.7 14.3-32 32-32H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg>';
+				break;
+
+			case "context":
+				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"/></svg>';
+				break;
 		}
 	}
 }
@@ -163,13 +171,39 @@ if (!function_exists("ep_icon")) {
 	<body>
 		<div id="app">
 			<header>
+				<div class="top">
+					<div class="inner">
+						<span class="left">
+							<a class="link" href="#stacktrace" target="_self" nav-link>
+								<?php echo ep_icon("stack"); ?>
+								Stack
+							</a>
+	
+							<a class="link" href="#context" target="_self" nav-link>
+								<?php echo ep_icon("context"); ?>
+								Context
+							</a>
+						</span>
+	
+						<span class="right">
+							
+						</span>
+					</div>
+				</div>
 
+				<div class="bottom">
+					<div class="inner">
+						<span class="truncate">
+							<?php echo $description; ?>
+						</span>
+					</div>
+				</div>
 			</header>
 
 			<div class="content">
 				<div id="details" class="panel">
 					<div class="flex flex-row flex-g1 info">
-						<video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video>
+						<!-- <video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video> -->
 	
 						<span class="flex-g1 block exception">
 							<div class="flex flex-row align-center justify-between flex-wrap top">
@@ -180,7 +214,9 @@ if (!function_exists("ep_icon")) {
 									</span>
 	
 									<?php if (!empty($exception)) { ?>
-										<span class="badge class"><?php echo $exception["class"]; ?></span>
+										<span class="badge class">
+											<?php echo str_replace("\\", "<span>\</span>", $exception["class"]); ?>
+										</span>
 									<?php } ?>
 								</span>
 	
@@ -219,9 +255,11 @@ if (!function_exists("ep_icon")) {
 						</div>
 					<?php } ?>
 				</div>
+			</div>
 
-				<?php if (!empty($stacktrace)) { ?>
-					<div id="stacktrace" class="flex flex-row panel">
+			<?php if (!empty($stacktrace)) { ?>
+				<div id="stacktrace" class="content">
+					<div class="flex flex-row panel">
 						<span class="flex flex-col flex-g0 left">
 							<div class="header">
 								<b>Frames</b>
@@ -344,10 +382,12 @@ if (!function_exists("ep_icon")) {
 							}
 						?></span>
 					</div>
-				<?php } ?>
-			</div>
+				</div>
+			<?php } ?>
 
-			<pre><?php var_dump($data); ?></pre>
+			<div id="context" class="content">
+				<pre><?php var_dump($data); ?></pre>
+			</div>
 		</div>
 
 		<script src="/core/public/error.js"></script>

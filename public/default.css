@@ -206,6 +206,11 @@
     line-height: 1.25rem;
 }
 
+.truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 ::-webkit-scrollbar {
     width: 15px;
     height: 4px;

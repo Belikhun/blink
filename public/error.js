@@ -71,9 +71,69 @@ const toggle = {
 	}
 }
 
+const nav = {
+	container: document.querySelector(`#app > header`),
+	links: {},
+	active: null,
+
+	init() {
+		let links = document.querySelectorAll(`a[nav-link]`);
+
+		for (let link of links) {
+			let id = link.getAttribute("href").substring(1);
+			let target = document.getElementById(id);
+
+			if (!target)
+				continue;
+
+			this.links[id] = { link, target }
+		}
+
+		error.container.addEventListener("scroll", (e) => this.updateScroll(e));
+	},
+
+	/**
+	 * @param {Event} e 
+	 */
+	updateScroll(e) {
+		let scroll = e.target.scrollTop;
+		let point = scroll + 200;
+		let found = false;
+
+		this.container.classList[scroll > 0 ? "add" : "remove"]("scrolling");
+		this.container.classList[scroll >= 140 ? "add" : "remove"]("details");
+		
+		for (let [id, item] of Object.entries(this.links)) {
+			let from = item.target.offsetTop;
+			let to = from + item.target.clientHeight;
+
+			if (point >= from && point <= to) {
+				if (this.active) {
+					this.active.link.classList.remove("active");
+					this.active.target.classList.remove("active");
+				}
+
+				item.link.classList.add("active");
+				item.target.classList.add("active");
+				this.active = item;
+				found = true;
+				break;
+			}
+		}
+
+		if (!found && this.active) {
+			this.active.link.classList.remove("active");
+			this.active.target.classList.remove("active");
+		}
+	}
+}
+
 const error = {
+	container: document.getElementById("app"),
+
 	init() {
 		toggle.init();
+		nav.init();
 
 		if (window.sticker) {
 			const handler = () => {

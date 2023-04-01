@@ -1,5 +1,7 @@
 <?php
 
+namespace Blink\Exception;
+
 /**
  * BaseException.php
  * 
@@ -12,8 +14,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Exception;
 
 class BaseException extends \Exception {
 	/**

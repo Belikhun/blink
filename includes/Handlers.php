@@ -44,6 +44,18 @@ class Handlers {
 							Kiểm tra lại chính tả hoặc thêm class này nếu bạn chưa định nghĩa nó.";
 				break;
 			}
+
+			case \Blink\Exception\RouteNotFound::class: {
+				$title = "Tài nguyên không tồn tại";
+				$content = "Có vẻ như đường dẫn này không còn tồn tại trên máy chủ. Liên hệ quản trị viên nếu bạn thấy đây là lỗi.";
+				break;
+			}
+
+			case \Blink\Exception\InvalidDefinition::class: {
+				$title = "Định nghĩa class không hợp lệ";
+				
+				break;
+			}
 		}
 
 		return Array( $title, $content );
