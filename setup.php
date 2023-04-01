@@ -130,6 +130,12 @@ if (file_exists(BASE_PATH . "/setup.php"))
  * Current requested path
  * @var string
  */
+global $PATH;
+
+/**
+ * Current requested path
+ * @var string
+ */
 $PATH = $_GET["path"];
 unset($_GET["path"]);
 

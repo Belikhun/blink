@@ -23,6 +23,9 @@ class Instance {
 	public String $id;
 
 	public int $status = 200;
+	public String $path = "/";
+	public String $method = "GET";
+	public ?String $protocol = null;
 
 	/**
 	 * @var ContextGroup[]
@@ -217,8 +220,13 @@ class Instance {
 	}
 
 	public static function create(Array $data = null): Instance {
+		global $PATH;
+
 		$instance = new static(bin2hex(random_bytes(10)));
 		$instance -> data = $data;
+		$instance -> path = $PATH;
+		$instance -> method = $_SERVER["REQUEST_METHOD"];
+		$instance -> protocol = $_SERVER["SERVER_PROTOCOL"];
 		$instance -> status = !empty($data)
 			? $data["status"]
 			: (http_response_code() || 200);
@@ -229,12 +237,36 @@ class Instance {
 			: null;
 		$instance -> blink = \CONFIG::$BLINK_VERSION;
 
+		$request = new ContextGroup("Request");
+
+		$infoContext = new ContextItem("info", "Info", Array(
+			"Path" => $instance -> path,
+			"Method" => $instance -> method,
+			"Status Code" => $instance -> status,
+			"Protocol" => $instance -> protocol
+		), "info");
+		$infoContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$request -> add($infoContext);
+
+		$paramsContext = new ContextItem("params", "Query String", $_GET, "magnify-glass");
+		$paramsContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$request -> add($paramsContext);
+
 		$headerContext = new ContextItem("headers", "Headers", getallheaders(), "arrow-right-left");
 		$headerContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$request -> add($headerContext);
 
-		$request = new ContextGroup("Request");
-		$request
-			-> add($headerContext);
+		$form = $_POST;
+		foreach ($_FILES as $key => $file)
+			$form[$key] = sprintf("[file \"%s\" %s %s]", $file["name"], $file["type"], convertSize($file["size"]));
+
+		$bodyContext = new ContextItem("body", "Body", Array(
+			"form" => $form,
+			"content" => file_get_contents("php://input"),
+			"type" => explode(";", getHeader("Content-Type", TYPE_TEXT, "text/plain"))[0]
+		), "scroll");
+		$bodyContext -> setRenderer([ ContextRenderer::class, "body" ]);
+		$request -> add($bodyContext);
 
 		$instance -> contexts[] = $request;
 
