@@ -1180,6 +1180,10 @@ function stop(
 	// Set the HTTP status code
 	http_response_code($status);
 
+	// Create a new error page instance!
+	$instance = \Blink\ErrorPage\Instance::create($output);
+	$output["report"] = $instance -> url();
+
 	if (!defined("PAGE_TYPE"))
 		define("PAGE_TYPE", "NORMAL");
 
@@ -1191,7 +1195,7 @@ function stop(
 			}
 
 			if ($status >= 300 || $code !== 0)
-				renderErrorPage($output, headers_sent());
+				renderErrorPage($instance, headers_sent());
 
 			break;
 		
@@ -1229,11 +1233,9 @@ function printException(Throwable $e) {
 	die();
 }
 
-function renderErrorPage(Array $data, bool $redirect = false) {
+function renderErrorPage(\Blink\ErrorPage\Instance $data, bool $redirect = false) {
 	$_SESSION["LAST_ERROR"] = $data;
-
-	if (isset($data["status"]))
-		$_SERVER["REDIRECT_STATUS"] = $data["status"];
+	$_SERVER["REDIRECT_STATUS"] = $data -> status;
 
 	if (file_exists(BASE_PATH . "/error.php") && !defined("CUSTOM_ERROR_HANDING")) {
 		if ($redirect && !defined("ERROR_NO_REDIRECT"))

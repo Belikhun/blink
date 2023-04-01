@@ -74,13 +74,15 @@ const toggle = {
 const nav = {
 	container: document.querySelector(`#app > header`),
 	links: {},
-	active: null,
 
 	init() {
 		let links = document.querySelectorAll(`a[nav-link]`);
 
 		for (let link of links) {
-			let id = link.getAttribute("href").substring(1);
+			let id = link.getAttribute("nav-target")
+				? link.getAttribute("nav-target")
+				: link.getAttribute("href").substring(1);
+			
 			let target = document.getElementById(id);
 
 			if (!target)
@@ -90,6 +92,7 @@ const nav = {
 		}
 
 		error.container.addEventListener("scroll", (e) => this.updateScroll(e));
+		this.updateScroll({ target: error.container });
 	},
 
 	/**
@@ -97,8 +100,7 @@ const nav = {
 	 */
 	updateScroll(e) {
 		let scroll = e.target.scrollTop;
-		let point = scroll + 200;
-		let found = false;
+		let point = scroll + e.target.clientHeight * 0.5;
 
 		this.container.classList[scroll > 0 ? "add" : "remove"]("scrolling");
 		this.container.classList[scroll >= 140 ? "add" : "remove"]("details");
@@ -108,22 +110,50 @@ const nav = {
 			let to = from + item.target.clientHeight;
 
 			if (point >= from && point <= to) {
-				if (this.active) {
-					this.active.link.classList.remove("active");
-					this.active.target.classList.remove("active");
-				}
-
 				item.link.classList.add("active");
 				item.target.classList.add("active");
-				this.active = item;
-				found = true;
-				break;
+			} else {
+				item.link.classList.remove("active");
+				item.target.classList.remove("active");
 			}
 		}
+	}
+}
 
-		if (!found && this.active) {
-			this.active.link.classList.remove("active");
-			this.active.target.classList.remove("active");
+const copyable = {
+	/** @type {HTMLElement} */
+	node: undefined,
+
+	/** @type {HTMLElement} */
+	hovering: undefined,
+
+	init() {
+		this.node = document.createElement("div");
+		this.node.classList.add("copy-btn");
+		this.node.innerText = "Copy";
+
+		this.node.addEventListener("click", () => {
+			if (!this.hovering)
+				return;
+
+			let content = this.hovering.getAttribute("copyable");
+			navigator.clipboard.writeText(content);
+			this.node.innerText = "Copied!";
+		});
+
+		let items = document.querySelectorAll(`[copyable]`);
+
+		for (let item of items) {
+			item.addEventListener("mouseenter", () => {
+				this.hovering = item;
+				item.appendChild(this.node);
+			});
+
+			item.addEventListener("mouseleave", () => {
+				this.hovering = undefined;
+				item.removeChild(this.node);
+				this.node.innerText = "Copy";
+			});
 		}
 	}
 }
@@ -134,6 +164,7 @@ const error = {
 	init() {
 		toggle.init();
 		nav.init();
+		copyable.init();
 
 		if (window.sticker) {
 			const handler = () => {

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Handler.php
+ * Handlers.php
  * 
  * Interface for core handlers. Built in handlers in this class
  * can be easily extender or overrided by applicaton.
@@ -59,5 +59,16 @@ class Handlers {
 		}
 
 		return Array( $title, $content );
+	}
+
+	/**
+	 * Add additional contexts to error page. It will be shown
+	 * in the bottom of the page.
+	 * 
+	 * @param	\Blink\ErrorPage\Instance		$instance
+	 * @return	\Blink\ErrorPage\ContextGroup[]
+	 */
+	public static function errorContexts(\Blink\ErrorPage\Instance $instance): Array {
+		return Array();
 	}
 }

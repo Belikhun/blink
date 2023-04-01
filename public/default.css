@@ -20,12 +20,16 @@
 	--badge-background: #f1f1f3;
 	--border-color: #e5e7eb;
 
-	--background-green: #8EE4BA;
-	--background-orange: #f39c18;
-	--background-red: #DD524C;
-	--background-red-1: rgba(239, 68, 68, 0.1);
-	--background-red-2: rgba(239, 68, 68, 0.2);
-	--background-red-3: rgba(239, 68, 68, 0.3);
+	--color-green: #6ee7b7;
+	--color-emerald: #10b981;
+	--color-emerald-05: rgba(16, 185, 129, .05);
+	--color-orange: #f39c18;
+	--color-indigo: #6366f1;
+	--color-red: #DD524C;
+	--color-red-1: rgba(239, 68, 68, 0.1);
+	--color-red-2: rgba(239, 68, 68, 0.2);
+	--color-red-3: rgba(239, 68, 68, 0.3);
+	--color-red-05: rgba(239, 68, 68, 0.05);
 	--max-width: 1300px;
 }
 
@@ -74,8 +78,8 @@
 }
 
 .sourceCode > .nums > .line.current {
-	background-color: var(--background-red-3);
-	border-right-color: var(--background-red-3);
+	background-color: var(--color-red-3);
+	border-right-color: var(--color-red-3);
 }
 
 .sourceCode > .lines {
@@ -100,11 +104,11 @@
 }
 
 .sourceCode > .lines > .line.current {
-	background-color: var(--background-red-2);
+	background-color: var(--color-red-2);
 }
 
 .sourceCode > .lines > .line:hover {
-	background-color: var(--background-red-1);
+	background-color: var(--color-red-1);
 }
 
 .sourceCode > .lines > .line .sc-keyword {
@@ -209,6 +213,39 @@
 .truncate {
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+pre {
+	margin: 0;
+	padding: 0.5rem 1rem;
+	background-color: rgba(107, 114, 128, .05);
+}
+
+pre[copyable] {
+	padding-right: 3rem;
+}
+
+[copyable] {
+	position: relative;
+}
+
+[copyable] > .copy-btn {
+	position: absolute;
+	top: 50%;
+	right: 1rem;
+	padding: 0.5rem;
+
+	font-size: 0.8rem;
+	line-height: 1;
+	transform: translateY(-50%);
+	background-color: var(--panel-color);
+	border-radius: 4px;
+	cursor: pointer;
+	box-shadow:
+		0 0 transparent,
+		0 0 transparent,
+		0 10px 15px -3px rgba(0, 0, 0, 0.1),
+		0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 ::-webkit-scrollbar {

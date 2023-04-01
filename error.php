@@ -1,4 +1,8 @@
 <?php
+use Blink\ErrorPage\ContextGroup;
+use Blink\ErrorPage\ContextItem;
+use Blink\ErrorPage\ContextRenderer;
+use Blink\ErrorPage\Instance;
 /**
  * error.php
  * 
@@ -13,148 +17,30 @@
  * See LICENSE in the project root for license information.
  */
 
-$data = null;
-$status = 200;
-$statusText = "OK";
-$description = "Everything is good and dandy!";
+/**
+ * Current error instance.
+ * @var \Blink\ErrorPage\Instance
+ */
+global $instance;
 
-if (isset($_SERVER["REDIRECT_STATUS"]))
-	$status = $_SERVER["REDIRECT_STATUS"];
-elseif (isset($_GET["status"]))
-	$status = trim($_GET["status"]);
+/** @var \Blink\ErrorPage\Instance */
+$instance = $_SESSION["LAST_ERROR"];
 
-if (!empty($_SESSION["LAST_ERROR"])) {
-	$data = $_SESSION["LAST_ERROR"];
-	$status = $data["status"];
-}
-
-switch ($status) {
-	case 400:
-		$statusText = "HTTP\BadRequest";
-		$description = "The request cannot be fulfilled due to bad syntax.";
-		break;
-	
-	case 401:
-		$statusText = "HTTP\Unauthorized";
-		$description = "Authentication is required and has failed or has not yet been provided.";
-		break;
-	
-	case 403:
-		$statusText = "HTTP\Forbidden";
-		$description = "Hey, Thats illegal! You are not allowed to access this resource!";
-		break;
-	
-	case 404:
-		$statusText = "HTTP\NotFound";
-		$description = "Không thể tìm thấy tài nguyên này trên máy chủ.";
-		break;
-	
-	case 405:
-		$statusText = "HTTP\MethodNotAllowed";
-		$description = "A request method is not supposed for the requested resource.";
-		break;
-	
-	case 406:
-		$statusText = "HTTP\NotAcceptable";
-		$description = "The requested resource is capable of generating only content not acceptable according to the Accept headers sent in the request.";
-		break;
-	
-	case 408:
-		$statusText = "HTTP\RequestTimeout";
-		$description = "The client did not produce a request within the time that the server was prepared to wait.";
-		break;
-	
-	case 414:
-		$statusText = "HTTP\URITooLong";
-		$description = "The URI provided was too long for the server to process.";
-		break;
-	
-	case 429:
-		$statusText = "HTTP\TooManyRequest";
-		$description = "Hey, you! Yes you. Why you spam here?";
-		break;
-	
-	case 500:
-		$statusText = "HTTP\InternalServerError";
-		$description = "The server did an oopsie";
-		break;
-	
-	case 502:
-		$statusText = "HTTP\BadGateway";
-		$description = "The server received an invalid response while trying to carry out the request.";
-		break;
-	
-	default:
-		$statusText = "HTTP\SampleText";
-		$description = "Much strangery page, Such magically error, wow";
-		break;
-}
-
-$statusColor = "green";
-$sticker = "/core/public/stickers/sticker-default.webm";
-$tipTitle = null;
-$tipContent = null;
-
-if ($status >= 400 && $status < 500) {
-	$statusColor = "yellow";
-	$sticker = "/core/public/stickers/sticker-40x.webm";
-} else if ($status >= 500 && $status < 600) {
-	$statusColor = "red";
-	$sticker = "/core/public/stickers/sticker-50x.webm";
-}
-
-$exception = null;
+list($statusText, $description) = $instance -> info();
+list($tipTitle, $tipContent) = $instance -> tips();
+$status = $instance -> status;
+$sticker = $instance -> sticker();
+$exception = $instance -> exception();
+$statusColor = match ($instance -> type()) {
+	Instance::ERROR_CLIENT => "yellow",
+	Instance::ERROR_SERVER => "red",
+	default => "green"
+};
 
 /** @var BacktraceFrame[] */
-$stacktrace = Array();
-
-if (!empty($data)) {
-	$description = $data["description"];
-
-	if (!empty($data["exception"])) {
-		$exception = $data["exception"];
-		$stacktrace = $exception["stacktrace"];
-
-		if (!defined("DISABLE_HANDLERS")) {
-			try {
-				if (!empty($exception["class"]))
-					list($tipTitle, $tipContent) = \Handlers::errorPageHint($exception["class"], $exception["data"]);
-			} catch (\Throwable $e) {
-				define("DISABLE_HANDLERS", true);
-				throw $e;
-			}
-		}
-	}
-}
-
+$stacktrace = $instance -> stacktrace();
+$contexts = $instance -> contexts;
 http_response_code($status);
-
-if (!function_exists("ep_icon")) {
-	function ep_icon($name) {
-		switch ($name) {
-			case "server":
-				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M64 80c-8.8 0-16 7.2-16 16V258c5.1-1.3 10.5-2 16-2H448c5.5 0 10.9 .7 16 2V96c0-8.8-7.2-16-16-16H64zM48 320v96c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V320c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zM0 320V96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V320v96c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V320zm280 48a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm120-24a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>';
-				break;
-	
-			case "blink":
-				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M160 256C160 202.1 202.1 160 256 160C309 160 352 202.1 352 256C352 309 309 352 256 352C202.1 352 160 309 160 256zM512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256zM256 48C141.1 48 48 141.1 48 256C48 370.9 141.1 464 256 464C370.9 464 464 370.9 464 256C464 141.1 370.9 48 256 48z"/></svg>';
-				break;
-	
-			case "close":
-				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"/></svg>';
-				break;
-
-			case "stack":
-				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM64 256c0-17.7 14.3-32 32-32H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg>';
-				break;
-
-			case "context":
-				echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"/></svg>';
-				break;
-		}
-	}
-}
-
 ?>
 
 <!DOCTYPE html>
@@ -175,12 +61,12 @@ if (!function_exists("ep_icon")) {
 					<div class="inner">
 						<span class="left">
 							<a class="link" href="#stacktrace" target="_self" nav-link>
-								<?php echo ep_icon("stack"); ?>
+								<?php echo ContextRenderer::icon("stack"); ?>
 								Stack
 							</a>
 	
 							<a class="link" href="#context" target="_self" nav-link>
-								<?php echo ep_icon("context"); ?>
+								<?php echo ContextRenderer::icon("context"); ?>
 								Context
 							</a>
 						</span>
@@ -203,14 +89,13 @@ if (!function_exists("ep_icon")) {
 			<div class="content">
 				<div id="details" class="panel">
 					<div class="flex flex-row flex-g1 info">
-						<!-- <video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video> -->
+						<video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video>
 	
 						<span class="flex-g1 block exception">
 							<div class="flex flex-row align-center justify-between flex-wrap top">
 								<span class="badges flex flex-row align-center flex-wrap">
 									<span class="badge status" data-color="<?php echo $statusColor; ?>">
-										<?php echo $_SERVER["SERVER_PROTOCOL"]; ?>
-										<b><?php echo $status; ?></b>
+										<?php echo $status; ?>
 									</span>
 	
 									<?php if (!empty($exception)) { ?>
@@ -223,17 +108,19 @@ if (!function_exists("ep_icon")) {
 								<span class="versions flex flex-row align-center">
 									<span>
 										<span class="wider">PHP</span>
-										<?php echo phpversion(); ?>
+										<?php echo $instance -> php; ?>
 									</span>
 	
-									<span>
-										<?php echo ep_icon("server"); ?>
-										<?php echo $_SERVER["SERVER_SOFTWARE"]; ?>
-									</span>
+									<?php if (!empty($instance -> server)) { ?>
+										<span>
+											<?php echo ContextRenderer::icon("server"); ?>
+											<?php echo $instance -> server; ?>
+										</span>
+									<?php } ?>
 	
 									<span>
-										<?php echo ep_icon("blink"); ?>
-										<?php echo CONFIG::$BLINK_VERSION; ?>
+										<?php echo ContextRenderer::icon("blink"); ?>
+										<?php echo $instance -> blink; ?>
 									</span>
 								</span>
 							</div>
@@ -250,7 +137,7 @@ if (!function_exists("ep_icon")) {
 							</div>
 
 							<div class="close active" toggle-id="tip1">
-								<?php echo ep_icon("close"); ?>
+								<?php echo ContextRenderer::icon("close"); ?>
 							</div>
 						</div>
 					<?php } ?>
@@ -386,7 +273,15 @@ if (!function_exists("ep_icon")) {
 			<?php } ?>
 
 			<div id="context" class="content">
-				<pre><?php var_dump($data); ?></pre>
+				<div class="nav">
+					<?php foreach ($contexts as $group)
+						$group -> renderNavigation(); ?>
+				</div>
+
+				<div class="panel">
+					<?php foreach ($contexts as $group)
+						$group -> render(); ?>
+				</div>
 			</div>
 		</div>
 

@@ -49,6 +49,8 @@ class CoreConfig {
 	public static String	$CACHE_ROOT = DATA_ROOT . "/caches";
 	
 	#[ConfigPathProperty]
+	public static String	$ERRORS_ROOT = DATA_ROOT . "/errors";
+	#[ConfigPathProperty]
 	public static String	$ROUTES_ROOT = BASE_PATH . "/routes";
 
 	public static Array		$INCLUDES = Array(
