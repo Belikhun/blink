@@ -18,7 +18,11 @@
  */
 define("HOST", $_SERVER["HTTP_HOST"]);
 
-// Constant Definition
+// Constants
+define("FILE_STORE_FS", "fs");
+define("FILE_STORE_DB", "db");
+
+// Error Codes
 define("TYPE_INT", "integer");
 define("TYPE_FLOAT", "float");
 define("TYPE_DOUBLE", "double");
@@ -37,6 +41,7 @@ define("SQL_SELECT", "SELECT");
 define("SQL_INSERT", "INSERT");
 define("SQL_UPDATE", "UPDATE");
 define("SQL_DELETE", "DELETE");
+define("SQL_CREATE", "CREATE");
 define("SQL_TRUNCATE", "TRUNCATE");
 
 define("UNKNOWN_ERROR", -1);
@@ -55,6 +60,7 @@ define("MIDDLEWARE_CLASS_INVALID", 109);
 define("AUTOLOAD_CLASS_MISSING", 110);
 define("AUTOLOAD_CLASS_INVALID", 111);
 define("ERROR_REPORT_NOT_FOUND", 112);
+define("SQL_TABLE_NOT_FOUND", 113);
 
 define("DATA_TYPE_MISMATCH", 201);
 define("INVALID_JSON", 202);
@@ -68,6 +74,7 @@ define("INVALID_URL", 209);
 define("FILE_INSTANCE_NOT_FOUND", 209);
 define("FILE_READ_ERROR", 210);
 define("FILE_WRITE_ERROR", 211);
+define("ROUTE_CALLBACK_INVALID_PARAM", 212);
 
 define("ACCESS_DENIED", 300);
 define("LOGGED_IN", 301);

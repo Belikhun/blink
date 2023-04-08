@@ -272,7 +272,7 @@ class Instance {
 
 		$bodyContext = new ContextItem("body", "Body", Array(
 			"form" => $form,
-			"content" => file_get_contents("php://input"),
+			"content" => fileGet("php://input"),
 			"type" => explode(";", getHeader("Content-Type", TYPE_TEXT, "text/plain"))[0]
 		), "scroll");
 		$bodyContext -> setRenderer([ ContextRenderer::class, "body" ]);
@@ -280,10 +280,19 @@ class Instance {
 
 		$app = new ContextGroup("App");
 
-		$routingContext = new ContextItem("routing", "Routing", Array(
-			"Active" => !empty(\Router::$active) ? (String) \Router::$active : "[no active route]",
-			"Arguments" => !empty(\Router::$active) ? stringify(\Router::$active -> args) : "[]"
-		), "route");
+		$routing = Array(
+			"Active" => "[no active route]",
+			"Callback" => "[unknown]",
+			"Arguments" => "[]"
+		);
+
+		if (!empty(\Router::$active)) {
+			$routing["Active"] = (String) \Router::$active;
+			$routing["Callback"] = stringify(\Router::$active -> action);
+			$routing["Arguments"] = stringify(\Router::$active -> args);
+		}
+
+		$routingContext = new ContextItem("routing", "Routing", $routing, "route");
 		$routingContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($routingContext);
 
@@ -303,17 +312,17 @@ class Instance {
 
 		$metrics = new ContextGroup("Metrics");
 
-		$requests = array_map(function ($item) { return $item -> __toString(); }, \Metric::$requests);
+		$requests = array_map(function ($item) { return $item -> __toString(); }, \Blink\Metric::$requests);
 		$requestsContext = new ContextItem("requests", "Requests", $requests, "arrow-up-bucket");
 		$requestsContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$metrics -> add($requestsContext);
 
-		$queries = array_map(function ($item) { return $item -> __toString(); }, \Metric::$queries);
+		$queries = array_map(function ($item) { return $item -> __toString(); }, \Blink\Metric::$queries);
 		$queriesContext = new ContextItem("queries", "Queries", $queries, "database");
 		$queriesContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$metrics -> add($queriesContext);
 
-		$files = array_map(function ($item) { return $item -> __toString(); }, \Metric::$files);
+		$files = array_map(function ($item) { return $item -> __toString(); }, \Blink\Metric::$files);
 		$filesContext = new ContextItem("files", "Files", $files, "file-pen");
 		$filesContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$metrics -> add($filesContext);
@@ -335,7 +344,7 @@ class Instance {
 			}
 		}
 
-		file_put_contents(static::path($instance -> id), serialize($instance));
+		filePut(static::path($instance -> id), serialize($instance));
 		return $instance;
 	}
 
@@ -345,7 +354,7 @@ class Instance {
 		if (!file_exists($path))
 			throw new ReportNotFound($id);
 
-		$content = file_get_contents($path);
+		$content = fileGet($path);
 		return unserialize($content);
 	}
 

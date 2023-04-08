@@ -1,13 +1,23 @@
 <?php
+/**
+ * Request.php
+ * 
+ * Request Metric
+ * 
+ * @author    Belikhun
+ * @since     2.0.0
+ * @license   https://tldrlegal.com/license/mit-license MIT
+ * 
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * See LICENSE in the project root for license information.
+ */
 
-namespace Metric;
+namespace Blink\Metric;
 
-class Request {
+class Request extends Instance {
 	public String $url;
 	public String $method;
 	public int $status;
-	public float $time;
-	private float $start;
 
 	public function __construct(String $url, String $method) {
 		$this -> url = $url;
@@ -15,18 +25,12 @@ class Request {
 		$this -> time = -1;
 		$this -> status = -1;
 		$this -> start = microtime(true);
-		\Metric::$requests[] = $this;
+		\Blink\Metric::$requests[] = $this;
 	}
 
 	public function time(int $status) {
 		$this -> status = $status;
 		$this -> time = microtime(true);
-	}
-
-	public function getTime() {
-		return ($this -> time > 0)
-			? $this -> time - $this -> start
-			: -1;
 	}
 
 	public function __toString() {

@@ -137,7 +137,7 @@ class Router {
 
 			$found = true;
 			self::$active = $route;
-			$route -> callback($args);
+			$route -> callback($path, $method, $args);
 			break;
 		}
 

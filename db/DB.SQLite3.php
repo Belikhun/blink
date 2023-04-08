@@ -5,6 +5,7 @@ namespace Blink\DB;
 use Blink\DB;
 use Blink\DB\Exception\DatabaseNotUpgraded;
 use Blink\DB\Exception\SQLError;
+use Blink\DB\Exception\TableNotFound;
 use Blink\Exception\BaseException;
 use Blink\Exception\CodingError;
 
@@ -76,7 +77,7 @@ class SQLite3 extends DB {
 		if ($this -> version !== 0)
 			return $this -> version;
 
-		$content = file_get_contents("{$this -> path}/database.version");
+		$content = fileGet("{$this -> path}/database.version");
 
 		if ($content == false)
 			return 0;
@@ -89,7 +90,7 @@ class SQLite3 extends DB {
 		if ($this -> tableVersion !== 0)
 			return $this -> tableVersion;
 		
-		$content = file_get_contents("{$this -> path}/tables/.version");
+		$content = fileGet("{$this -> path}/tables/.version");
 
 		if ($content == false)
 			return 0;
@@ -103,7 +104,7 @@ class SQLite3 extends DB {
 	}
 
 	public function upgrade(int $version) {
-		file_put_contents("{$this -> path}/database.version", $version);
+		filePut("{$this -> path}/database.version", $version);
 		$this -> version = $version;
 	}
 
@@ -122,6 +123,7 @@ class SQLite3 extends DB {
 		}
 
 		$this -> instance = new \SQLite3($this -> filePath());
+		$this -> instance -> enableExceptions(true);
 		$this -> dbVersion();
 		$this -> connected = true;
 
@@ -147,6 +149,7 @@ class SQLite3 extends DB {
 	 */
 	public function init() {
 		$this -> instance = new \SQLite3($this -> filePath());
+		$this -> instance -> enableExceptions(true);
 
 		$tables = glob($this -> path . "/tables/*.sql");
 		foreach ($tables as $table) {
@@ -185,20 +188,18 @@ class SQLite3 extends DB {
 		int $from = 0,
 		int $limit = 0
 	): Object|Array|int {
-		$sql = trim($sql);
+		$sql = static::cleanSQL($sql);
 
 		// Detect current mode
-		if (str_starts_with($sql, SQL_SELECT))
-			$mode = SQL_SELECT;
-		else if (str_starts_with($sql, SQL_INSERT))
-			$mode = SQL_INSERT;
-		else if (str_starts_with($sql, SQL_UPDATE))
-			$mode = SQL_UPDATE;
-		else if (str_starts_with($sql, SQL_DELETE))
-			$mode = SQL_DELETE;
-		else if (str_starts_with($sql, SQL_TRUNCATE))
-			$mode = SQL_TRUNCATE;
-		else
+		$mode = null;
+		foreach ([ SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_TRUNCATE, SQL_CREATE ] as $m) {
+			if (str_starts_with($sql, $m)) {
+				$mode = $m;
+				break;
+			}
+		}
+
+		if (empty($mode))
 			throw new CodingError("\$DB -> execute(): cannot detect sql execute mode");
 
 		$from = max($from, 0);
@@ -214,9 +215,17 @@ class SQLite3 extends DB {
 			$sql .= " LIMIT $limit OFFSET $from";
 		}
 
-		$stmt = $this -> instance -> prepare($sql);
+		try {
+			$stmt = $this -> instance -> prepare($sql);
+		} catch (\Throwable $e) {
+			if ($this -> instance -> lastErrorCode() === 1) {
+				// Table not found error.
+				$list = explode(" ", $e -> getMessage());
+				$table = $list[count($list) - 1];
 
-		if ($stmt === false) {
+				throw new TableNotFound($table, $sql);
+			}
+
 			throw new SQLError(
 				$this -> instance -> lastErrorCode(),
 				$this -> instance -> lastErrorMsg(),
@@ -224,15 +233,16 @@ class SQLite3 extends DB {
 			);
 		}
 
-		foreach ($params as $key => $value) {
-			$type = $this -> getType(gettype($value));
-			$stmt -> bindValue($key, $value, $type);
+		if (!empty($params)) {
+			foreach ($params as $key => $value) {
+				$type = $this -> getType(gettype($value));
+				$stmt -> bindValue($key + 1, $value, $type);
+			}
 		}
 
-		$res = $stmt -> execute();
-
-		// Check for error
-		if ($res === false) {
+		try {
+			$res = $stmt -> execute();
+		} catch (\Throwable $e) {
 			throw new SQLError(
 				$this -> instance -> lastErrorCode(),
 				$this -> instance -> lastErrorMsg(),
@@ -240,7 +250,7 @@ class SQLite3 extends DB {
 			);
 		}
 
-		if (!is_bool($res)) {
+		if ($mode === SQL_SELECT) {
 			$rows = Array();
 
 			while ($row = $res -> fetchArray(SQLITE3_ASSOC)) {
@@ -281,6 +291,7 @@ class SQLite3 extends DB {
 			case SQL_UPDATE:
 			case SQL_DELETE:
 			case SQL_TRUNCATE:
+			case SQL_CREATE:
 				return $affected;
 			
 			default:

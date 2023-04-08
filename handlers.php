@@ -71,7 +71,7 @@ function updateAutoloadData() {
 			if (!empty($AUTOLOAD_MAP[$hash]))
 				continue;
 
-			$content = file_get_contents(($path[0] === "/" && !str_starts_with($path, BASE_PATH))
+			$content = fileGet(($path[0] === "/" && !str_starts_with($path, BASE_PATH))
 				? BASE_PATH . $path
 				: $path);
 			
@@ -115,7 +115,7 @@ function getAutoloadData() {
 	if (!file_exists($path))
 		return;
 
-	$AUTOLOAD_DATA = unserialize(file_get_contents($path));
+	$AUTOLOAD_DATA = unserialize(fileGet($path));
 
 	foreach ($AUTOLOAD_DATA as $class => $value)
 		$AUTOLOAD_MAP[$value["hash"]] = $class;
@@ -123,7 +123,7 @@ function getAutoloadData() {
 
 function saveAutoloadData() {
 	global $AUTOLOAD_DATA;
-	file_put_contents(DATA_ROOT . "/autoload.data", serialize($AUTOLOAD_DATA));
+	filePut(DATA_ROOT . "/autoload.data", serialize($AUTOLOAD_DATA));
 }
 
 function middleware(String $class) {
@@ -148,10 +148,10 @@ function middleware(String $class) {
 	} else {
 		if (!file_exists($default)) {
 			// Create new default file for this class.
-			$content = file_get_contents(CORE_ROOT . "/defaults/middleware/.template");
+			$content = fileGet(CORE_ROOT . "/defaults/middleware/.template");
 			$content = str_replace("{{NAME}}", $name, $content);
 			$content = "<?php\n{$content}";
-			file_put_contents($default, $content);
+			filePut($default, $content);
 		}
 
 		require_once $default;

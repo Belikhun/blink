@@ -13,6 +13,8 @@
  * See LICENSE in the project root for license information.
  */
 
+namespace Blink;
+use Blink\DB\Exception\TableNotFound;
 use Blink\Exception\BaseException;
 use Blink\Exception\FileInstanceNotFound;
 
@@ -25,7 +27,7 @@ class File {
 	public String $extension;
 	public String $mimetype;
 	public int $size;
-	public \User $author;
+	public ?\User $author;
 	public int $created;
 
 	public function __construct(
@@ -35,7 +37,7 @@ class File {
 		String $extension = null,
 		String $mimetype = null,
 		int $size = null,
-		\User $author = null,
+		?\User $author = null,
 		int $created = 0
 	) {
 		$this -> id = $id;
@@ -61,15 +63,32 @@ class File {
 			"extension" => $this -> extension,
 			"mimetype" => $this -> mimetype,
 			"size" => $this -> size,
-			"author" => $this -> author -> id,
+			"author" => $this -> author ?-> id,
 			"created" => $this -> created
 		);
 
-		if ($this -> isValidID()) {
-			$record["id"] = $this -> id;
-			$DB -> update("files", $record);
+		if (\CONFIG::$FILE_STORE === FILE_STORE_FS) {
+			$path = $this -> getStorePath() . ".info";
+
+			if (!$this -> isValidID()) {
+				// Just add a random ID to make it valid.
+				$this -> id = $record["id"] = randBetween(10000, 99999);
+			}
+
+			filePut($path, json_encode($record));
 		} else {
-			$this -> id = $DB -> insert("files", $record);
+			if ($this -> isValidID()) {
+				$record["id"] = $this -> id;
+				$DB -> update("files", $record);
+			} else {
+				try {
+					$this -> id = $DB -> insert("files", $record);
+				} catch (TableNotFound $e) {
+					// Try to init the table and try again.
+					static::initDB();
+					$this -> id = $DB -> insert("files", $record);
+				}
+			}
 		}
 	}
 	
@@ -154,10 +173,37 @@ class File {
 		exit();
 	}
 
-
-	public static function getByHash(String $hash) {
+	protected static function initDB() {
 		global $DB;
-		$record = $DB -> record("files", Array("hash" => $hash));
+		$DB -> execute(fileGet(CORE_ROOT . "/db/tables/files.sql"));
+	}
+
+	/**
+	 * Get file by hash.
+	 * @param	string	$hash
+	 * @return	File
+	 * @throws	FileInstanceNotFound
+	 */
+	public static function getByHash(String $hash): File {
+		global $DB;
+
+		if (\CONFIG::$FILE_STORE === FILE_STORE_FS) {
+			$path = self::$ROOT . "/{$hash}.info";
+			$content = fileGet($path);
+
+			if (empty($content))
+				throw new FileInstanceNotFound($hash);
+
+			return self::processRecord(json_decode($content));
+		}
+
+		try {
+			$record = $DB -> record("files", Array( "hash" => $hash ));
+		} catch (TableNotFound $e) {
+			// Try to init the table and try again.
+			static::initDB();
+			$record = $DB -> record("files", Array( "hash" => $hash ));
+		}
 
 		if (empty($record))
 			throw new FileInstanceNotFound($hash);
@@ -165,9 +211,26 @@ class File {
 		return self::processRecord($record);
 	}
 
-	public static function getByID(int $id) {
+	/**
+	 * Get file by ID. It's not recommend to use this function.
+	 * This function will not be available when file store is {@link FILE_STORE_FS}
+	 * @param	int		$id
+	 * @return	File
+	 * @throws	FileInstanceNotFound
+	 */
+	public static function getByID(int $id): File {
 		global $DB;
-		$record = $DB -> record("files", Array("id" => $id));
+
+		if (\CONFIG::$FILE_STORE !== FILE_STORE_DB)
+			throw new BaseException(DB_NOT_INITIALIZED, "File -> getByID() is not available in FS mode.", 500);
+
+		try {
+			$record = $DB -> record("files", Array( "id" => $id ));
+		} catch (TableNotFound $e) {
+			// Try to init the table and try again.
+			static::initDB();
+			$record = $DB -> record("files", Array( "id" => $id ));
+		}
 
 		if (empty($record))
 			throw new FileInstanceNotFound($id);
@@ -176,54 +239,10 @@ class File {
 	}
 
 	/**
-	 * Process uploaded file then save it into FS and DB.
-	 * @param	array	$file	File object from `$_FILES`
-	 * @return	\File
-	 */
-	public static function processFile($file) {
-		global $DB;
-		
-		switch ($file["error"]) {
-			case UPLOAD_ERR_OK:
-				break;
-			case UPLOAD_ERR_NO_FILE:
-				throw new BaseException(41, "No file sent!", 400);
-			case UPLOAD_ERR_INI_SIZE:
-			case UPLOAD_ERR_FORM_SIZE:
-				throw new BaseException(42, "File limit exceeded!", 400);
-			default:
-				throw new BaseException(-1, "Unknown error while handing file upload!", 500);
-		}
-
-		$hash = hash_file("md5", $file["tmp_name"]);
-
-		// Check if file is already exist. If so
-		// we don"t need to create new record for it.
-		$record = $DB -> record("files", Array("hash" => $hash));
-		if (!empty($record))
-			return self::processRecord($record);
-
-		$instance = new self(
-			null,
-			$hash,
-			$file["name"],
-			pathinfo($file["name"],PATHINFO_EXTENSION),
-			mime_content_type($file["tmp_name"]),
-			$file["size"],
-			\Session::$user,
-			time()
-		);
-
-		$instance -> save();
-		move_uploaded_file($file["tmp_name"], self::$ROOT . "/{$hash}");
-		return $instance;
-	}
-
-	/**
 	 * Process a file record from the DB
 	 *
 	 * @param	object	$record
-	 * @return	\File
+	 * @return	File
 	 */
 	public static function processRecord($record) {
 		return new self(
@@ -233,7 +252,9 @@ class File {
 			$record -> extension,
 			$record -> mimetype,
 			$record -> size,
-			\User::getByID($record -> author),
+			!empty($record -> author)
+				? \User::getByID($record -> author)
+				: null,
 			$record -> created
 		);
 	}
@@ -254,4 +275,4 @@ class File {
 	}
 }
 
-\File::$ROOT = &CONFIG::$FILES_ROOT;
+File::$ROOT = &\CONFIG::$FILES_ROOT;

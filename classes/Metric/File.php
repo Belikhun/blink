@@ -1,14 +1,24 @@
 <?php
+/**
+ * File.php
+ * 
+ * File Metric
+ * 
+ * @author    Belikhun
+ * @since     2.0.0
+ * @license   https://tldrlegal.com/license/mit-license MIT
+ * 
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * See LICENSE in the project root for license information.
+ */
 
-namespace Metric;
+namespace Blink\Metric;
 
-class File {
+class File extends Instance {
 	public String $mode;
 	public String $type;
 	public String $file;
 	public int $size;
-	public float $time;
-	private float $start;
 
 	public function __construct(String $mode, String $type, String $file) {
 		// Cache file is treated differently.
@@ -23,7 +33,7 @@ class File {
 		$this -> time = -1;
 		$this -> size = -1;
 		$this -> start = microtime(true);
-		\Metric::$files[] = $this;
+		\Blink\Metric::$files[] = $this;
 	}
 
 	public function time(int $size) {
@@ -31,12 +41,8 @@ class File {
 		$this -> time = microtime(true);
 	}
 
-	public function getTime() {
-		return $this -> time - $this -> start;
-	}
-
 	public function __toString() {
-		return sprintf("%01.2fs %4s %10s %8s %s",
+		return sprintf("%01.2fs %3s %10s %12s %s",
 			$this -> getTime(),
 			$this -> mode,
 			$this -> type,

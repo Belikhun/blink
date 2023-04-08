@@ -61,6 +61,8 @@ class CoreConfig {
 		CORE_ROOT . "/middleware"
 	);
 
+	public static String	$FILE_STORE = FILE_STORE_FS;
+
 	public static bool		$PRODUCTION = false;
 
 	public static Array		$IMAGE_ALLOW = Array("png", "jpg", "webp", "gif", "tif", "jpeg", "bmp");

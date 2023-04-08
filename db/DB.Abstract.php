@@ -128,6 +128,14 @@ abstract class DB {
 		return Array(implode(" AND ", $where), $params);
 	}
 
+	public static function cleanSQL(String $query) {
+		// Remove SQL comments from the string
+		$clean = preg_replace("/\/\*.*?\*\//s", "", $query);
+		$clean = trim($clean);
+
+		return $clean;
+	}
+
 	/**
 	 * Get a number of records as an array of objects where
 	 * all the given conditions met.
@@ -161,7 +169,7 @@ abstract class DB {
 			$sort = "ORDER BY $sort";
 
 		// Record Metric
-		$metric = new \Metric\Query("SELECT", $table);
+		$metric = new \Blink\Metric\Query("SELECT", $table);
 
 		$sql = "SELECT $fields FROM `$table` $select $sort";
 		$results = $this -> execute($sql, $params, $from, $limit);
@@ -233,7 +241,7 @@ abstract class DB {
 		$sql = "INSERT INTO `$table` ($fields) VALUES ($questions)";
 
 		// Record Metric
-		$metric = new \Metric\Query("INSERT", $table);
+		$metric = new \Blink\Metric\Query("INSERT", $table);
 
 		$results = $this -> execute($sql, $values);
 		$metric -> time(1);
@@ -278,7 +286,7 @@ abstract class DB {
 		$sql = "UPDATE $table SET $sets WHERE id = ?";
 
 		// Record Metric
-		$metric = new \Metric\Query("INSERT", $table);
+		$metric = new \Blink\Metric\Query("INSERT", $table);
 		
 		$affected = $this -> execute($sql, $values);
 		$metric -> time($affected);
@@ -340,7 +348,7 @@ abstract class DB {
 	public function delete(String $table, Array $conditions = Array()) {
 		if (empty($conditions)) {
 			// Record Metric
-			$metric = new \Metric\Query("TRUNCATE", $table);
+			$metric = new \Blink\Metric\Query("TRUNCATE", $table);
 			
 			$affected = $this -> execute("TRUNCATE TABLE {" . $table . "}");
 			$metric -> time($affected);
@@ -355,7 +363,7 @@ abstract class DB {
 		$sql = "DELETE FROM `$table` $select";
 
 		// Record Metric
-		$metric = new \Metric\Query("TRUNCATE", $table);
+		$metric = new \Blink\Metric\Query("TRUNCATE", $table);
 
 		$affected = $this -> execute($sql, $params);
 		$metric -> time($affected);

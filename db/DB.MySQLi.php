@@ -66,20 +66,18 @@ class MySQLi extends DB {
 		int $from = 0,
 		int $limit = 0
 	): Object|Array|int {
-		$sql = trim($sql);
+		$sql = static::cleanSQL($sql);
 
 		// Detect current mode
-		if (str_starts_with($sql, SQL_SELECT))
-			$mode = SQL_SELECT;
-		else if (str_starts_with($sql, SQL_INSERT))
-			$mode = SQL_INSERT;
-		else if (str_starts_with($sql, SQL_UPDATE))
-			$mode = SQL_UPDATE;
-		else if (str_starts_with($sql, SQL_DELETE))
-			$mode = SQL_DELETE;
-		else if (str_starts_with($sql, SQL_TRUNCATE))
-			$mode = SQL_TRUNCATE;
-		else
+		$mode = null;
+		foreach ([ SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_TRUNCATE, SQL_CREATE ] as $m) {
+			if (str_starts_with($sql, $m)) {
+				$mode = $m;
+				break;
+			}
+		}
+
+		if (empty($mode))
 			throw new CodingError("\$DB -> execute(): cannot detect sql execute mode");
 
 		$from = max($from, 0);
@@ -104,7 +102,7 @@ class MySQLi extends DB {
 
 		try {
 			$stmt = $this -> mysqli -> prepare($sql);
-		} catch(\mysqli_sql_exception $e) {
+		} catch (\mysqli_sql_exception $e) {
 			throw new SQLError(
 				$e -> getCode(),
 				$e -> getMessage(),

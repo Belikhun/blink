@@ -1,13 +1,23 @@
 <?php
+/**
+ * Query.php
+ * 
+ * Query Metric
+ * 
+ * @author    Belikhun
+ * @since     2.0.0
+ * @license   https://tldrlegal.com/license/mit-license MIT
+ * 
+ * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * See LICENSE in the project root for license information.
+ */
 
-namespace Metric;
+namespace Blink\Metric;
 
-class Query {
+class Query extends Instance {
 	public String $mode;
 	public String $table;
 	public int $rows;
-	public float $time;
-	private float $start;
 
 	public function __construct(String $mode, String $table) {
 		$this -> mode = $mode;
@@ -15,16 +25,12 @@ class Query {
 		$this -> time = -1;
 		$this -> rows = -1;
 		$this -> start = microtime(true);
-		\Metric::$queries[] = $this;
+		\Blink\Metric::$queries[] = $this;
 	}
 
 	public function time(int $rows) {
 		$this -> rows = $rows;
 		$this -> time = microtime(true);
-	}
-
-	public function getTime() {
-		return $this -> time - $this -> start;
 	}
 
 	public function __toString() {

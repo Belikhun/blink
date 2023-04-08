@@ -61,9 +61,9 @@ class StopClock {
 function safeJSONParsing(String $json, String $path = "", bool $assoc = false) {
 	// Temporary disable `NOTICE` error reporting
 	// to try unserialize data without triggering `E_NOTICE`
-	error_reporting(E_ERROR);
+	set_error_handler(null, 0);
 	$json = json_decode($json, $assoc);
-	error_reporting(E_ALL);
+	restore_error_handler();
 
 	if ($json === null)
 		throw new JSONDecodeError($path, json_last_error_msg(), Array(
@@ -332,7 +332,7 @@ function getParam(string $name, $type = TYPE_TEXT, $default = null) {
  * @param	mixed		$default
  * @throws	MissingParam
  */
-function requiredParam(string $name, $type = TYPE_TEXT) {
+function requiredParam(String $name, $type = TYPE_TEXT) {
 	$param = getParam($name, $type);
 
 	if ($param === null)
@@ -349,7 +349,7 @@ function requiredParam(string $name, $type = TYPE_TEXT) {
  * @param	string		$type
  * @param	mixed		$default
  */
-function getHeader(string $name, $type = TYPE_TEXT, $default = null) {
+function getHeader(String $name, $type = TYPE_TEXT, $default = null) {
 	$param = null;
 
 	foreach (getallheaders() as $key => $value) {
@@ -495,7 +495,18 @@ function getClientIP() {
 function stringify($subject) {
 	$output = "";
 
-	if (is_array($subject)) {
+	if (is_callable($subject)) {
+		if (is_array($subject)) {
+			$class = new \ReflectionClass($subject[0]);
+			$info = $class -> getMethod($subject[1]);
+			$output = $class -> getName() . ($info -> isStatic() ? "::" : " -> ") . $info -> getName();
+		} else {
+			$info = new \ReflectionFunction($subject);
+			$output = $info -> getName();
+		}
+
+		$output .= " (" . getRelativePath($info -> getFileName()) . ":" . $info -> getStartLine() . ")";
+	} else if (is_array($subject)) {
 		$output = "[]";
 
 		if (!empty($subject)) {
@@ -661,7 +672,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 		return;
 	}
 
-	$content = htmlspecialchars(file_get_contents($file));
+	$content = htmlspecialchars(fileGet($file));
 	$lines = explode("\n", $content);
 
 	$from = $line - floor($count / 2);
@@ -751,15 +762,22 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
  * @return	string|null				File content or default value if failed.
  */
 function fileGet(String $path, $default = null): String|null {
-	$metric = new \Metric\File("r", "text", $path);
+	$metric = null;
+
+	if (!file_exists($path))
+		return $default;
+
+	if (class_exists('\Blink\Metric\File'))
+		$metric = new \Blink\Metric\File("r", "text", $path);
+	
 	$content = file_get_contents($path);
 
 	if ($content === false) {
-		$metric -> time(-1);
+		$metric ?-> time(-1);
 		return $default;
 	}
 
-	$metric -> time(!empty($content) ? mb_strlen($content, "utf-8") : -1);
+	$metric ?-> time(!empty($content) ? mb_strlen($content, "utf-8") : -1);
 	return $content;
 }
 
@@ -771,9 +789,13 @@ function fileGet(String $path, $default = null): String|null {
  * @return	int|null				Bytes written or null if write failed.
  */
 function filePut(String $path, $content): int|null {
-	$metric = new \Metric\File("w", "text", $path);
+	$metric = null;
+
+	if (class_exists('\Blink\Metric\File'))
+		$metric = new \Blink\Metric\File("w", "text", $path);
+	
 	$bytes = file_put_contents($path, $content);
-	$metric -> time(($bytes === false) ? -1 : $bytes);
+	$metric ?-> time(($bytes === false) ? -1 : $bytes);
 	return ($bytes === false) ? null : $bytes;
 }
 
@@ -855,8 +877,8 @@ class FileIO {
 			}
 		}
 
-		if (class_exists("\Metric\File"))
-			$metric = new \Metric\File("r", $type, $this -> path);
+		if (class_exists("\Blink\Metric\File"))
+			$metric = new \Blink\Metric\File("r", $type, $this -> path);
 
 		$this -> fos($this -> path, "r");
 
@@ -881,9 +903,9 @@ class FileIO {
 				// Temporary disable `NOTICE` error reporting
 				// to try unserialize data without triggering `E_NOTICE`
 				try {
-					error_reporting(0);
+					set_error_handler(null, 0);
 					$data = (!empty($data)) ? unserialize($data) : false;
-					error_reporting(E_ALL);
+					restore_error_handler();
 				} catch (Throwable $e) {
 					// pass
 				}
@@ -924,8 +946,8 @@ class FileIO {
 			}
 		}
 
-		if (class_exists("\Metric\File"))
-			$metric = new \Metric\File($mode, $type, $this -> path);
+		if (class_exists("\Blink\Metric\File"))
+			$metric = new \Blink\Metric\File($mode, $type, $this -> path);
 		
 		$this -> fos($this -> path, $mode);
 
@@ -1096,7 +1118,7 @@ function processBacktrace($data, bool $forward = true) {
 		$file = getRelativePath($exception -> getFile());
 		$line = $exception -> getLine();
 
-		if ($file && $line && ($frames[0] -> file !== $file || $frames[0] -> line !== $line)) {
+		if ($file && $line && (empty($frames) || ($frames[0] -> file !== $file || $frames[0] -> line !== $line))) {
 			// Add missing top frame.
 			$trace = new BacktraceFrame("[unknown]");
 			$trace -> file = $file;
@@ -1117,9 +1139,9 @@ function processBacktrace($data, bool $forward = true) {
 			if (($merge -> file === $check -> file && $merge -> line === $check -> line)
 				|| $merge -> function === $check -> function
 			) {
-				$frames[$mcount] -> file = $merge -> file || $check -> file;
-				$frames[$mcount] -> line = $merge -> line || $check -> line;
-				$frames[$mcount] -> function = $merge -> function || $check -> function;
+				$frames[$mcount] -> file = $merge -> file ?: $check -> file;
+				$frames[$mcount] -> line = $merge -> line ?: $check -> line;
+				$frames[$mcount] -> function = $merge -> function ?: $check -> function;
 				break;
 			}
 	

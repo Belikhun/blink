@@ -4,6 +4,8 @@ namespace Router;
 
 use Blink\Exception\BaseException;
 use Blink\Exception\RouteArgumentMismatch;
+use Blink\Exception\RouteCallbackInvalidParam;
+use Blink\Request;
 
 /**
  * Route.php
@@ -33,7 +35,7 @@ class Route {
 
 	/**
 	 * Callback action for this route if matched
-	 * @var	string|array|callable
+	 * @var	array|string|callable
 	 */
 	public $action;
 
@@ -69,12 +71,47 @@ class Route {
 	 * @param	string[]	$args
 	 * @return	mixed
 	 */
-	public function callback(Array $args) {
+	public function callback(String $path, String $method, Array $args) {
 		$this -> args = $args;
+		$request = new Request($this, $method, $path, $args, $_GET, $_POST, $_FILES);
 
 		if (is_callable($this -> action)) {
+			if (is_array($this -> action)) {
+				$class = new \ReflectionClass($this -> action[0]);
+				$info = $class -> getMethod($this -> action[1]);
+			} else {
+				$info = new \ReflectionFunction($this -> action);
+			}
+
+			$params = $info -> getParameters();
+			$callArgs = Array();
+
+			foreach ($params as $param) {
+				$type = $param -> getType();
+				$name = $param -> getName();
+
+				if ($type && $type instanceof \ReflectionNamedType) {
+					if ($type -> getName() === Request::class) {
+						$callArgs[] = $request;
+						continue;
+					}
+				}
+
+				if ($param -> isVariadic()) {
+					// Merge left over args and end processing.
+					$callArgs = array_merge($callArgs, $args);
+					break;
+				}
+
+				if (!isset($args[$name]))
+					throw new RouteCallbackInvalidParam($this -> uri, $name);
+
+				$callArgs[] = $args[$name];
+				unset($args[$name]);
+			}
+
 			try {
-				return call_user_func_array($this -> action, $args);
+				return call_user_func_array($this -> action, $callArgs);
 			} catch (\TypeError $e) {
 				$message = $e -> getMessage();
 				$traces = $e -> getTrace();
