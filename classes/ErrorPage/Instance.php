@@ -184,11 +184,17 @@ class Instance {
 
 		switch ($this -> type()) {
 			case static::ERROR_SERVER:
-				$sticker = "/core/public/stickers/sticker-50x.webm";
+				$sticker = match ($this -> status) {
+					503 => "/core/public/stickers/sticker-503.webm",
+					default => "/core/public/stickers/sticker-50x.webm"
+				};
 				break;
 
 			case static::ERROR_CLIENT:
-				$sticker = "/core/public/stickers/sticker-40x.webm";
+				$sticker = match ($this -> status) {
+					404 => "/core/public/stickers/sticker-404.webm",
+					default => "/core/public/stickers/sticker-40x.webm"
+				};
 				break;
 		}
 

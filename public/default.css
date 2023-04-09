@@ -68,7 +68,7 @@
 	justify-content: flex-end;
 	flex-shrink: 0;
 	
-	min-width: 40px;
+	min-width: 2.5rem;
 	height: var(--line-height);
 	padding: 0 8px;
 	box-sizing: border-box;
@@ -199,6 +199,10 @@
 
 .justify-between {
 	justify-content: space-between;
+}
+
+.justify-end {
+	justify-content: flex-end;
 }
 
 .wider {

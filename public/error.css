@@ -12,7 +12,7 @@
  */
 
 html {
-	font-size: max(13px, min(1.3vw, 16px));
+	font-size: 15px;
 }
 
 body {
@@ -34,8 +34,20 @@ body {
 	color: var(--text-primary);
 	font-feature-settings: "calt" 0;
 	background-color: var(--background-color);
-	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg width='30' height='30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.227 0c.687 0 1.227.54 1.227 1.227s-.54 1.227-1.227 1.227S0 1.914 0 1.227.54 0 1.227 0z' fill='rgba(0,0,0,0.07)'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cg id='Group_1' data-name='Group 1' transform='translate(-126 -102)'%3E%3Crect id='Rectangle_1' data-name='Rectangle 1' width='30' height='30' transform='translate(126 102)' fill='none'/%3E%3Cg id='Rectangle_2' data-name='Rectangle 2' transform='translate(141 114.172) rotate(45)' fill='none' stroke='rgba(0,0,0,0.07)' stroke-width='1'%3E%3Crect width='4' height='4' stroke='none'/%3E%3Crect x='0.5' y='0.5' width='3' height='3' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
+	background-position: 0px 0px;
+	animation: page-background 10s linear 0s infinite forwards;
 	-webkit-font-smoothing: antialiased;
+}
+
+@keyframes page-background {
+	0% {
+		background-position: 0px 0px;
+	}
+
+	100% {
+		background-position: 30px 30px;
+	}
 }
 
 header {
@@ -192,13 +204,13 @@ header > .bottom > .inner {
 #details > div > video {
 	width: auto;
 	height: 96px;
-	margin: 32px 0 32px 40px;
+	margin: 2rem 0 2rem 2.5rem;
 	aspect-ratio: 1 / 1;
 	border-radius: 8px;
 }
 
 #details > div > .block {
-	padding: 32px 40px;
+	padding: 2rem 2.5rem;
 }
 
 #details > .info > .exception > .top > .badges > .badge {
@@ -319,7 +331,7 @@ header > .bottom > .inner {
 
 #details > .tips > .tip > .title {
 	font-weight: 700;
-	margin-bottom: 20px;
+	margin-bottom: 1rem;
 }
 
 #stacktrace > .panel {
@@ -343,7 +355,7 @@ header > .bottom > .inner {
 	flex-shrink: 0;
 
 	height: 64px;
-	padding: 16px 40px;
+	padding: 16px 2.5rem;
 	box-sizing: border-box;
 	border-bottom: 1px solid var(--border-color);
 }
@@ -368,7 +380,7 @@ header > .bottom > .inner {
 }
 
 #stacktrace > .panel > .left > .frames > .frame {
-	padding: 16px 40px;
+	padding: 16px 2.5rem;
 	border-bottom: 1px solid var(--border-color);
 }
 
@@ -438,7 +450,7 @@ header > .bottom > .inner {
 	flex-shrink: 0;
 
 	height: 64px;
-	padding: 0 40px;
+	padding: 0 2.5rem;
 	box-sizing: border-box;
 }
 
@@ -644,9 +656,13 @@ header > .bottom > .inner {
 	color: inherit;
 }
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 1200px) {
+	html {
+		font-size: 14px;
+	}
+
 	:root {
-		--max-width: 700px;
+		--max-width: 1000px;
 	}
 
 	#details {
@@ -655,6 +671,12 @@ header > .bottom > .inner {
 
 	#details > .tips {
 		width: 100%;
+	}
+}
+
+@media screen and (max-width: 900px) {
+	:root {
+		--max-width: 700px;
 	}
 
 	#stacktrace > .panel {
