@@ -242,7 +242,7 @@ class Router {
 			ob_end_clean();
 
 		if ($response instanceof Response) {
-			$response -> serve();
+			echo $response -> serve();
 			return;
 		}
 

@@ -1224,10 +1224,9 @@ function stop(
 		case "NORMAL":
 			if (!headers_sent()) {
 				$response -> header("Output", "[{$response -> code}] {$response -> description}");
-				// $response -> header("Output-Json", $response -> serve(false));
+				$response -> serve(false);
 			}
 
-			$response -> serve(false);
 
 			if ($status >= 300 || $code !== 0)
 				renderErrorPage($instance, headers_sent());
@@ -1263,13 +1262,13 @@ function printException(Throwable $e) {
 function renderErrorPage(\Blink\ErrorPage\Instance $data, bool $redirect = false) {
 	$_SESSION["LAST_ERROR"] = $data;
 	$_SERVER["REDIRECT_STATUS"] = $data -> status;
-	header("Content-Type: text/html; charset=utf-8");
 
 	if (file_exists(BASE_PATH . "/error.php") && !defined("CUSTOM_ERROR_HANDING")) {
 		if ($redirect && !defined("ERROR_NO_REDIRECT"))
 			redirect("/error?redirect=true");
 
 		define("CUSTOM_ERROR_HANDING", true);
+		header("Content-Type: text/html; charset=utf-8");
 
 		try {
 			require BASE_PATH . "/error.php";
@@ -1283,6 +1282,10 @@ function renderErrorPage(\Blink\ErrorPage\Instance $data, bool $redirect = false
 			}
 		}
 	}
+
+	// Fall back to built in error page.
+	if (!headers_sent())
+		header("Content-Type: text/html; charset=utf-8");
 
 	try {
 		require CORE_ROOT . "/error.php";

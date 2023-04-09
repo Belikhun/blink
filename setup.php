@@ -146,6 +146,10 @@ if (!file_exists(DATA_ROOT . "/.htaccess"))
 require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";
 
+// We have registered our handlers, dispose of all garbage output from now.
+// This is to prevent headers from being sent early.
+ob_start();
+
 /**
  * Clock for tracking runtime since request started.
  * @var StopClock

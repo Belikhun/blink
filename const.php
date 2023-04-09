@@ -76,6 +76,7 @@ define("FILE_READ_ERROR", 210);
 define("FILE_WRITE_ERROR", 211);
 define("ROUTE_CALLBACK_INVALID_PARAM", 212);
 define("ROUTE_INVALID_RESPONSE", 213);
+define("HEADER_SENT", 214);
 
 define("ACCESS_DENIED", 300);
 define("LOGGED_IN", 301);

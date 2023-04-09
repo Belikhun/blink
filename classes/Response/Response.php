@@ -13,6 +13,7 @@
  */
 
 namespace Blink;
+use Blink\Exception\HeaderSent;
 
 class Response {
 	/**
@@ -145,11 +146,15 @@ class Response {
 	/**
 	 * Reponse to the request. This will set necessary status/headers/cookies before
 	 * calling {@link process()} to get the response body.
-	 * @param	bool	$out	Print output to stdout directly if `true`.
-	 * @return	string			Return outputted body.
+	 * @return	string	Return outputted body.
 	 */
-	public function serve(bool $out = true): String {
+	public function serve(): ?String {
+		$body = $this -> process();
+		
 		http_response_code($this -> status);
+
+		if (headers_sent($hfile, $hline))
+			throw new HeaderSent($hfile, $hline);
 
 		// Process our cookie bag.
 		foreach ($this -> cookies as $name => $cookie)
@@ -169,11 +174,6 @@ class Response {
 
 			header("{$key}: {$value}", true);
 		}
-
-		$body = $this -> process();
-
-		if ($out)
-			echo $body;
 
 		return $body;
 	}
