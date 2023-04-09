@@ -14,7 +14,7 @@
 
 namespace Blink;
 use Blink\Exception\MissingParam;
-use Router\Route;
+use Blink\Router\Route;
 
 class Request {
 	public Array $args = Array();
@@ -23,6 +23,7 @@ class Request {
 
 	public Array $data = Array();
 	public Array $headers = Array();
+	public Array $cookies = Array();
 
 	/**
 	 * List of uploaded files.
@@ -44,6 +45,7 @@ class Request {
 		Array $params,
 		Array $data,
 		Array $headers,
+		Array $cookies,
 		Array $files
 	) {
 		$this -> route = $route;
@@ -53,6 +55,7 @@ class Request {
 		$this -> params = $params;
 		$this -> data = $data;
 		$this -> headers = $headers;
+		$this -> cookies = $cookies;
 
 		foreach ($files as $key => $file)
 			$this -> files[$key] = new UploadedFile($file);
@@ -80,6 +83,13 @@ class Request {
 	public function header(String $name, $type = TYPE_TEXT, $default = null) {
 		if (isset($this -> headers[$name]))
 			return cleanParam($this -> headers[$name], $type);
+		
+		return $default;
+	}
+
+	public function cookie(String $name, $default = null) {
+		if (isset($this -> cookies[$name]))
+			return $this -> cookies[$name];
 		
 		return $default;
 	}

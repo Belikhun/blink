@@ -20,6 +20,7 @@ use Blink\Exception\JSONDecodeError;
 use Blink\Exception\MissingParam;
 use Blink\Exception\RuntimeError;
 use Blink\Exception\UnserializeError;
+use Blink\Response\APIResponse;
 
 require_once "const.php";
 
@@ -506,6 +507,11 @@ function stringify($subject) {
 		}
 
 		$output .= " (" . getRelativePath($info -> getFileName()) . ":" . $info -> getStartLine() . ")";
+	} else if (is_object($subject)) {
+		$output = get_class($subject);
+
+		if (method_exists($subject, "__toString"))
+			$output .= " \"{$subject}\"";
 	} else if (is_array($subject)) {
 		$output = "[]";
 
@@ -520,6 +526,8 @@ function stringify($subject) {
 		}
 	} else if (is_bool($subject)) {
 		$output = $subject ? "true" : "false";
+	} else if (is_numeric($subject)) {
+		$output = (String) $subject;
 	} else if ($subject === null) {
 		$output = "[NULL]";
 	} else {
@@ -709,7 +717,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	$content = preg_replace($re, '$1<span class="sc-function">$2</span>', $content);
 		
 	// Class name regex
-	$re = '/(^| |\()([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\{\:\- ]|$)/m';
+	$re = '/(^| |\()([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
 	$content = preg_replace($re, '$1<span class="sc-class">$2</span>$3', $content);
 
 	// String
@@ -1202,72 +1210,12 @@ function stop(
 	array|object $data = Array(),
 	$hashData = false
 ) {
-	global $runtime, $ERROR_STACK;
-
-	$hash = null;
-	$exceptionData = null;
-	$caller = "hidden";
-	$exception = null;
-
-	if ($data instanceof Throwable) {
-		$exception = $data;
-		$stacktrace = null;
-		$additionalData = null;
-
-		$ERROR_STACK[] = $exception;
-		$file = getRelativePath($exception -> getFile());
-
-		if (class_exists("CONFIG") && !CONFIG::$PRODUCTION) {
-			$stacktrace = processBacktrace($exception);
-			$caller = $stacktrace[0] -> getCallString();
-		}
-
-		if ($exception instanceof BaseException)
-			$additionalData = $exception -> data;
-
-		$exceptionData = Array(
-			"class" => get_class($exception),
-			"file" => $file,
-			"line" => $exception -> getLine(),
-			"data" => $additionalData,
-			"stacktrace" => $stacktrace
-		);
-
-		$data = ($data instanceof BaseException)
-			? $data -> data
-			: null;
-	}
-
-	if (is_bool($hashData)) {
-		if ($hashData && (is_array($data) || $data instanceof stdClass))
-			$hash = md5(serialize($data));
-	} else {
-		$hash = md5(serialize($hashData));
-	}
-
-	// Remove absolute path
-	$description = str_replace(BASE_PATH, "", $description);
-
-	$output = Array(
-		"code" => $code,
-		"status" => $status,
-		"description" => $description,
-		"caller" => "{$caller}()",
-		"user" => class_exists("Session", true)
-			? \Session::$username
-			: null,
-		"data" => $data,
-		"hash" => $hash,
-		"runtime" => $runtime -> stop(),
-		"exception" => $exceptionData
-	);
-
-	// Set the HTTP status code
-	http_response_code($status);
+	$response = new APIResponse($code, $description, $data, $hashData);
+	$response -> status($status);
 
 	// Create a new error page instance!
-	$instance = \Blink\ErrorPage\Instance::create($output);
-	$output["report"] = $instance -> url();
+	$instance = \Blink\ErrorPage\Instance::create($response -> output());
+	$response -> set("report", $instance -> url());
 
 	if (!defined("PAGE_TYPE"))
 		define("PAGE_TYPE", "NORMAL");
@@ -1275,9 +1223,11 @@ function stop(
 	switch (strtoupper(PAGE_TYPE)) {
 		case "NORMAL":
 			if (!headers_sent()) {
-				header("Output: [$code] $description");
-				header("Output-Json: ". json_encode($output));
+				$response -> header("Output", "[{$response -> code}] {$response -> description}");
+				// $response -> header("Output-Json", $response -> serve(false));
 			}
+
+			$response -> serve(false);
 
 			if ($status >= 300 || $code !== 0)
 				renderErrorPage($instance, headers_sent());
@@ -1285,20 +1235,12 @@ function stop(
 			break;
 		
 		case "API":
-			if (!headers_sent()) {
-				header("Content-Type: application/json", true);
-
-				if (!header_set("Access-Control-Allow-Origin"))
-					header("Access-Control-Allow-Origin: *", true);
-			}
-				
-			print(json_encode($output, JSON_PRETTY_PRINT));
-			
+			$response -> header("Access-Control-Allow-Origin", "*");
+			$response -> serve();
 			break;
 
 		default:
-			print "<h1>Error $status</h1><p>$description</p>";
-
+			print "<h1>Code $status</h1><p>$description</p>";
 			break;
 	}
 

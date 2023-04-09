@@ -1,0 +1,57 @@
+{
+    "python.linting.enabled": true,
+    "discord.enabled": true,
+    "psi-header.templates": [
+        {
+            "language": "*",
+            "template": [
+                "<<filename>>",
+                "",
+                "File Description",
+                "",
+                "@author    <<author>>",
+                "@since     <<version>>",
+                "@license   https://tldrlegal.com/license/mit-license MIT",
+                "",
+                "Copyright (C) 2018-<<dateformat('YYYY')>> Belikhun. All right reserved",
+                "See LICENSE in the project root for license information."
+            ]
+        }
+    ],
+    "psi-header.license-reference": {
+        "uri": "LICENSE"
+    },
+    "psi-header.variables": [
+        ["version", "2.0.0"]
+    ],
+    "psi-header.lang-config": [
+        {
+            "language": "php",
+            "begin": "/**",
+            "prefix": " * ",
+            "end": " */"
+        },
+
+        {
+            "language": "css",
+            "begin": "/**",
+            "prefix": " * ",
+            "end": " */"
+        },
+
+        {
+            "language": "js",
+            "begin": "/**",
+            "prefix": " * ",
+            "end": " */"
+        }
+    ],
+    "php.format.codeStyle": "K&R",
+    "php.problems.scope": "user",
+    "php.completion.setterSnippet": "return {PROPERTY};",
+    "php.inlayHints.types.return": true,
+    "php.version": "8.1",
+	"files.associations": {
+		"*.blade.php": "blade"
+	}
+}

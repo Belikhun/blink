@@ -15,11 +15,12 @@
 
 namespace Blink\Exception;
 use Blink\Exception\BaseException;
+use Blink\Router\Route;
 
 class RouteArgumentMismatch extends BaseException {
 	/**
      * The Route object associated with the exception.
-     * @var \Router\Route
+     * @var Route
      */
     public $route;
 
@@ -29,7 +30,7 @@ class RouteArgumentMismatch extends BaseException {
      */
     public $message;
 
-	public function __construct(\Router\Route $route, $message) {
+	public function __construct(Route $route, $message) {
 		$this -> route = $route;
 		$this -> message = $message;
 		parent::__construct(DATA_TYPE_MISMATCH, $message, 400, (Array) $route);
@@ -63,7 +64,7 @@ class RouteNotFound extends BaseException {
 
 class RouteCallbackInvalidParam extends BaseException {
 	/**
-	 * Route uri
+	 * Route URI
 	 * @var string
 	 */
 	public String $uri;
@@ -83,6 +84,28 @@ class RouteCallbackInvalidParam extends BaseException {
 			"Callback for route \"{$uri}\" is requesting unknown URI parameter: \"{$param}\"",
 			500,
 			Array( "uri" => $uri, "param" => $param )
+		);
+	}
+}
+
+class RouteInvalidResponse extends BaseException {
+	/**
+	 * Route URI
+	 * @var string
+	 */
+	public String $uri;
+
+	public String $got;
+
+	public function __construct(String $uri, String $got) {
+		$this -> uri = $uri;
+		$this -> got = $got;
+
+		parent::__construct(
+			ROUTE_INVALID_RESPONSE,
+			"Callback for route \"{$uri}\" must return either String, Number or Blink\Response, got [{$got}]",
+			500,
+			Array( "uri" => $uri, "got" => $got )
 		);
 	}
 }

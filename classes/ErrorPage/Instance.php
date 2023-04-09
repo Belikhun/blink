@@ -14,6 +14,7 @@
 
 namespace Blink\ErrorPage;
 use Blink\ErrorPage\Exception\ReportNotFound;
+use Blink\Router;
 
 class Instance {
 	const ERROR_CLIENT = "client";
@@ -286,17 +287,17 @@ class Instance {
 			"Arguments" => "[]"
 		);
 
-		if (!empty(\Router::$active)) {
-			$routing["Active"] = (String) \Router::$active;
-			$routing["Callback"] = stringify(\Router::$active -> action);
-			$routing["Arguments"] = stringify(\Router::$active -> args);
+		if (!empty(Router::$active)) {
+			$routing["Active"] = (String) Router::$active;
+			$routing["Callback"] = stringify(Router::$active -> action);
+			$routing["Arguments"] = stringify(Router::$active -> args);
 		}
 
 		$routingContext = new ContextItem("routing", "Routing", $routing, "route");
 		$routingContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($routingContext);
 
-		$routes = array_map(function ($item) { return $item -> __toString(); }, \Router::getRoutes());
+		$routes = array_map(function ($item) { return $item -> __toString(); }, Router::getRoutes());
 		$routesContext = new ContextItem("routes", "Routes", $routes, "road");
 		$routesContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($routesContext);

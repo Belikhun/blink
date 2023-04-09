@@ -17,19 +17,24 @@ use Blink\Response;
 
 class JsonResponse extends Response {
 
-	protected Array $body;
+	protected Array $json = Array();
 
-	public function __construct(Array|Object $body) {
-		$this -> body($body);
+	public function __construct(Array|Object $json = Array()) {
+		$this -> json($json);
 		$this -> header("Content-Type", "application/json; charset=utf-8");
 	}
 
-	public function body(Array|Object $body) {
-		$this -> body = (Array) $body;
+	public function json(Array|Object $json) {
+		$this -> json = (Array) $json;
+		return $this;
+	}
+
+	public function set(String $key, $value) {
+		$this -> json[$key] = $value;
 		return $this;
 	}
 
 	protected function process(): String {
-		return json_encode($this -> body, JSON_PRETTY_PRINT);
+		return json_encode($this -> json, JSON_PRETTY_PRINT);
 	}
 }

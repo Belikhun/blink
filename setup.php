@@ -1,4 +1,5 @@
 <?php
+use Blink\Router;
 /**
  * setup.php
  * 
@@ -33,6 +34,58 @@ define("DATA_ROOT", BASE_PATH . "/data");
  * @var	string
  */
 define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME)));
+
+
+
+//* ===========================================================
+//*  Parse Current Path Information
+//* -----------------------------------------------------------
+//*  Parse current path information to make it available to
+//*  core as soon as possible.
+//* ===========================================================
+
+/**
+ * Current requested path
+ * @var string
+ */
+global $PATH;
+
+/**
+ * Current requested path
+ * @var string
+ */
+$PATH = $_GET["path"];
+unset($_GET["path"]);
+
+// Little hack for nginx server
+if (isset($_GET["params"])) {
+	$PATH .= "?". $_GET["params"];
+	unset($_GET["params"]);
+}
+
+$URL = parse_url($PATH);
+$PATH = $URL["path"];
+
+if (!empty($URL["query"])) {
+	$GET = [];
+	parse_str($URL["query"], $GET);
+	$_GET = array_merge($_GET, $GET);
+}
+
+// Special rules for index page
+if ($PATH === "/index" || $PATH === "/index.php")
+	$PATH = "/";
+
+
+
+//* ===========================================================
+//*  Initialize Config Store and Autoload
+//* -----------------------------------------------------------
+//*  Try to load config defined in application, fallback to
+//*  core default config if none exist.
+//*  
+//*  This also setup class autoload.
+//* ===========================================================
 
 require_once CORE_ROOT . "/const.php";
 require_once CORE_ROOT . "/config.php";
@@ -115,7 +168,14 @@ if (file_exists(BASE_PATH . "/config.store.php")) {
 // Pre-setup DB
 require_once CORE_ROOT . "/db/DB.Abstract.php";
 
-//* ================== Additional Page Setup ==================
+
+
+//* ===========================================================
+//*  Additional Page Setup
+//* -----------------------------------------------------------
+//*  Just initialize current session and run additional setup
+//*  process defined in application.
+//* ===========================================================
 
 // Initialize session
 if (class_exists("Session"))
@@ -127,39 +187,14 @@ Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);
 if (file_exists(BASE_PATH . "/setup.php"))
 	require_once BASE_PATH . "/setup.php";
 
-//* ================== Handle Page Routing ==================
 
-/**
- * Current requested path
- * @var string
- */
-global $PATH;
 
-/**
- * Current requested path
- * @var string
- */
-$PATH = $_GET["path"];
-unset($_GET["path"]);
-
-// Little hack for nginx server
-if (isset($_GET["params"])) {
-	$PATH .= "?". $_GET["params"];
-	unset($_GET["params"]);
-}
-
-$URL = parse_url($PATH);
-$PATH = $URL["path"];
-
-if (!empty($URL["query"])) {
-	$GET = [];
-	parse_str($URL["query"], $GET);
-	$_GET = array_merge($_GET, $GET);
-}
-
-// Special rules for index page
-if ($PATH === "/index" || $PATH === "/index.php")
-	$PATH = "/";
+//* ===========================================================
+//*  Handle Routing
+//* -----------------------------------------------------------
+//*  Include all route definition files and start routing based
+//*  on current request path and method.
+//* ===========================================================
 
 // Include routes definition before start routing.
 $routesPath = CONFIG::$ROUTES_ROOT;

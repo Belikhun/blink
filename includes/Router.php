@@ -13,14 +13,16 @@
  * See LICENSE in the project root for license information.
  */
 
+namespace Blink;
 use Blink\Exception\BaseException;
+use Blink\Exception\RouteInvalidResponse;
 use Blink\Exception\RouteNotFound;
-use Router\Route;
+use Blink\Router\Route;
 
 class Router {
 	/**
 	 * All routes for this router.
-	 * @var	\Router\Route[]
+	 * @var	Router\Route[]
 	 */
 	protected static $routes = Array();
 
@@ -32,7 +34,7 @@ class Router {
 
 	/**
 	 * Currently active route.
-	 * @var	\Router\Route
+	 * @var	Router\Route
 	 */
 	public static $active = null;
 
@@ -93,7 +95,7 @@ class Router {
 	* @param  array|string		$methods
 	* @param  string			$uri
 	* @param  string|callable	$action
-	* @return \Router\Route
+	* @return Router\Route
 	*/
 	public static function match($methods, $uri, $action, $priority = 0) {
 		if (is_string($methods))
@@ -108,6 +110,10 @@ class Router {
 		Router::$routes[] = $route;
 		
 		return $route;
+	}
+
+	public static function getRoutes() {
+		return self::$routes;
 	}
 
 	/**
@@ -137,7 +143,8 @@ class Router {
 
 			$found = true;
 			self::$active = $route;
-			$route -> callback($path, $method, $args);
+			$response = $route -> callback($path, $method, $args);
+			static::handleResponse($route, $response);
 			break;
 		}
 
@@ -156,7 +163,7 @@ class Router {
 
 	/**
 	 * Check if Route match current URI
-	 * @param      \Router\Route  $route
+	 * @param      Router\Route  $route
 	 * @param      string         $path
 	 * @return     bool
 	 */
@@ -206,7 +213,32 @@ class Router {
 		return true;
 	}
 
-	public static function getRoutes() {
-		return self::$routes;
+	/**
+	 * Handle response returned from route callback.
+	 * @param Response|string $response
+	 */
+	protected static function handleResponse(Route $route, $response) {
+		if (empty($response))
+			return;
+
+		$valid = is_string($response)
+			|| is_numeric($response)
+			|| $response instanceof Response
+			|| (is_object($response) && method_exists($response, "__toString"));
+
+		if (!$valid)
+			throw new RouteInvalidResponse($route -> uri, stringify($response));
+
+		// At this point, we should clean all output buffer to make sure
+		// our response output are sent to the client.
+		while (ob_get_level())
+			ob_end_clean();
+
+		if ($response instanceof Response) {
+			$response -> serve();
+			return;
+		}
+
+		echo $response;
 	}
 }

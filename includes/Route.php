@@ -1,11 +1,12 @@
 <?php
 
-namespace Router;
+namespace Blink\Router;
 
 use Blink\Exception\BaseException;
 use Blink\Exception\RouteArgumentMismatch;
 use Blink\Exception\RouteCallbackInvalidParam;
 use Blink\Request;
+use Blink\Router;
 
 /**
  * Route.php
@@ -73,7 +74,11 @@ class Route {
 	 */
 	public function callback(String $path, String $method, Array $args) {
 		$this -> args = $args;
-		$request = new Request($this, $method, $path, $args, $_GET, $_POST, getallheaders(), $_FILES);
+	
+		$request = new Request(
+			$this, $method, $path, $args,
+			$_GET, $_POST, getallheaders(),
+			$_COOKIE, $_FILES);
 
 		if (is_callable($this -> action)) {
 			if (is_array($this -> action)) {
@@ -133,19 +138,13 @@ class Route {
 				throw new BaseException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
 			}
 		} else {
-			if ($this -> action instanceof \Closure)
-				$callbackName = "Closure";
-			else if (is_array($this -> action))
-				$callbackName = implode("::", $this -> action);
-			else
-				$callbackName = (String) $this -> action;
-
+			$callbackName = stringify($this -> action);
 			throw new BaseException(ROUTE_CALLBACK_INVALID, "Callback [{$callbackName}] for route \"{$this -> uri}\" is missing or not callable.", 500);
 		}
 	}
 
 	public function __toString() {
-		$verb = (count($this -> verbs) === count(\Router::$verbs))
+		$verb = (count($this -> verbs) === count(Router::$verbs))
 			? "ANY"
 			: implode(" ", $this ->  verbs);
 
