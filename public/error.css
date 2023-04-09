@@ -689,3 +689,13 @@ header > .bottom > .inner {
 		border-bottom: 1px solid var(--border-color);
 	}
 }
+
+@media screen and (max-width: 710px) {
+	html {
+		font-size: 12px;
+	}
+
+	#context > .nav {
+		display: none;
+	}
+}
