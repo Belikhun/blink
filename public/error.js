@@ -19,7 +19,8 @@ const toggle = {
 
 				if (name === "stacktrace") {
 					// Keep the active fault frame in scroll view port.
-					button.parentElement.scrollTop = (button.offsetTop - button.parentElement.offsetTop) + 100;
+					// button.parentElement.scrollTop = (button.offsetTop - button.parentElement.offsetTop) + 100;
+					button.parentElement.scrollTop = button.offsetTop - button.clientHeight;
 				}
 			}
 		}

@@ -91,7 +91,7 @@ class HTMLBuilder {
 
 	public static function a(String $href, String $title, Array $attributes = Array()) {
 		if (!isset($attributes["title"]))
-			$attributes["title"] = $title;
+			$attributes["title"] = strip_tags($title);
 
 		$attributes["href"] = $href;
 		return self::build("a", $attributes, $title);

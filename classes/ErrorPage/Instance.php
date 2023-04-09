@@ -229,7 +229,7 @@ class Instance {
 	}
 
 	public static function create(Array $data = null): Instance {
-		global $PATH;
+		global $PATH, $AUTOLOADED;
 
 		$instance = new static(bin2hex(random_bytes(10)));
 		$instance -> data = $data;
@@ -246,6 +246,9 @@ class Instance {
 			? $_SERVER["SERVER_SOFTWARE"]
 			: null;
 		$instance -> blink = \CONFIG::$BLINK_VERSION;
+
+
+
 
 		$request = new ContextGroup("Request");
 
@@ -279,6 +282,9 @@ class Instance {
 		$bodyContext -> setRenderer([ ContextRenderer::class, "body" ]);
 		$request -> add($bodyContext);
 
+
+
+
 		$app = new ContextGroup("App");
 
 		$routing = Array(
@@ -310,6 +316,23 @@ class Instance {
 		), "user-tag");
 		$sessionContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($sessionContext);
+
+		$autoload = Array();
+		foreach ($AUTOLOADED as $item) {
+			$name = !empty($item["namespace"])
+				? $item["namespace"] . "\\"
+				: "";
+
+			$name .= "<b>" . $item["class"] . "</b>";
+			$autoload[$name] = $item["path"];
+		}
+
+		$autoloadContext = new ContextItem("autoload", "Autoload", $autoload, "truck-ramp-box");
+		$autoloadContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($autoloadContext);
+
+
+
 
 		$metrics = new ContextGroup("Metrics");
 

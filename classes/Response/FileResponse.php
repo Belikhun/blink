@@ -36,6 +36,9 @@ class FileResponse extends Response {
 
 	public function file(File|String $file) {
 		if (is_string($file)) {
+			if (!file_exists($file))
+				throw new FileNotFound($file);
+
 			$this -> mimetype = mime_content_type($file);
 			$this -> path = $file;
 			$this -> filename = pathinfo($file, PATHINFO_FILENAME);
@@ -43,10 +46,10 @@ class FileResponse extends Response {
 			$this -> mimetype = $file -> mimetype;
 			$this -> path = $file -> getStorePath();
 			$this -> filename = $file -> filename;
-		}
 
-		if (!file_exists($this -> path))
-			throw new FileNotFound($this -> path);
+			if (!file_exists($this -> path))
+				throw new FileNotFound($this -> path);
+		}
 
 		return $this;
 	}
