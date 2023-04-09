@@ -123,6 +123,7 @@ class APIResponse extends JsonResponse {
 	}
 
 	public function process(): String {
-		return json_encode($this -> output(), JSON_PRETTY_PRINT);
+		$this -> json($this -> output());
+		return parent::process();
 	}
 }

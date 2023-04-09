@@ -1263,6 +1263,7 @@ function printException(Throwable $e) {
 function renderErrorPage(\Blink\ErrorPage\Instance $data, bool $redirect = false) {
 	$_SESSION["LAST_ERROR"] = $data;
 	$_SERVER["REDIRECT_STATUS"] = $data -> status;
+	header("Content-Type: text/html; charset=utf-8");
 
 	if (file_exists(BASE_PATH . "/error.php") && !defined("CUSTOM_ERROR_HANDING")) {
 		if ($redirect && !defined("ERROR_NO_REDIRECT"))

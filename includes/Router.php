@@ -158,6 +158,11 @@ class Router {
 	 * @return     string[]
 	 */
 	private static function uriTokens(String $uri) {
+		$uri = ltrim($uri, "/");
+
+		if (empty($uri))
+			return Array();
+
 		return explode("/", str_replace("\\", "/", $uri));
 	}
 
@@ -184,11 +189,11 @@ class Router {
 		foreach ($uriTokens as $i => $token) {
 			if (strlen($token) >= 2 && $token[0] === "{" && substr($token, -1) === "}") {
 				$key = trim($token, "{}");
-				$value = $pathTokens[$i];
 
-				// Don't accept empty value.
-				if (empty($value))
+				if (!isset($pathTokens[$i]))
 					continue;
+
+				$value = $pathTokens[$i];
 
 				// Try to parse value into int or float.
 				if (is_float($value))
@@ -203,11 +208,13 @@ class Router {
 			// Check block
 			if ($token === "*")
 				continue;
-			if ($token === "**")
+			
+			if ($token === "**") {
 				// Pretend the rest are matched.
 				return true;
-			else if ($token !== $pathTokens[$i])
+			} else if ($token !== $pathTokens[$i]) {
 				return false;
+			}
 		}
 
 		return true;
