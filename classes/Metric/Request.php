@@ -34,8 +34,8 @@ class Request extends Instance {
 	}
 
 	public function __toString() {
-		return sprintf("%01.2fs %6s  %3d %s",
-			$this -> getTime(),
+		return sprintf("%5s %6s  %3d %s",
+			$this -> timeFormat(),
 			$this -> method,
 			$this -> status,
 			$this -> url);

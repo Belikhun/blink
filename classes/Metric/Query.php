@@ -34,8 +34,8 @@ class Query extends Instance {
 	}
 
 	public function __toString() {
-		return sprintf("%01.2fs %8s %16s %2d",
-			$this -> getTime(),
+		return sprintf("%5s %8s %16s %2d",
+			$this -> timeFormat(),
 			$this -> mode,
 			$this -> table,
 			$this -> rows);

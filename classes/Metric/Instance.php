@@ -26,5 +26,11 @@ abstract class Instance {
 			: -1;
 	}
 
+	protected function timeFormat(): String {
+		return ($this -> getTime() > 0)
+			? sprintf("%01.2fs")
+			: " fail";
+	}
+
 	abstract public function __toString(): String;
 }

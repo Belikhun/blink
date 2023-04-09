@@ -22,6 +22,7 @@ class Request {
 	public Array $params = Array();
 
 	public Array $data = Array();
+	public Array $headers = Array();
 
 	/**
 	 * List of uploaded files.
@@ -42,6 +43,7 @@ class Request {
 		Array $args,
 		Array $params,
 		Array $data,
+		Array $headers,
 		Array $files
 	) {
 		$this -> route = $route;
@@ -50,6 +52,7 @@ class Request {
 		$this -> args = $args;
 		$this -> params = $params;
 		$this -> data = $data;
+		$this -> headers = $headers;
 
 		foreach ($files as $key => $file)
 			$this -> files[$key] = new UploadedFile($file);
@@ -70,6 +73,13 @@ class Request {
 	public function arg(String $name, $type = TYPE_TEXT, $default = null) {
 		if (isset($this -> args[$name]))
 			return cleanParam($this -> args[$name], $type);
+		
+		return $default;
+	}
+
+	public function header(String $name, $type = TYPE_TEXT, $default = null) {
+		if (isset($this -> headers[$name]))
+			return cleanParam($this -> headers[$name], $type);
 		
 		return $default;
 	}

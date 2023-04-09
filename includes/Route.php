@@ -73,7 +73,7 @@ class Route {
 	 */
 	public function callback(String $path, String $method, Array $args) {
 		$this -> args = $args;
-		$request = new Request($this, $method, $path, $args, $_GET, $_POST, $_FILES);
+		$request = new Request($this, $method, $path, $args, $_GET, $_POST, getallheaders(), $_FILES);
 
 		if (is_callable($this -> action)) {
 			if (is_array($this -> action)) {

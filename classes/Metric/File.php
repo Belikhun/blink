@@ -42,8 +42,8 @@ class File extends Instance {
 	}
 
 	public function __toString() {
-		return sprintf("%01.2fs %3s %10s %12s %s",
-			$this -> getTime(),
+		return sprintf("%5s %3s %10s %12s %s",
+			$this -> timeFormat(),
 			$this -> mode,
 			$this -> type,
 			convertSize($this -> size),
