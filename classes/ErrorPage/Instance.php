@@ -263,7 +263,8 @@ class Instance {
 			"Method" => $instance -> method,
 			"Status Code" => $instance -> status,
 			"Protocol" => $instance -> protocol,
-			"IP" => $instance -> ip
+			"IP" => $instance -> ip,
+			"Runtime" => $data["runtime"] . "s"
 		), "info");
 		$infoContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$request -> add($infoContext);
@@ -316,7 +317,7 @@ class Instance {
 
 		$sessionContext = new ContextItem("session", "Session", Array(
 			"Lifetime" => \Session::$lifetime,
-			"Session ID" => session_id(),
+			"Session ID" => session_id() ?: "[NULL]",
 			"Username" => \Session::$username,
 			"Status" => [ "PHP_SESSION_DISABLED", "PHP_SESSION_NONE", "PHP_SESSION_ACTIVE" ][session_status()]
 		), "user-tag");

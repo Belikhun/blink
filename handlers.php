@@ -177,6 +177,30 @@ function middleware(String $class) {
 	return true;
 }
 
+function handlers() {
+	$class = "Handlers";
+	$default = CORE_ROOT . "/defaults/Handlers.php";
+	$appPath = BASE_PATH . "/includes/Handlers.php";
+
+	require_once CORE_ROOT . "/includes/Handlers.php";
+
+	if (file_exists($appPath))
+		require_once $appPath;
+	else
+		require_once $default;
+
+	// Make sure the class have been included and defined correctly.
+	if (!class_exists($class)) {
+		require_once $default;
+		throw new \Blink\Exception\ClassNotDefined($class, $appPath);
+	}
+
+	if (!in_array("Blink\\Handlers", class_parents($class, false)))
+		throw new \Blink\Exception\InvalidDefinition($class, "Blink\\Handlers", $appPath);
+
+	return true;
+}
+
 function callMiddleware($class) {
 	if (!class_exists("Blink\\Middleware", false))
 		require_once CORE_ROOT . "/middleware/Middleware.php";
@@ -213,6 +237,23 @@ function autoloadClass(String $class) {
 		} catch (\Throwable $e) {
 			// Include failed! disable middleware autoloading.
 			define("DISABLE_MIDDLEWARE_INCLUDE", true);
+
+			ExceptionHandler($e);
+			return;
+		}
+	}
+
+	if ($class === "Handlers") {
+		if (defined("DISABLE_HANDLERS_INCLUDE"))
+			return;
+
+		try {
+			// Try to include global handlers.
+			handlers();
+			return;
+		} catch (\Throwable $e) {
+			// Include failed! disable handlers autoloading.
+			define("DISABLE_HANDLERS_INCLUDE", true);
 
 			ExceptionHandler($e);
 			return;

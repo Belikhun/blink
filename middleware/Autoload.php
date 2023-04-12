@@ -13,8 +13,6 @@
  */
 
 namespace Blink\Middleware;
-use Blink\Exception\ClassNotDefined;
-use Blink\Exception\InvalidDefinition;
 use Blink\Middleware;
 
 class Autoload extends Middleware {
@@ -29,25 +27,7 @@ class Autoload extends Middleware {
 	 * 					successfully, false otherwise.
 	 */
 	public static function load(String $class): bool {
-		if ($class === "Handlers") {
-			$default = CORE_ROOT . "/defaults/Handlers.php";
-			$appPath = BASE_PATH . "/includes/Handlers.php";
-
-			require_once CORE_ROOT . "/includes/Handlers.php";
-
-			if (file_exists($appPath))
-				require_once $appPath;
-			else
-				require_once $default;
-
-			// Make sure the class have been included and defined correctly.
-			if (!class_exists($class))
-				throw new ClassNotDefined($class, $appPath);
-
-			if (!in_array("Blink\\Handlers", class_parents($class, false)))
-				throw new InvalidDefinition($class, "Blink\\Handlers");
-		}
-
+		
 		return false;
 	}
 }
