@@ -15,6 +15,7 @@
 
 use Blink\ErrorPage\ContextRenderer;
 use Blink\ErrorPage\Instance;
+use Blink\ErrorPage\Renderer;
 
 /**
  * Current error instance.
@@ -60,19 +61,19 @@ http_response_code($status);
 					<div class="inner">
 						<span class="left">
 							<a class="link" href="#stacktrace" target="_self" nav-link>
-								<?php echo ContextRenderer::icon("stack"); ?>
+								<?php echo Renderer::icon("stack"); ?>
 								Stack
 							</a>
 	
 							<a class="link" href="#context" target="_self" nav-link>
-								<?php echo ContextRenderer::icon("context"); ?>
+								<?php echo Renderer::icon("context"); ?>
 								Context
 							</a>
 						</span>
 	
 						<span class="right">
 							<a class="link" data-report-link="<?php echo $instance -> url(); ?>">
-								<?php echo ContextRenderer::icon("link"); ?>
+								<?php echo Renderer::icon("link"); ?>
 								<span>Copy report link</span>
 							</a>
 						</span>
@@ -115,13 +116,13 @@ http_response_code($status);
 	
 									<?php if (!empty($instance -> server)) { ?>
 										<span>
-											<?php echo ContextRenderer::icon("server"); ?>
+											<?php echo Renderer::icon("server"); ?>
 											<?php echo $instance -> server; ?>
 										</span>
 									<?php } ?>
 	
 									<span>
-										<?php echo ContextRenderer::icon("blink"); ?>
+										<?php echo Renderer::icon("blink"); ?>
 										<?php echo $instance -> blink; ?>
 									</span>
 								</span>
@@ -139,7 +140,7 @@ http_response_code($status);
 							</div>
 
 							<div class="close active" toggle-id="tip1">
-								<?php echo ContextRenderer::icon("close"); ?>
+								<?php echo Renderer::icon("close"); ?>
 							</div>
 						</div>
 					<?php } ?>

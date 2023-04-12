@@ -337,6 +337,12 @@ class Instance {
 		$autoloadContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($autoloadContext);
 
+		if (!empty(\Blink\Debug::$output)) {
+			$debugContext = new ContextItem("debug", "Debug Output", \Blink\Debug::$output, "bug");
+			$debugContext -> setRenderer([ ContextRenderer::class, "string" ]);
+			$app -> add($debugContext);
+		}
+		
 
 
 

@@ -27,15 +27,22 @@ class InvalidDefinition extends BaseException {
 	 */
 	public String $from;
 
-	public function __construct(String $class, String $from) {
+	/**
+	 * The file containing invalid class definition.
+	 * @var string
+	 */
+	public ?String $targetFile;
+
+	public function __construct(String $class, String $from, String $file = null) {
 		$this -> class = $class;
 		$this -> from = $from;
+		$this -> targetFile = $file;
 		
 		parent::__construct(
 			MIDDLEWARE_CLASS_INVALID,
 			"Middleware class [{$class}] is not valid! It's must be extended from [{$from}]",
 			500,
-			Array( "class" => $class, "from" => $from )
+			Array( "class" => $class, "from" => $from, "file" => $file )
 		);
 	}
 }

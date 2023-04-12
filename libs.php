@@ -13,6 +13,7 @@
  * See LICENSE in the project root for license information.
  */
 
+use Blink\Debug;
 use Blink\Exception\BaseException;
 use Blink\Exception\FileWriteError;
 use Blink\Exception\InvalidValue;
@@ -1061,7 +1062,7 @@ function backtrace(int $limit = 0) {
  * @param	\Throwable|array	$data
  * @return	BacktraceFrame[]
  */
-function processBacktrace($data, bool $forward = true) {
+function processBacktrace($data, bool $merges = true) {
 	global $ERROR_STACK;
 
 	$exception = null;
@@ -1136,45 +1137,29 @@ function processBacktrace($data, bool $forward = true) {
 		}
 	}
 
-	if (!empty($exception) && $forward) {
-		// Merge forward.
+	if (!empty($exception) && $merges) {
+		// Merge exception frames with full backtrace.
 		$merges = backtrace();
-		$mcount = 0;
+		$insert = 0;
 	
 		foreach ($merges as $merge) {
-			$check = $frames[$mcount];
-	
-			if (($merge -> file === $check -> file && $merge -> line === $check -> line)
-				|| $merge -> function === $check -> function
-			) {
-				$frames[$mcount] -> file = $merge -> file ?: $check -> file;
-				$frames[$mcount] -> line = $merge -> line ?: $check -> line;
-				$frames[$mcount] -> function = $merge -> function ?: $check -> function;
-				break;
-			}
-	
-			if ($mcount === 0)
-				array_unshift($frames, $merge);
-			else
-				array_splice($frames, $mcount, 0, [ $merge ] );
-			
-			$mcount += 1;
-		}
+			foreach ($frames as $i => &$check) {
+				if ($merge -> hash() === $check -> hash()) {
+					if (!empty($merge -> file) && $merge -> file)
+						$check -> file = $merge -> file;
+					
+					if (!empty($merge -> line) && $merge -> line > 0)
+						$check -> line = $merge -> line;
 
-		// Merge backward
-		foreach (array_reverse($ERROR_STACK) as $e) {
-			if ($e == $exception)
-				continue;
-	
-			$pstacks = processBacktrace($e, false);
-	
-			// Add to current stack one by one.
-			foreach ($pstacks as $stack) {
-				$last = $frames[count($frames) - 1];
-	
-				if ($last -> file !== $stack -> file || $last -> line !== $stack -> line)
-					$frames[] = $stack;
+					$check -> function = $merge -> function ?: $check -> function;
+
+					$insert = $i;
+					continue 2;
+				}
 			}
+	
+			array_splice($frames, $insert, 0, [ $merge ] );
+			$insert += 1;
 		}
 	}
 

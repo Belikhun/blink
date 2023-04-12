@@ -139,13 +139,7 @@ function middleware(String $class) {
 	if (!file_exists($corePath))
 		return false;
 
-	// Include the base class first to avoid error in the.
-	// future.
-	require_once $corePath;
-
-	if (file_exists($appPath)) {
-		require_once $appPath;
-	} else {
+	$fallback = function () use ($default, $name) {
 		if (!file_exists($default)) {
 			// Create new default file for this class.
 			$content = fileGet(CORE_ROOT . "/defaults/middleware/.template");
@@ -155,14 +149,29 @@ function middleware(String $class) {
 		}
 
 		require_once $default;
+	};
+
+	// Include the base class first to avoid error in the.
+	// future.
+	require_once $corePath;
+
+	if (file_exists($appPath)) {
+		require_once $appPath;
+	} else {
+		// Fallback to default middleware definition file.
+		$fallback();
 	}
 
 	// Make sure the class have been included and defined correctly.
-	if (!class_exists($class))
-		throw new ClassNotDefined($class);
+	if (!class_exists($class)) {
+		$fallback();
+		throw new ClassNotDefined($class, $appPath);
+	}
 
-	if (!in_array("Blink\\Middleware\\{$name}", class_parents($class, false)))
-		throw new InvalidDefinition($class, $parent);
+	if (!in_array("Blink\\Middleware\\{$name}", class_parents($class, false))) {
+		$fallback();
+		throw new InvalidDefinition($class, $parent, $appPath);
+	}
 
 	return true;
 }
@@ -186,9 +195,20 @@ function autoloadClass(String $class) {
 	global $AUTOLOAD_DATA, $AUTOLOADED;
 
 	if (str_starts_with($class, "Middleware")) {
-		// Process middleware class include.
-		if (middleware($class))
+		if (defined("DISABLE_MIDDLEWARE_INCLUDE"))
 			return;
+
+		try {
+			// Process middleware class include.
+			if (middleware($class))
+				return;
+		} catch (\Throwable $e) {
+			// Include failed! disable middleware autoloading.
+			define("DISABLE_MIDDLEWARE_INCLUDE", true);
+
+			ExceptionHandler($e);
+			return;
+		}
 	}
 
 	if (callMiddleware($class))

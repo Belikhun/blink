@@ -21,8 +21,10 @@ class BacktraceFrame {
 	public String $function;
 	public Array $args = Array();
 	public bool $fault = false;
+
 	private ?String $id = null;
 	private ?String $fullpath = null;
+	private ?String $hash = null;
 
 	public function __construct(String $function = "[unknown]", bool $fault = false) {
 		$this -> function = $function;
@@ -64,6 +66,14 @@ class BacktraceFrame {
 			$this -> id = randString(8, RAND_CHARSET_HEX);
 
 		return $this -> id;
+	}
+
+	public function hash(): String {
+		if (!empty($this -> hash))
+			return $this -> hash;
+
+		$this -> hash = md5(($this -> file ?: "file") . ($this -> line ?: "0"));
+		return $this -> hash;
 	}
 
 	public function isVendor() {

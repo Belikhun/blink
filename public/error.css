@@ -294,7 +294,7 @@ header > .bottom > .inner {
 
 #details > .tips {
 	display: none;
-	width: 33.33%;
+	width: 33%;
 	border-radius: 8px;
 	overflow: hidden;
 }
@@ -332,6 +332,14 @@ header > .bottom > .inner {
 #details > .tips > .tip > .title {
 	font-weight: 700;
 	margin-bottom: 1rem;
+}
+
+#details > .tips > .tip > .content > * {
+	margin-bottom: 1rem;
+}
+
+#details > .tips > .tip > .content > :last-child {
+	margin-bottom: 0;
 }
 
 #stacktrace > .panel {

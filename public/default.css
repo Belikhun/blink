@@ -21,11 +21,13 @@
 	--border-color: #e5e7eb;
 
 	--color-green: #6ee7b7;
+	--color-green-alt: #079669;
 	--color-emerald: #10b981;
 	--color-emerald-05: rgba(16, 185, 129, .05);
 	--color-orange: #f39c18;
 	--color-indigo: #6366f1;
 	--color-red: #DD524C;
+	--color-red-alt: #971813;
 	--color-red-1: rgba(239, 68, 68, 0.1);
 	--color-red-2: rgba(239, 68, 68, 0.2);
 	--color-red-3: rgba(239, 68, 68, 0.3);
@@ -250,6 +252,129 @@ pre[copyable] {
 		0 0 transparent,
 		0 10px 15px -3px rgba(0, 0, 0, 0.1),
 		0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+/** ERROR PAGE's BUTTON */
+
+.error-btn {
+	position: relative;
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: fit-content;
+	--color: var(--color-emerald);
+	--color-alt: var(--color-green-alt);
+
+	margin-top: 1rem;
+	padding: 0.5rem 1rem;
+	box-sizing: border-box;
+	background-color: var(--color);
+	
+	color: white;
+	font-size: 0.85rem;
+	line-height: 1;
+	font-weight: 600;
+	text-align: center;
+	letter-spacing: 0.6px;
+	text-decoration: none;
+	text-transform: uppercase;
+	gap: 0.5rem;
+	border-radius: 4px;
+
+	border: unset;
+	cursor: pointer;
+	overflow: hidden;
+	user-select: none;
+	z-index: 0;
+
+	box-shadow:
+		0px 0.3rem 0px 0px var(--color-alt);
+
+	transition: filter 1s cubic-bezier(0.06, 0.81, 0, 0.98);
+}
+
+.error-btn:active {
+	transform: translateY(0.3rem);
+	box-shadow: unset;
+}
+
+.error-btn::before,
+.error-btn::after,
+.error-btn > .tris {
+	content: "";
+	position: absolute;
+	display: block;
+
+	width: 0;
+	height: 0;
+	top: 100%;
+	right: 5%;
+
+	border-style: solid;
+	border-width: 0 50px 100px;
+	border-color: transparent transparent var(--color);
+	filter: brightness(0.9);
+	z-index: -1;
+
+	will-change: transform;
+
+	animation:
+		error-btn-trig-anim 8s linear 0s infinite;
+}
+
+.error-btn::after {
+	left: -10%;
+	filter: brightness(1.06);
+	transform: scale(0.8);
+	animation-duration: 4.5s;
+	animation-delay: 0.8s;
+}
+
+.error-btn > .tris-1 {
+	left: -4%;
+	filter: brightness(0.94);
+	transform: scale(0.9);
+	animation-duration: 4.2s;
+	animation-delay: 1.2s;
+}
+
+.error-btn > .tris-2 {
+	right: -8%;
+	filter: brightness(1.03);
+	transform: scale(0.6);
+	animation-duration: 6.1s;
+	animation-delay: 0.3s;
+}
+
+.error-btn > .tris-3 {
+	left: 30%;
+	filter: brightness(0.88);
+	transform: scale(0.4);
+	animation-duration: 3.1s;
+	animation-delay: 1.2s;
+}
+
+.error-btn > svg {
+	width: 1rem;
+	height: 1rem;
+	fill: var(--text-alternate);
+	opacity: 0.6;
+}
+
+@keyframes error-btn-trig-anim {
+	0% {
+		transform: translateY(0);
+	}
+
+	100% {
+		transform: translateY(-160px);
+	}
+}
+
+.error-btn.btn-danger {
+	--color: var(--color-red);
+	--color-alt: var(--color-red-alt);
 }
 
 ::-webkit-scrollbar {

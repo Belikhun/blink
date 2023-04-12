@@ -21,14 +21,22 @@ class ClassNotDefined extends BaseException {
 	 */
 	public String $class;
 
-	public function __construct(String $class) {
+	/**
+	 * Target file that loaded during autoload process that
+	 * does not define specified class.
+	 * @var string
+	 */
+	public String $targetFile;
+
+	public function __construct(String $class, String $file) {
 		$this -> class = $class;
+		$this -> targetFile = $file;
 
 		parent::__construct(
 			MIDDLEWARE_CLASS_MISSING,
 			"Middleware class [{$class}] is missing after autoloaded!",
 			500,
-			Array( "class" => $class )
+			Array( "class" => $class, "file" => $file )
 		);
 	}
 }

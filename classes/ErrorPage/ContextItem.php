@@ -62,7 +62,7 @@ class ContextItem {
 		), "", false);
 
 		if (!empty($this -> icon))
-			echo ContextRenderer::icon($this -> icon);
+			echo Renderer::icon($this -> icon);
 
 		echo HTMLBuilder::span([ "class" => "label" ], $this -> name);
 		echo HTMLBuilder::end("a");
@@ -75,7 +75,7 @@ class ContextItem {
 		$title = $this -> name;
 
 		if (!empty($this -> icon))
-			$title .= ContextRenderer::icon($this -> icon);
+			$title .= Renderer::icon($this -> icon);
 
 		echo HTMLBuilder::build("h1", [ "class" => "title" ], $title);
 

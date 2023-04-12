@@ -15,6 +15,7 @@
  */
 
 namespace Blink;
+use Blink\ErrorPage\Renderer;
 
 class Handlers {
 	/**
@@ -35,13 +36,20 @@ class Handlers {
 		$content = "";
 
 		switch ($class) {
-			case \Blink\Exception\ClassNotDefined::class: {
+			case \Blink\Exception\ClassNotDefined::class:
+			case \Blink\Middleware\Exception\ClassNotDefined::class: {
 				$className = $data["class"];
-				$file = $data["file"];
+				$file = getRelativePath($data["file"]);
 
 				$title = "Class không tồn tại";
-				$content = "Có vẻ như bạn chưa định nghĩa class <code>{$className}</code> trong tệp <code>{$file}</code>.
+				$content = "Có vẻ như bạn chưa định nghĩa class <b>{$className}</b> trong tệp <b>{$file}</b>.
 							Kiểm tra lại chính tả hoặc thêm class này nếu bạn chưa định nghĩa nó.";
+
+				$content .= Renderer::button(
+					"Mở File",
+					link: "vscode://file/" . urlencode($data["file"]),
+					icon: "file-pen"
+				);
 				break;
 			}
 
@@ -51,9 +59,18 @@ class Handlers {
 				break;
 			}
 
-			case \Blink\Exception\InvalidDefinition::class: {
+			case \Blink\Exception\InvalidDefinition::class:
+			case \Blink\Middleware\Exception\InvalidDefinition::class: {
 				$title = "Định nghĩa class không hợp lệ";
-				
+				$content = "Hãy đảm bảo rằng class <b>{$data['class']}</b> của bạn đã kế thừa <b>{$data['from']}</b>";
+
+				if (!empty($data["file"])) {
+					$content .= Renderer::button(
+						"Mở File",
+						link: "vscode://file/" . urlencode($data["file"]),
+						icon: "file-pen"
+					);
+				}
 				break;
 			}
 		}
