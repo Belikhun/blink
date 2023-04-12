@@ -13,7 +13,6 @@
  * See LICENSE in the project root for license information.
  */
 
-use Blink\ErrorPage\ContextRenderer;
 use Blink\ErrorPage\Instance;
 use Blink\ErrorPage\Renderer;
 

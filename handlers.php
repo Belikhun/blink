@@ -169,7 +169,8 @@ function middleware(String $class) {
 	}
 
 	if (!in_array("Blink\\Middleware\\{$name}", class_parents($class, false))) {
-		$fallback();
+		// We can't redefine the class because it's included, so
+		// no fallback call here.
 		throw new InvalidDefinition($class, $parent, $appPath);
 	}
 
@@ -187,6 +188,13 @@ function callMiddleware($class) {
 		return \Middleware\Autoload::load($class);
 	} catch (\Throwable $e) {
 		\Blink\Middleware::disable();
+
+		if (str_contains($class, "Exception")) {
+			// We are autoloading an exception class here,
+			// let it die gracefully.
+			return false;
+		}
+
 		throw $e;
 	}
 }

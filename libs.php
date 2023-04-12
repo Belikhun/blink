@@ -15,6 +15,7 @@
 
 use Blink\Debug;
 use Blink\Exception\BaseException;
+use Blink\Exception\FileNotFound;
 use Blink\Exception\FileWriteError;
 use Blink\Exception\InvalidValue;
 use Blink\Exception\JSONDecodeError;
@@ -770,11 +771,15 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
  * @param	string		$default	Default value
  * @return	string|null				File content or default value if failed.
  */
-function fileGet(String $path, $default = null): String|null {
+function fileGet(String $path, $default = null, bool $throw = false): String|null {
 	$metric = null;
 
-	if (!file_exists($path))
+	if (!file_exists($path)) {
+		if ($throw)
+			throw new FileNotFound($path);
+
 		return $default;
+	}
 
 	if (class_exists('\Blink\Metric\File'))
 		$metric = new \Blink\Metric\File("r", "text", $path);

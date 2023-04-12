@@ -143,7 +143,7 @@ class Instance {
 		if (!empty($this -> tipTitle))
 			return [ $this -> tipTitle, $this -> tipContent ];
 
-		if (!$this -> hasException())
+		if (!$this -> hasException() || !class_exists("Handlers"))
 			return [ null, null ];
 
 		$exception = $this -> data["exception"];
