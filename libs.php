@@ -1138,39 +1138,57 @@ function processBacktrace($data, bool $merges = true) {
 	}
 
 	if (!empty($exception) && $merges) {
-		// Merge exception frames with full backtrace.
-		$merges = backtrace();
-		$insert = 0;
+		/**
+		 * Merge frames.
+		 * @param	BacktraceFrame[]	$from
+		 * @param	BacktraceFrame[]	$target
+		 */
+		$merge = function (Array $from, Array $target) {
+			$insert = 0;
 	
-		foreach ($merges as $merge) {
-			foreach ($frames as $i => &$check) {
-				if ($merge -> hash() === $check -> hash()) {
-					if (!empty($merge -> file) && $merge -> file)
-						$check -> file = $merge -> file;
-					
-					if (!empty($merge -> line) && $merge -> line > 0)
-						$check -> line = $merge -> line;
+			foreach ($from as $merge) {
+				foreach ($target as $i => &$check) {
+					if ($merge -> hash() === $check -> hash()) {
+						if (!empty($merge -> file) && $merge -> file)
+							$check -> file = $merge -> file;
+						
+						if (!empty($merge -> line) && $merge -> line > 0)
+							$check -> line = $merge -> line;
 
-					$check -> function = $merge -> function ?: $check -> function;
+						$check -> function = $merge -> function ?: $check -> function;
 
-					$insert = $i;
-					continue 2;
+						$insert = $i;
+						continue 2;
+					}
 				}
+		
+				array_splice($target, $insert, 0, [ $merge ] );
+				$insert += 1;
 			}
-	
-			array_splice($frames, $insert, 0, [ $merge ] );
-			$insert += 1;
+
+			return $target;
+		};
+
+		// Add previous exceptions.
+		foreach ($ERROR_STACK as $e) {
+			if ($exception == $e)
+				continue;
+
+			$frames = $merge($frames, processBacktrace($e, false));
 		}
-	}
 
-	// Update fault points
-	foreach ($ERROR_STACK as $e) {
-		$file = getRelativePath($e -> getFile());
-		$line = $e -> getLine();
+		// Merge exception frames with full backtrace.
+		$frames = $merge(backtrace(), $frames);
 
-		foreach ($frames as $frame) {
-			if ($frame -> file === $file && $frame -> line === $line)
-				$frame -> fault = true;
+		// Update fault points
+		foreach ($ERROR_STACK as $e) {
+			$file = getRelativePath($e -> getFile());
+			$line = $e -> getLine();
+
+			foreach ($frames as $frame) {
+				if ($frame -> file === $file && $frame -> line === $line)
+					$frame -> fault = true;
+			}
 		}
 	}
 	
