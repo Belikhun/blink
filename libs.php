@@ -1134,7 +1134,7 @@ function processBacktrace($data, bool $merges = true) {
 
 		if ($file && $line && (empty($frames) || ($frames[0] -> file !== $file || $frames[0] -> line !== $line))) {
 			// Add missing top frame.
-			$trace = new BacktraceFrame("[unknown]");
+			$trace = new BacktraceFrame(get_class($exception));
 			$trace -> file = $file;
 			$trace -> line = $exception -> getLine();
 			$trace -> fault = true;
@@ -1232,7 +1232,7 @@ function stop(
 		case "NORMAL":
 			if (!headers_sent()) {
 				$response -> header("Output", "[{$response -> code}] {$response -> description}");
-				$response -> serve(false);
+				$response -> serve();
 			}
 
 
