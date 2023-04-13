@@ -16,12 +16,6 @@
 use Blink\ErrorPage\Instance;
 use Blink\ErrorPage\Renderer;
 
-/**
- * Current error instance.
- * @var \Blink\ErrorPage\Instance
- */
-global $instance;
-
 /** @var \Blink\ErrorPage\Instance */
 $instance = $_SESSION["LAST_ERROR"];
 
@@ -35,6 +29,10 @@ $statusColor = match ($instance -> type()) {
 	Instance::ERROR_SERVER => "red",
 	default => "green"
 };
+
+$class = (!empty($exception) && !empty($exception["class"]))
+	? $exception["class"]
+	: null;
 
 /** @var BacktraceFrame[] */
 $stacktrace = $instance -> stacktrace();
@@ -50,7 +48,7 @@ http_response_code($status);
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="stylesheet" href="/core/public/default.css">
 		<link rel="stylesheet" href="/core/public/error.css">
-		<title><?php echo (!empty($exception) ? $exception["class"] : $statusText) . ": {$description}"; ?></title>
+		<title><?php echo (!empty($class) ? $class : $statusText) . ": {$description}"; ?></title>
 	</head>
 
 	<body>
@@ -100,9 +98,9 @@ http_response_code($status);
 										<?php echo $status; ?>
 									</span>
 	
-									<?php if (!empty($exception)) { ?>
+									<?php if (!empty($class)) { ?>
 										<span class="badge class">
-											<?php echo str_replace("\\", "<span>\</span>", $exception["class"]); ?>
+											<?php echo str_replace("\\", "<span>\</span>", $class); ?>
 										</span>
 									<?php } ?>
 								</span>

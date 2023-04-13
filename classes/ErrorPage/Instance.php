@@ -52,7 +52,7 @@ class Instance {
 	}
 
 	public function info() {
-		if ($this -> hasException())
+		if ($this -> hasException() && !empty($this -> data["description"]))
 			return [ $this -> data["exception"]["class"], $this -> data["description"] ];
 
 		return $this -> httpInfo();
@@ -124,7 +124,7 @@ class Instance {
 				break;
 		}
 
-		if (!empty($this -> data))
+		if (!empty($this -> data) && !empty($this -> data["description"]))
 			$description = $this -> data["description"];
 
 		return [ $statusText, $description ];
@@ -397,6 +397,35 @@ class Instance {
 
 	public static function handle(String $id) {
 		$instance = static::get($id);
+		renderErrorPage($instance);
+	}
+
+	public static function index() {
+		global $PATH;
+
+		if (empty($_SESSION["LAST_ERROR"])) {
+			$instance = new static("invalid");
+			$instance -> path = $PATH;
+			$instance -> method = $_SERVER["REQUEST_METHOD"];
+			$instance -> protocol = $_SERVER["SERVER_PROTOCOL"];
+			$instance -> ip = getClientIP();
+			$instance -> status = 200;
+			$instance -> php = phpversion();
+			$instance -> server = (!empty($_SERVER["SERVER_SOFTWARE"]))
+				? $_SERVER["SERVER_SOFTWARE"]
+				: null;
+			$instance -> blink = \CONFIG::$BLINK_VERSION;
+			$instance -> data = [ "exception" => [ "stacktrace" => backtrace() ] ];
+
+			$hello = new ContextGroup("Hello");
+			$world = new ContextItem("world", "World", "This is an error page, but currently we don't have any error to report here.\n*fly away*", "info");
+			$world -> setRenderer([ ContextRenderer::class, "string" ]);
+			$hello -> add($world);
+			$instance -> contexts[] = $hello;
+		} else {
+			$instance = $_SESSION["LAST_ERROR"];
+		}
+
 		renderErrorPage($instance);
 	}
 }

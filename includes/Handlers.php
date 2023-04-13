@@ -54,7 +54,7 @@ class Handlers {
 			}
 
 			case \Blink\Exception\RouteNotFound::class: {
-				$title = "Tài nguyên không tồn tại";
+				$title = "Đường dẫn không tồn tại";
 				$content = "Có vẻ như đường dẫn này không còn tồn tại trên máy chủ. Liên hệ quản trị viên nếu bạn thấy đây là lỗi.";
 				break;
 			}

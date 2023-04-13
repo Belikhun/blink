@@ -187,6 +187,7 @@ if (class_exists("Session"))
 
 // Add default endpoint for error page.
 Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);
+Router::GET("/error", [ \Blink\ErrorPage\Instance::class, "index" ], -1);
 
 if (file_exists(BASE_PATH . "/setup.php"))
 	require_once BASE_PATH . "/setup.php";

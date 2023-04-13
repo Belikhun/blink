@@ -1097,14 +1097,22 @@ function processBacktrace($data, bool $merges = true) {
 
 		foreach ($item["args"] as $arg) {
 			if (is_string($arg)) {
-				if (strlen($arg) > 5 && realpath($arg))
+				if (strlen($arg) > 5 && (str_contains($arg, ".php") || realpath($arg)))
 					$arg = getRelativePath($arg);
 			} else if (is_object($arg)) {
-				if ($arg instanceof \Throwable)
-					$arg = [ get_class($arg), $arg -> getMessage() ];
-				else if (method_exists($arg, "__toString"))
-					$arg = [ get_class($arg), (string) $arg ];
-				else
+				if ($arg instanceof \Throwable) {
+					$value = $arg -> getMessage();
+					if (str_contains($value, ".php"))
+						$value = getRelativePath($value);
+					
+					$arg = [ get_class($arg), $value ];
+				} else if (method_exists($arg, "__toString")) {
+					$value = (string) $arg;
+					if (str_contains($value, ".php"))
+						$value = getRelativePath($value);
+
+					$arg = [ get_class($arg), $value ];
+				} else
 					$arg = get_class($arg);
 			} else if (is_bool($arg)) {
 				$arg = $arg ? "true" : "false";
@@ -1161,6 +1169,9 @@ function processBacktrace($data, bool $merges = true) {
 							$check -> line = $merge -> line;
 
 						$check -> function = $merge -> function ?: $check -> function;
+
+						if (empty($check -> args) && !empty($merge -> args))
+							$check -> args = $merge -> args;
 
 						$insert = $i;
 						continue 2;
@@ -1280,6 +1291,7 @@ function renderErrorPage(\Blink\ErrorPage\Instance $data, bool $redirect = false
 
 		try {
 			require BASE_PATH . "/error.php";
+			unset($_SESSION["LAST_ERROR"]);
 			die();
 		} catch (Throwable $e) {
 			try {
@@ -1297,6 +1309,7 @@ function renderErrorPage(\Blink\ErrorPage\Instance $data, bool $redirect = false
 
 	try {
 		require CORE_ROOT . "/error.php";
+		unset($_SESSION["LAST_ERROR"]);
 		die();
 	} catch (Throwable $e) {
 		try {

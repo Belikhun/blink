@@ -3,19 +3,29 @@ const toggle = {
 
 	/** @type {Object<string, HTMLElement>} */
 	active: {},
+	
+	/** @type {Object<string, HTMLElement[]>} */
+	buttons: {},
 
 	/** @type {HTMLElement} */
 	stickyBar: null,
 
 	init() {
 		let buttons = document.querySelectorAll(`[toggle-id]`);
+		let activated = {}
 
 		for (let button of buttons) {
 			let name = button.getAttribute("toggle-name");
 			button.addEventListener("click", () => this.activate(button, name));
 
+			if (!this.buttons[name])
+				this.buttons[name] = [];
+
+			this.buttons[name].push(button);
+
 			if (button.getAttribute("toggle-default")) {
 				this.activate(button, name);
+				activated[name] = true;
 
 				if (name === "stacktrace") {
 					// Keep the active fault frame in scroll view port.
@@ -23,6 +33,13 @@ const toggle = {
 					button.parentElement.scrollTop = button.offsetTop - button.clientHeight;
 				}
 			}
+		}
+
+		for (let name of Object.keys(this.buttons)) {
+			if (activated[name])
+				continue;
+
+			this.activate(this.buttons[name][0], name);
 		}
 	},
 
