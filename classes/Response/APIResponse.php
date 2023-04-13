@@ -84,7 +84,7 @@ class APIResponse extends JsonResponse {
 			$ERROR_STACK[] = $exception;
 			$file = getRelativePath($exception -> getFile());
 	
-			if (class_exists("CONFIG") && !\CONFIG::$PRODUCTION) {
+			if (class_exists("CONFIG") && CONFIG::$DEBUG) {
 				$stacktrace = processBacktrace($exception);
 				$caller = $stacktrace[0] -> getCallString();
 			}
