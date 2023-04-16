@@ -41,6 +41,8 @@ class ContextRenderer {
 						$value = (String) $value;
 					else
 						$value = get_class($value);
+				} else if (is_array($value)) {
+					$value = print_r($value, true);
 				} else if ($value === null) {
 					$value = "[NULL]";
 				}

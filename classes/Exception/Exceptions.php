@@ -35,7 +35,7 @@ class UnserializeError extends BaseException {
 
 class MissingParam extends BaseException {
 	public function __construct(String $param) {
-		parent::__construct(MISSING_PARAM, "missing required param: $param", 400, Array( "param" => $param ));
+		parent::__construct(MISSING_PARAM, "Missing required param: $param", 400, Array( "param" => $param ));
 	}
 }
 

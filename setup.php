@@ -91,7 +91,7 @@ require_once CORE_ROOT . "/const.php";
 require_once CORE_ROOT . "/config.php";
 
 if (!file_exists(BASE_PATH . "/.htaccess")) {
-	copy(CORE_ROOT . "/htaccess/index.htaccess", BASE_PATH . "/.htaccess");
+	copy(CORE_ROOT . "/files/index.htaccess", BASE_PATH . "/.htaccess");
 	header("Location: /", true);
 	die();
 }
@@ -140,7 +140,7 @@ foreach ($configProps as $prop) {
 }
 
 if (!file_exists(DATA_ROOT . "/.htaccess"))
-	copy(CORE_ROOT . "/htaccess/data.htaccess", DATA_ROOT . "/.htaccess");
+	copy(CORE_ROOT . "/files/data.htaccess", DATA_ROOT . "/.htaccess");
 
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";

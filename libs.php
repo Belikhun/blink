@@ -16,6 +16,7 @@
 use Blink\Debug;
 use Blink\Exception\BaseException;
 use Blink\Exception\FileNotFound;
+use Blink\Exception\FileReadError;
 use Blink\Exception\FileWriteError;
 use Blink\Exception\InvalidValue;
 use Blink\Exception\JSONDecodeError;
@@ -788,6 +789,10 @@ function fileGet(String $path, $default = null, bool $throw = false): String|nul
 
 	if ($content === false) {
 		$metric ?-> time(-1);
+
+		if ($throw)
+			throw new FileReadError($path);
+
 		return $default;
 	}
 
@@ -895,11 +900,11 @@ class FileIO {
 			$metric = new \Blink\Metric\File("r", $type, $this -> path);
 
 		$this -> fos($this -> path, "r");
+		$size = filesize($this -> path);
 
-		if (filesize($this -> path) > 0)
-			$data = fread($this -> stream, filesize($this -> path));
-		else
-			$data = null;
+		$data = ($size > 0)
+			? fread($this -> stream, $size)
+			: null;
 
 		$this -> fcs();
 
@@ -913,23 +918,32 @@ class FileIO {
 			case TYPE_JSON_ASSOC:
 				return safeJSONParsing($data, $this -> path, true);
 
-			case TYPE_SERIALIZED:
+			case TYPE_SERIALIZED: {
 				// Temporary disable `NOTICE` error reporting
 				// to try unserialize data without triggering `E_NOTICE`
 				try {
 					set_error_handler(null, 0);
-					$data = (!empty($data)) ? unserialize($data) : false;
+					$content = (!empty($data)) ? unserialize($data) : false;
 					restore_error_handler();
 				} catch (Throwable $e) {
-					// pass
+					// Nothing to do here.
 				}
 
-				if ($data === false || $data === serialize(false)) {
+				if ($content === false || $content === serialize(false)) {
 					$e = error_get_last();
+
+					if (empty($e)) {
+						$e = Array(
+							"message" => "Failed to unserialize data. No further information is provided.",
+							"content" => $data
+						);
+					}
+
 					throw new UnserializeError($this -> path, $e["message"], $e);
 				}
 
-				return $data;
+				return $content;
+			}
 			
 			default:
 				return $data;
@@ -1243,9 +1257,9 @@ function stop(
 		case "NORMAL":
 			if (!headers_sent()) {
 				$response -> header("Output", "[{$response -> code}] {$response -> description}");
+				$response -> header("Report-ID", $instance -> id);
 				$response -> serve();
 			}
-
 
 			if ($status >= 300 || $code !== 0)
 				renderErrorPage($instance, headers_sent());

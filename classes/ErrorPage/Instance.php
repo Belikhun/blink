@@ -344,7 +344,19 @@ class Instance {
 			$app -> add($debugContext);
 		}
 		
+		if (!empty($data["data"])) {
+			try {
+				// We might fail at this step if data contains unserializable stuff.
+				// (eg. functions)
+				$edata = (Array) $data["data"];
 
+				$dataContext = new ContextItem("edata", "Exception Data", $edata, "asterisk");
+				$dataContext -> setRenderer([ ContextRenderer::class, "list" ]);
+				$app -> add($dataContext);
+			} catch (\Throwable $e) {
+				// Don't need to do any other action here.
+			}
+		}
 
 
 		$metrics = new ContextGroup("Metrics");

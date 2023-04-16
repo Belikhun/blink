@@ -19,7 +19,7 @@ class APIResponse extends JsonResponse {
 
 	public int $code = 0;
 	public String $description = "";
-	protected Array|Object $data = Array();
+	protected Array|Object|null $data = Array();
 	protected ?String $hash = null;
 	private ?Array $output = null;
 
@@ -71,7 +71,6 @@ class APIResponse extends JsonResponse {
 		if (!empty($this -> output))
 			return $this -> output;
 
-		$data = $this -> data;
 		$exceptionData = null;
 		$caller = "hidden";
 		$exception = null;
@@ -84,7 +83,7 @@ class APIResponse extends JsonResponse {
 			$ERROR_STACK[] = $exception;
 			$file = getRelativePath($exception -> getFile());
 	
-			if (class_exists("CONFIG") && CONFIG::$DEBUG) {
+			if (class_exists("CONFIG") && \CONFIG::$DEBUG) {
 				$stacktrace = processBacktrace($exception);
 				$caller = $stacktrace[0] -> getCallString();
 			}
@@ -100,7 +99,7 @@ class APIResponse extends JsonResponse {
 				"stacktrace" => $stacktrace
 			);
 	
-			$data = ($exception instanceof BaseException)
+			$this -> data = ($exception instanceof BaseException)
 				? $exception -> data
 				: null;
 		}
@@ -113,7 +112,7 @@ class APIResponse extends JsonResponse {
 			"user" => class_exists("Session", true)
 				? \Session::$username
 				: null,
-			"data" => $data,
+			"data" => $this -> data,
 			"hash" => $this -> hash,
 			"runtime" => $runtime -> stop(),
 			"exception" => $exceptionData
