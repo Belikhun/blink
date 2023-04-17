@@ -14,6 +14,7 @@
 
 namespace Blink\Handlers;
 use Blink\Exception\BaseException;
+use Blink\Exception\FatalError;
 use Blink\Exception\RuntimeError;
 use Blink\Middleware\Exception\ClassNotDefined;
 use Blink\Middleware\Exception\InvalidDefinition;
@@ -24,19 +25,24 @@ global $ERROR_STACK;
 $ERROR_STACK = Array();
 
 function ErrorHandler(int $code, String $text, String $file, int $line) {
+	// Disable all middleware handing entirely.
+	\Blink\Middleware::disable();
+
 	// Diacard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
 	
 	$error = new RuntimeError(1000 + $code, $text);
 	$error -> file = $file;
-	$error -> file = getRelativePath($file);
 	$error -> line = $line;
 
 	stop($error -> code, $error -> description, 500, $error);
 }
 
 function ExceptionHandler(\Throwable $e) {
+	// Disable all middleware handing entirely.
+	\Blink\Middleware::disable();
+
 	// Discard all output buffer to avoid garbage html.
 	while (ob_get_level())
 		ob_end_clean();
@@ -45,6 +51,25 @@ function ExceptionHandler(\Throwable $e) {
 		stop($e -> code, $e -> description, $e -> status, $e);
 	
 	stop(1000 + $e -> getCode(), $e -> getMessage(), 500, $e);
+}
+
+function ShutdownHandler() {
+	$error = error_get_last();
+
+	if (!empty($error)) {
+		// Disable all middleware handing entirely.
+		\Blink\Middleware::disable();
+
+		// Diacard all output buffer to avoid garbage html.
+		while (ob_get_level())
+			ob_end_clean();
+		
+		$fatal = new FatalError($error["type"], $error["message"]);
+		$fatal -> file = $error["file"];
+		$fatal -> line = $error["line"];
+
+		stop($error["type"], $error["message"], 500, $fatal);
+	}
 }
 
 global $AUTOLOAD_DATA, $AUTOLOAD_MAP, $AUTOLOADED;
@@ -59,7 +84,7 @@ function updateAutoloadData() {
 	$nsre = "/namespace ([a-zA-Z0-9\\\\]+);/mi";
 
 	// Class name regex
-	$clre = '/^(?:[\t\n]*|[\t\n]*abstract\s+)class ([a-zA-Z0-9\_]+)[a-zA-Z0-9\ \,\t\n]*\{/m';
+	$clre = '/^(?:[\t\n]*|[\t\n]*abstract\s+)class ([a-zA-Z0-9\_]+)[\\a-zA-Z0-9\ \,\t\n]*\{/m';
 
 	foreach (\CONFIG::$INCLUDES as $include) {
 		$files = getFiles($include, "php");
@@ -254,7 +279,7 @@ function callMiddleware($class) {
 	}
 }
 
-function autoloadClass(String $class) {
+function AutoloadClass(String $class) {
 	global $AUTOLOAD_DATA, $AUTOLOADED;
 
 	if (str_starts_with($class, "Middleware")) {
@@ -299,13 +324,22 @@ function autoloadClass(String $class) {
 
 	if (!empty($AUTOLOAD_DATA[$class])) {
 		$item = $AUTOLOAD_DATA[$class];
-
-		require_once ($item["path"][0] === "/" && !str_starts_with($item["path"], BASE_PATH))
+		$path = ($item["path"][0] === "/" && !str_starts_with($item["path"], BASE_PATH))
 			? BASE_PATH . $item["path"]
 			: $item["path"];
 
-		$AUTOLOADED[] = $item;
-		return;
+		if (file_exists($path)) {
+			require_once $path;
+
+			if (class_exists($class)) {
+				$AUTOLOADED[] = $item;
+				return;
+			}
+		}
+
+		// This class might have been moved to other location or deleted.
+		// Unset this class data and start fallback autoloading.
+		unset($AUTOLOAD_DATA[$class]);
 	}
 	
 	// We might have a new class here that the code is requesting. Update the
@@ -322,4 +356,5 @@ function autoloadClass(String $class) {
 
 set_exception_handler("Blink\\Handlers\\ExceptionHandler");
 set_error_handler("Blink\\Handlers\\ErrorHandler", E_ALL);
-spl_autoload_register("Blink\\Handlers\\autoloadClass");
+spl_autoload_register("Blink\\Handlers\\AutoloadClass");
+register_shutdown_function("Blink\\Handlers\\ShutdownHandler");

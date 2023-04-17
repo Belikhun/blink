@@ -17,7 +17,10 @@ namespace Blink;
 use Blink\Exception\BaseException;
 use Blink\Exception\RouteInvalidResponse;
 use Blink\Exception\RouteNotFound;
+use Middleware\Request as RequestMiddleware;
+use Middleware\Response as ResponseMiddleware;
 use Blink\Router\Route;
+use CONFIG;
 
 class Router {
 	/**
@@ -126,6 +129,14 @@ class Router {
 		$args = Array();
 		$found = false;
 
+		$request = new Request(
+			$method, $path, $args,
+			$_GET, $_POST, getallheaders(),
+			$_COOKIE, $_FILES);
+
+		if (!\Blink\Middleware::disabled())
+			$request = RequestMiddleware::handle($request);
+
 		// Up case method just to be sure
 		$method = strtoupper($method);
 
@@ -143,7 +154,27 @@ class Router {
 
 			$found = true;
 			self::$active = $route;
-			$response = $route -> callback($path, $method, $args);
+			
+			// Update the request instance.
+			$request -> route = $route;
+			$request -> args = $args;
+
+			$response = $route -> callback($request);
+
+			$valid = is_string($response)
+				|| is_numeric($response)
+				|| $response instanceof Response
+				|| (is_object($response) && method_exists($response, "__toString"));
+
+			if (!$valid)
+				throw new RouteInvalidResponse($route -> uri, stringify($response));
+
+			if (!$response instanceof Response)
+				$response = new Response($response);
+
+			if (!\Blink\Middleware::disabled())
+				$response = ResponseMiddleware::handle($request, $response);
+			
 			static::handleResponse($route, $response);
 			break;
 		}
@@ -222,30 +253,16 @@ class Router {
 
 	/**
 	 * Handle response returned from route callback.
-	 * @param Response|string $response
+	 * @param Response $response
 	 */
-	protected static function handleResponse(Route $route, $response) {
-		if (empty($response))
-			return;
-
-		$valid = is_string($response)
-			|| is_numeric($response)
-			|| $response instanceof Response
-			|| (is_object($response) && method_exists($response, "__toString"));
-
-		if (!$valid)
-			throw new RouteInvalidResponse($route -> uri, stringify($response));
-
+	protected static function handleResponse(Route $route, Response $response) {
 		// At this point, we should clean all output buffer to make sure
 		// our response output are sent to the client.
 		while (ob_get_level())
 			ob_end_clean();
 
-		if ($response instanceof Response) {
-			echo $response -> serve();
-			return;
-		}
-
-		echo $response;
+		$response -> header("X-Powered-By", "PHP/" . phpversion() . " Blink/" . CONFIG::$BLINK_VERSION);
+		echo $response -> serve();
+		return;
 	}
 }

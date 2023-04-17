@@ -90,7 +90,14 @@ class Response {
 		return $cookie;
 	}
 
+	protected function normalizeHeaderName(String $name) {
+		$name = str_replace("_", "-", trim($name));
+		return ucwords($name, "-");
+	}
+
 	public function header(String $name, String|Array $value, bool $overwrite = true) {
+		$name = $this -> normalizeHeaderName($name);
+
 		if (is_array($value))
 			$value = implode("; ", $value);
 		
@@ -123,6 +130,15 @@ class Response {
 		return $this;
 	}
 
+	public function removeHeader(String $name) {
+		$name = $this -> normalizeHeaderName($name);
+
+		if (isset($this -> headers[$name]))
+			unset($this -> headers[$name]);
+
+		return $this;
+	}
+
 	public function headers(Array $headers, bool $overwrite = true) {
 		foreach ($headers as $name => $value)
 			$this -> header($name, $value, $overwrite);
@@ -136,6 +152,19 @@ class Response {
 
 	public function body(String $body) {
 		$this -> body = $body;
+		return $this;
+	}
+
+	/**
+	 * Set expire headers for this response.
+	 * @param	int		$time	Expire time, in seconds.
+	 */
+	public function expire(int $time) {
+		$this
+			-> header("Cache-Control", "public, max-age=$time")
+			-> header("Expires", gmdate("D, d M Y H:i:s \G\M\T", time() + $time))
+			-> removeHeader("Pragma");
+		
 		return $this;
 	}
 

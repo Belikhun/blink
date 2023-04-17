@@ -114,7 +114,7 @@ if (!class_exists("CONFIG")) {
 	die();
 }
 
-if (!in_array("CoreConfig", class_parents("CONFIG", false))) {
+if (!in_array("CoreConfig", class_parents(CONFIG::class, false))) {
 	echo "Your \"CONFIG\" class MUST extend \"CoreConfig\"!!!";
 	http_response_code(500);
 	die();
@@ -130,7 +130,7 @@ foreach ($configProps as $prop) {
 		continue;
 
 	foreach ($attrs as $attr) {
-		if ($attr -> getName() === "ConfigPathProperty") {
+		if ($attr -> getName() === ConfigPathProperty::class) {
 			$value = $prop -> getValue();
 
 			if (!file_exists($value))

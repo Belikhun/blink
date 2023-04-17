@@ -130,7 +130,7 @@ class UploadedFile {
 			$hash,
 			$this -> name,
 			$this -> extension,
-			mime_content_type($this -> temp),
+			mime($this -> extension, default: null) ?: mime_content_type($this -> temp),
 			$this -> size,
 			\Session::$user,
 			time()

@@ -35,10 +35,9 @@ class Request {
 
 	public String $path;
 
-	public Route $route;
+	public ?Route $route = null;
 
 	public function __construct(
-		Route $route,
 		String $method,
 		String $path,
 		Array $args,
@@ -48,7 +47,6 @@ class Request {
 		Array $cookies,
 		Array $files
 	) {
-		$this -> route = $route;
 		$this -> method = $method;
 		$this -> path = $path;
 		$this -> args = $args;

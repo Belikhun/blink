@@ -69,16 +69,11 @@ class Route {
 	 * Call to the action of this Route. Return the result
 	 * of the callback
 	 * 
-	 * @param	string[]	$args
+	 * @param	Request		$request
 	 * @return	mixed
 	 */
-	public function callback(String $path, String $method, Array $args) {
-		$this -> args = $args;
-	
-		$request = new Request(
-			$this, $method, $path, $args,
-			$_GET, $_POST, getallheaders(),
-			$_COOKIE, $_FILES);
+	public function callback(Request $request) {
+		$args = $this -> args = $request -> args;
 
 		if (is_callable($this -> action)) {
 			if (is_array($this -> action)) {

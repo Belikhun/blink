@@ -372,88 +372,35 @@ function getHeader(String $name, $type = TYPE_TEXT, $default = null) {
 /**
  * Set Content-Type header using file extension
  * 
- * @param	string	$ext		File extension
- * @param	string	$charset
+ * @param	string	$file		File path
+ * @param	string	$charset	Charset
+ * @param	mixed	$default	Default value
  * @return	string|null
  */
-function contentType(String $ext, String $charset = "utf-8") {
-	$mimet = Array(
-		"txt" => "text/plain",
-		"htm" => "text/html",
-		"html" => "text/html",
-		"php" => "text/html",
-		"css" => "text/css",
-		"js" => "application/javascript",
-		"json" => "application/json",
-		"xml" => "application/xml",
-		"swf" => "application/x-shockwave-flash",
-		"crx" => "application/x-chrome-extension",
-		"flv" => "video/x-flv",
-		"log" => "text/x-log",
-		"csv" => "text/csv",
+function mime(String $file, String $charset = "utf-8", $default = "text/plain") {
+	$mime = null;
+	$extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-		// images
-		"png" => "image/png",
-		"jpe" => "image/jpeg",
-		"jpeg" => "image/jpeg",
-		"jpg" => "image/jpeg",
-		"gif" => "image/gif",
-		"bmp" => "image/bmp",
-		"ico" => "image/vnd.microsoft.icon",
-		"tiff" => "image/tiff",
-		"tif" => "image/tiff",
-		"svg" => "image/svg+xml",
-		"svgz" => "image/svg+xml",
-		"webp" => "image/webp",
+	if (!empty(MIME_TYPES[$extension])) {
+		$mime = MIME_TYPES[$extension];
 
-		// archives
-		"zip" => "application/zip",
-		"rar" => "application/x-rar-compressed",
-		"exe" => "application/x-msdownload",
-		"msi" => "application/x-msdownload",
-		"cab" => "application/vnd.ms-cab-compressed",
+		if (!empty($charset))
+			$mime .= "; charset={$charset}";
+	}
 
-		// audio/video
-		"mp3" => "audio/mpeg",
-		"qt" => "video/quicktime",
-		"mov" => "video/quicktime",
-		"mp4" => "video/mp4",
-		"3gp" => "video/3gpp",
-		"avi" => "video/x-msvideo",
-		"wmv" => "video/x-ms-wmv",
+	if (empty($mime) && function_exists("mime_content_type"))
+		$mime = mime_content_type($file);
 
-		// adobe
-		"pdf" => "application/pdf",
-		"psd" => "image/vnd.adobe.photoshop",
-		"ai" => "application/postscript",
-		"eps" => "application/postscript",
-		"ps" => "application/postscript",
+	if (empty($mime))
+		$mime = $default;
 
-		// ms office
-		"doc" => "application/msword",
-		"rtf" => "application/rtf",
-		"xls" => "application/vnd.ms-excel",
-		"ppt" => "application/vnd.ms-powerpoint",
-		"docx" => "application/msword",
-		"xlsx" => "application/vnd.ms-excel",
-		"pptx" => "application/vnd.ms-powerpoint",
-
-		// open office
-		"odt" => "application/vnd.oasis.opendocument.text",
-		"ods" => "application/vnd.oasis.opendocument.spreadsheet",
-	);
-
-	if (isset($mimet[$ext])) {
-		header("Content-Type: ". $mimet[$ext] ."; charset=". $charset);
-		return $mimet[$ext];
-	} else
-		return null;
+	return $mime;
 }
 
-function expireHeader($time) {
+function expire(int $time) {
 	header("Cache-Control: public, max-age=$time");
 	header("Expires: " . gmdate("D, d M Y H:i:s \G\M\T", time() + $time));
-	header_remove("pragma");
+	header_remove("Pragma");
 }
 
 /**
@@ -472,16 +419,6 @@ function getRelativePath(String $fullPath, String $separator = "/", String $base
 	}
 
 	return str_replace($search, "", $subject);
-}
-
-function header_set($name) {
-	$name = strtolower($name);
-
-	foreach (headers_list() as $item)
-		if (strpos(strtolower($item), $name) >= 0)
-			return true;
-		
-	return false;
 }
 
 function getClientIP() {
