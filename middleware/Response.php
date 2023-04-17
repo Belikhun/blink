@@ -41,10 +41,17 @@ class Response {
 			if (!class_exists($middleware))
 				throw new ClassNotFound($middleware);
 
-			$response = $middleware::handle($request, $response);
+			$handled = $middleware::handle($request, $response);
 
-			if (!$middleware instanceof \Blink\Response)
-				throw new InvalidMiddlewareReturn($response, \Blink\Response::class, get_class($response));
+			if ($handled === null) {
+				// Does not return anything, fallback to current response data.
+				$handled = $response;
+			} else {
+				$response = $handled;
+			}
+
+			if (!($response instanceof \Blink\Response))
+				throw new InvalidMiddlewareReturn($middleware, \Blink\Response::class, stringify($response));
 		}
 
 		return $response;

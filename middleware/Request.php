@@ -43,10 +43,17 @@ class Request {
 			if (!class_exists($middleware))
 				throw new ClassNotFound($middleware);
 
-			$request = $middleware::handle($request);
+			$handled = $middleware::handle($request);
 
-			if (!$middleware instanceof \Blink\Request)
-				throw new InvalidMiddlewareReturn($request, \Blink\Request::class, get_class($request));
+			if ($handled === null) {
+				// Does not return anything, fallback to current request data.
+				$handled = $request;
+			} else {
+				$request = $handled;
+			}
+
+			if (!($request instanceof \Blink\Request))
+				throw new InvalidMiddlewareReturn($middleware, \Blink\Request::class, stringify($request));
 		}
 
 		return $request;

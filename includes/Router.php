@@ -129,6 +129,9 @@ class Router {
 		$args = Array();
 		$found = false;
 
+		// Up case method just to be sure
+		$method = strtoupper($method);
+
 		$request = new Request(
 			$method, $path, $args,
 			$_GET, $_POST, getallheaders(),
@@ -137,8 +140,8 @@ class Router {
 		if (!\Blink\Middleware::disabled())
 			$request = RequestMiddleware::handle($request);
 
-		// Up case method just to be sure
-		$method = strtoupper($method);
+		$path = $request -> path;
+		$method = $request -> method;
 
 		// Sort routes by priority
 		usort(self::$routes, function ($a, $b) {
