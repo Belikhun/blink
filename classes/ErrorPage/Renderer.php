@@ -5,7 +5,7 @@
  * File Description
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
@@ -13,7 +13,7 @@
  */
 
 namespace Blink\ErrorPage;
-use HTMLBuilder;
+use HtmlWriter;
 
 class Renderer {
 	const BUTTON_PRIMARY = "btn-primary";
@@ -47,12 +47,12 @@ class Renderer {
 			$content .= static::icon($icon);
 
 		if (!empty($text))
-			$content .= HTMLBuilder::span([ "class" => "content" ], $text);
+			$content .= HtmlWriter::span([ "class" => "content" ], $text);
 
 		for ($i = 0; $i < $tris; $i++)
-			$content .= HTMLBuilder::div([ "class" => "tris tris-$i" ]);
+			$content .= HtmlWriter::div([ "class" => "tris tris-$i" ]);
 
-		return HTMLBuilder::build("a", $attrs, $content);
+		return HtmlWriter::build("a", $attrs, $content);
 	}
 
 	public static function icon(String $icon): String {

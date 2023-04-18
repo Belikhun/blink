@@ -6,7 +6,7 @@
  * {@link set_error_handler()}.
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved

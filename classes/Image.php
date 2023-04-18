@@ -8,7 +8,7 @@ use Blink\Exception\IllegalAccess;
  * Image interface for storing and managing images.
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved

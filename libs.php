@@ -6,7 +6,7 @@
  * Core libraries. Formerly `belibrary.php`.
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
@@ -692,14 +692,14 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 		if ($i == $line - $from - 1)
 			$classes[] = "current";
 
-		$numHtml .= HTMLBuilder::div(Array( "class" => $classes ), $from + $i + 1);
-		$lineHtml .= HTMLBuilder::div(Array( "class" => $classes ), "<span>{$code}</span>");
+		$numHtml .= HtmlWriter::div(Array( "class" => $classes ), $from + $i + 1);
+		$lineHtml .= HtmlWriter::div(Array( "class" => $classes ), "<span>{$code}</span>");
 	}
 
-	echo HTMLBuilder::startDIV(Array( "class" => "sourceCode" ));
-	echo HTMLBuilder::span(Array( "class" => "nums" ), $numHtml);
-	echo HTMLBuilder::build("code", Array( "class" => "lines" ), $lineHtml);
-	echo HTMLBuilder::endDIV();
+	echo HtmlWriter::startDIV(Array( "class" => "sourceCode" ));
+	echo HtmlWriter::span(Array( "class" => "nums" ), $numHtml);
+	echo HtmlWriter::build("code", Array( "class" => "lines" ), $lineHtml);
+	echo HtmlWriter::endDIV();
 }
 
 /**

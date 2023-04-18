@@ -5,7 +5,7 @@
  * File Description
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
@@ -13,19 +13,19 @@
  */
 
 namespace Blink\ErrorPage;
-use HTMLBuilder;
+use HtmlWriter;
 
 class ContextRenderer {
 	public static function list(Array $data): String {
 		if (empty($data))
-			return HTMLBuilder::build("pre", content: "[empty]");
+			return HtmlWriter::build("pre", content: "[empty]");
 
-		$output = HTMLBuilder::startDIV([ "class" => "error-context-list" ]);
+		$output = HtmlWriter::startDIV([ "class" => "error-context-list" ]);
 		$seq = isSequential($data);
 
 		foreach ($data as $name => $value) {
 			$row = (!$seq)
-				? HTMLBuilder::span([ "class" => "name", "title" => strip_tags($name) ], $name)
+				? HtmlWriter::span([ "class" => "name", "title" => strip_tags($name) ], $name)
 				: "";
 			
 			$attrs = Array( "class" => [] );
@@ -51,11 +51,11 @@ class ContextRenderer {
 				$value = htmlspecialchars($value);
 			}
 			
-			$row .= HTMLBuilder::build("pre", $attrs, $value);
-			$output .= HTMLBuilder::div([ "class" => "row" ], $row);
+			$row .= HtmlWriter::build("pre", $attrs, $value);
+			$output .= HtmlWriter::div([ "class" => "row" ], $row);
 		}
 
-		$output .= HTMLBuilder::endDIV();
+		$output .= HtmlWriter::endDIV();
 		return $output;
 	}
 
@@ -79,10 +79,10 @@ class ContextRenderer {
 				break;
 		}
 
-		return HTMLBuilder::build("pre", [ "copyable" => $content ], htmlspecialchars($content));
+		return HtmlWriter::build("pre", [ "copyable" => $content ], htmlspecialchars($content));
 	}
 
 	public static function string(String $content) {
-		return HTMLBuilder::build("pre", [], htmlspecialchars($content));
+		return HtmlWriter::build("pre", [], htmlspecialchars($content));
 	}
 }

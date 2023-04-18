@@ -6,7 +6,7 @@
  * error page.
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
@@ -171,38 +171,38 @@ http_response_code($status);
 											$foundfault = true;
 										}
 
-										echo HTMLBuilder::startDIV($attrs);
+										echo HtmlWriter::startDIV($attrs);
 										$badges = Array();
 
 										if ($trace -> isVendor()) {
-											$badges[] = HTMLBuilder::span(
+											$badges[] = HtmlWriter::span(
 												Array( "class" => "badge vendor" ),
 												"vendor"
 											);
 										}
 
 										if ($trace -> fault) {
-											$badges[] = HTMLBuilder::span(
+											$badges[] = HtmlWriter::span(
 												Array( "class" => "badge fault" ),
 												"fault"
 											);
 										}
 
 										if (!empty($badges)) {
-											echo HTMLBuilder::div(
+											echo HtmlWriter::div(
 												Array( "class" => "badges" ),
 												implode("", $badges)
 											);
 										}
 
-										echo HTMLBuilder::div(
+										echo HtmlWriter::div(
 											Array( "class" => "path" ),
 											$trace -> file . "<code>:{$trace -> line}</code>");
 									} else {
-										echo HTMLBuilder::startDIV($attrs);
+										echo HtmlWriter::startDIV($attrs);
 									}
 
-									echo HTMLBuilder::div(Array(
+									echo HtmlWriter::div(Array(
 										"class" => "font-semibold"
 									), $trace -> getCallString());
 
@@ -210,7 +210,7 @@ http_response_code($status);
 										$prefix = "args[{$i}] = ";
 
 										if (is_array($arg)) {
-											echo HTMLBuilder::code(
+											echo HtmlWriter::code(
 												Array( "class" => "arg" ),
 												"$prefix <b>{$arg[0]}</b> " . htmlspecialchars($arg[1])
 											);
@@ -218,12 +218,12 @@ http_response_code($status);
 											continue;
 										}
 
-										echo HTMLBuilder::code(
+										echo HtmlWriter::code(
 											Array( "class" => "arg" ),
 											htmlspecialchars($prefix . $arg));
 									}
 
-									echo HTMLBuilder::endDIV();
+									echo HtmlWriter::endDIV();
 								}
 								?>
 							
@@ -249,23 +249,23 @@ http_response_code($status);
 									$foundfault = true;
 								}
 
-								echo HTMLBuilder::startDIV($attrs);
+								echo HtmlWriter::startDIV($attrs);
 
-								echo HTMLBuilder::startDIV(Array(
+								echo HtmlWriter::startDIV(Array(
 									"class" => "header text-sm font-semibold"
 								));
 								
-								echo HTMLBuilder::a(
+								echo HtmlWriter::a(
 									"vscode://file/" . urlencode($trace -> getFullPath() . ":{$trace -> line}"),
 									$trace -> file . "<code>:{$trace -> line}</code>",
 									Array( "class" => "open-file" )
 								);
 
-								echo HTMLBuilder::endDIV();
+								echo HtmlWriter::endDIV();
 
 								echo renderSourceCode($trace -> getFullPath(), $trace -> line, 27);
 
-								echo HTMLBuilder::endDIV();
+								echo HtmlWriter::endDIV();
 							}
 						?></span>
 					</div>

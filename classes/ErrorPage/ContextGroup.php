@@ -5,7 +5,7 @@
  * File Description
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
@@ -13,7 +13,7 @@
  */
 
 namespace Blink\ErrorPage;
-use HTMLBuilder;
+use HtmlWriter;
 
 class ContextGroup {
 	public String $name;
@@ -47,13 +47,13 @@ class ContextGroup {
 	}
 
 	public function render() {
-		echo HTMLBuilder::startDIV([ "class" => "context-group" ]);
-		echo HTMLBuilder::div([ "class" => "label" ], $this -> name);
+		echo HtmlWriter::startDIV([ "class" => "context-group" ]);
+		echo HtmlWriter::div([ "class" => "label" ], $this -> name);
 
 		foreach ($this -> items as $item)
 			$item -> render();
 
-		echo HTMLBuilder::endDIV();
+		echo HtmlWriter::endDIV();
 	}
 
 	public function __serialize() {

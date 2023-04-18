@@ -5,7 +5,7 @@
  * File Description
  * 
  * @author    Belikhun
- * @since     2.0.0
+ * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
@@ -13,7 +13,7 @@
  */
 
 namespace Blink\ErrorPage;
-use HTMLBuilder;
+use HtmlWriter;
 
 class ContextItem {
 	public String $id;
@@ -53,7 +53,7 @@ class ContextItem {
 	}
 
 	public function renderNavigation() {
-		echo HTMLBuilder::build("a", Array(
+		echo HtmlWriter::build("a", Array(
 			"target" => "_self",
 			"href" => "#context-{$this -> id}",
 			"class" => "context-nav-item",
@@ -64,20 +64,20 @@ class ContextItem {
 		if (!empty($this -> icon))
 			echo Renderer::icon($this -> icon);
 
-		echo HTMLBuilder::span([ "class" => "label" ], $this -> name);
-		echo HTMLBuilder::end("a");
+		echo HtmlWriter::span([ "class" => "label" ], $this -> name);
+		echo HtmlWriter::end("a");
 	}
 
 	public function render() {
-		echo HTMLBuilder::startDIV([ "class" => "context-item", "id" => "context-{$this -> id}-target" ]);
-		echo HTMLBuilder::div([ "class" => "scroll-target", "id" => "context-{$this -> id}" ]);
+		echo HtmlWriter::startDIV([ "class" => "context-item", "id" => "context-{$this -> id}-target" ]);
+		echo HtmlWriter::div([ "class" => "scroll-target", "id" => "context-{$this -> id}" ]);
 
 		$title = $this -> name;
 
 		if (!empty($this -> icon))
 			$title .= Renderer::icon($this -> icon);
 
-		echo HTMLBuilder::build("h1", [ "class" => "title" ], $title);
+		echo HtmlWriter::build("h1", [ "class" => "title" ], $title);
 
 		$content = "";
 
@@ -86,17 +86,17 @@ class ContextItem {
 				try {
 					$content = call_user_func($this -> renderer, $this -> data);
 				} catch (\Throwable $e) {
-					$content = HTMLBuilder::build("pre", [], get_class($e) . ": " . $e -> getMessage());
+					$content = HtmlWriter::build("pre", [], get_class($e) . ": " . $e -> getMessage());
 				}
 			} else {
-				$content = HTMLBuilder::build("pre", [], "Renderer [" . $this -> getCallString() . "] is not callable!"); 
+				$content = HtmlWriter::build("pre", [], "Renderer [" . $this -> getCallString() . "] is not callable!"); 
 			}
 		} else {
-			$content = HTMLBuilder::build("pre", [], "Renderer not set for this context."); 
+			$content = HtmlWriter::build("pre", [], "Renderer not set for this context."); 
 		}
 
 		echo $content;
-		echo HTMLBuilder::endDIV();
+		echo HtmlWriter::endDIV();
 	}
 
 	public function __serialize() {
