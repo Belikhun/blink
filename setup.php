@@ -154,10 +154,10 @@ ob_start();
  * Clock for tracking runtime since request started.
  * @var StopClock
  */
-global $runtime;
+global $RUNTIME;
 
-if (!isset($runtime))
-	$runtime = new StopClock();
+if (!isset($RUNTIME))
+	$RUNTIME = new StopClock();
 
 if (!class_exists("User"))
 	require_once CORE_ROOT . "/defaults/User.php";

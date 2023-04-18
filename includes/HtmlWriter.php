@@ -27,31 +27,35 @@ class HtmlWriter {
 		if (preg_match($re, $target, $tM)) {
 			$tag = $tM[1];
 
-			// Parse ID and classes.
-			$re = '/([.#])([a-zA-Z0-9\-\_]+)/m';
-
-			if (preg_match_all($re, $target, $cM, PREG_SET_ORDER)) {
-				foreach ($cM as $item) {
-					if ($item[1] === ".")
-						$classes[] = $item[2];
-					else if ($item[1] === "#")
-						$id = $item[2];
+			if (str_contains($tag, "#") || str_contains($tag, ".")) {
+				// Parse ID and classes.
+				$re = '/([.#])([a-zA-Z0-9\-\_]+)/m';
+	
+				if (preg_match_all($re, $target, $cM, PREG_SET_ORDER)) {
+					foreach ($cM as $item) {
+						if ($item[1] === ".")
+							$classes[] = $item[2];
+						else if ($item[1] === "#")
+							$id = $item[2];
+					}
 				}
 			}
 
-			// Parse attributes
-			$re = '/\[([a-zA-Z0-9=\'\"]+)\]/mU';
-
-			if (preg_match_all($re, $target, $aM, PREG_SET_ORDER)) {
-				foreach ($aM as $item) {
-					$parts = explode("=", $item[1]);
-					
-					if (empty($parts[1])) {
-						$attributes[$parts[0]] = true;
-						continue;
+			if (str_contains($tag, "[")) {
+				// Parse attributes
+				$re = '/\[([a-zA-Z0-9=\'\" ]+)\]/mU';
+	
+				if (preg_match_all($re, $target, $aM, PREG_SET_ORDER)) {
+					foreach ($aM as $item) {
+						$parts = explode("=", $item[1]);
+						
+						if (empty($parts[1])) {
+							$attributes[$parts[0]] = true;
+							continue;
+						}
+	
+						$attributes[$parts[0]] = trim($parts[1], "\"'");
 					}
-
-					$attributes[$parts[0]] = trim($parts[1], "\"'");
 				}
 			}
 		}
@@ -141,7 +145,7 @@ class HtmlWriter {
 	 * @version	1.0
 	 * @author	Belikhun <belivipro9x99@gmail.com>
 	 */
-	public static function tag(String $tag, Array $attributes = Array(), String $content = "", bool $end = true) {
+	public static function tag(String $tag, String $content = "", Array $attributes = Array(), bool $end = true) {
 		return static::build($tag, $attributes, $content, $end);
 	}
 
@@ -196,7 +200,8 @@ class HtmlWriter {
 
 	public static function css(String $src, Array $attributes = Array()) {
 		$attributes = array_merge(Array(
-
+			"rel" => "stylesheet",
+			"href" => $src
 		), $attributes);
 
 		return self::build("link", $attributes);

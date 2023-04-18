@@ -66,7 +66,7 @@ class APIResponse extends JsonResponse {
 	}
 
 	public function output(): Array {
-		global $runtime, $ERROR_STACK;
+		global $RUNTIME, $ERROR_STACK;
 
 		if (!empty($this -> output))
 			return $this -> output;
@@ -114,7 +114,7 @@ class APIResponse extends JsonResponse {
 				: null,
 			"data" => $this -> data,
 			"hash" => $this -> hash,
-			"runtime" => $runtime -> stop(),
+			"runtime" => $RUNTIME -> stop(),
 			"exception" => $exceptionData
 		);
 
