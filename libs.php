@@ -952,9 +952,12 @@ function processBacktrace($data, bool $merges = true) {
 		 * @param	BacktraceFrame[]	$from
 		 * @param	BacktraceFrame[]	$target
 		 */
-		$merge = function (Array $from, Array $target) {
+		$merge = function (Array $from, Array $target, bool $reverse = false) {
 			$insert = 0;
-	
+
+			if ($reverse)
+				$target = array_reverse($target);
+			
 			foreach ($from as $merge) {
 				foreach ($target as $i => &$check) {
 					if ($merge -> hash() === $check -> hash()) {
@@ -974,11 +977,13 @@ function processBacktrace($data, bool $merges = true) {
 					}
 				}
 		
-				array_splice($target, $insert, 0, [ $merge ] );
+				array_splice($target, $insert - ($reverse ? 1 : 0), 0, [ $merge ] );
 				$insert += 1;
 			}
 
-			return $target;
+			return $reverse
+				? array_reverse($target)
+				: $target;
 		};
 
 		// Add previous exceptions.
@@ -986,11 +991,11 @@ function processBacktrace($data, bool $merges = true) {
 			if ($exception == $e)
 				continue;
 
-			$frames = $merge($frames, processBacktrace($e, false));
+			$frames = $merge($frames, processBacktrace($e, false), true);
 		}
 
 		// Merge exception frames with full backtrace.
-		$frames = $merge(backtrace(), $frames);
+		// $frames = $merge(backtrace(), $frames);
 
 		// Update fault points
 		foreach ($ERROR_STACK as $e) {

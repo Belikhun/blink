@@ -73,7 +73,7 @@ class Environment {
 			$value = cleanParam($lval, TYPE_BOOL);
 		else {
 			if ($lval[0] === "'" || $lval[0] === "\"")
-				$value = trim($value, "'\"");
+				$value = trim($value, "'\"\n");
 			else
 				$value = trim($value);
 		}
