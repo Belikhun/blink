@@ -672,7 +672,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	// Keywords regex
 	$keywords = Array(	"try", "catch", "return", "public", "protected", "private", "static", "include_once",
 						"include", "require_once", "require", "global", "if", "else", "use", "throw",
-						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break" );
+						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break", "instanceof" );
 	$re = '/(^|[\t\n\(\! ])(' . implode("|", $keywords) . ')(?=[\t\n\(\{\:\; ])/mi';
 	$content = preg_replace($re, '$1<span class="sc-keyword">$2</span>', $content);
 
@@ -681,7 +681,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	$content = preg_replace($re, '$1<span class="sc-function">$2</span>', $content);
 		
 	// Class name regex
-	$re = '/(^| |\()([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
+	$re = '/(^| |\(|\t)([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
 	$content = preg_replace($re, '$1<span class="sc-class">$2</span>$3', $content);
 
 	// String
@@ -991,13 +991,37 @@ function processBacktrace($data, bool $merges = true) {
 			if ($exception == $e)
 				continue;
 
-			$frames = $merge($frames, processBacktrace($e, false), true);
+			$frames = $merge($frames, processBacktrace($e, false));
 		}
 
 		// Merge exception frames with full backtrace.
-		// $frames = $merge(backtrace(), $frames);
+		$frames = $merge(backtrace(), $frames);
 
-		// Update fault points
+		// Reduce duplicate.
+		for ($i = 0; $i < count($frames) - 1; $i++) {
+			$frame = &$frames[$i];
+			$next = $frames[$i + 1];
+
+			if ($frame -> hash() === $next -> hash() || $frame -> function === $next -> function) {
+				if (!empty($next -> file) && $next -> file)
+					$frame -> file = $next -> file;
+				
+				if (!empty($next -> line) && $next -> line > 0)
+					$frame -> line = $next -> line;
+
+				$frame -> function = $next -> function ?: $frame -> function;
+
+				if (empty($frame -> args) && !empty($next -> args))
+					$frame -> args = $next -> args;
+
+				array_splice($frames, $i + 1, 1);
+			}
+		}
+
+		// Reset frame pointer to prevent error in next loop.
+		unset($frame);
+
+		// Update fault points.
 		foreach ($ERROR_STACK as $e) {
 			$file = getRelativePath($e -> getFile());
 			$line = $e -> getLine();
