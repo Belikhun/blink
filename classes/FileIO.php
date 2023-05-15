@@ -19,19 +19,29 @@ use Blink\Exception\UnserializeError;
  * See LICENSE in the project root for license information.
  */
 class FileIO {
+	const NO_DEFAULT = null;
+
 	private $maxTry = 20;
 	public $stream;
 	public $path;
+	public String $type = TYPE_TEXT;
 
 	public function __construct(
 		String $path,
-		mixed $defaultData = "",
-		String $defaultType = TYPE_TEXT
+		mixed $default = NO_DEFAULT,
+		String $type = TYPE_TEXT
 	) {
 		$this -> path = $path;
+		$this -> type = $type;
 
-		if (!file_exists($path))
-			$this -> write($defaultData, $defaultType, "x");
+		if (!file_exists($path) && $default !== static::NO_DEFAULT) {
+			$data = $default;
+
+			if (is_callable($default))
+				$data = $default();
+
+			$this -> write($data, $type, "x");
+		}
 	}
 
 	public function fos(String $path, String $mode) {
@@ -69,7 +79,10 @@ class FileIO {
 	 * @return	string|array|object|mixed
 	 *
 	 */
-	public function read($type = TYPE_TEXT) {
+	public function read($type = null) {
+		if (empty($type))
+			$type = $this -> type;
+		
 		if (file_exists($this -> path)) {
 			$tries = 0;
 			
@@ -154,7 +167,10 @@ class FileIO {
 	 * @return
 	 *
 	 */
-	public function write($data, String $type = TYPE_TEXT, String $mode = "w") {
+	public function write($data, String $type = null, String $mode = "w") {
+		if (empty($type))
+			$type = $this -> type;
+
 		if (file_exists($this -> path)) {
 			$tries = 0;
 			

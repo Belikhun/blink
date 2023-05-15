@@ -1,6 +1,7 @@
 <?php
 
 namespace Blink\Cache;
+use Blink\Cache;
 
 /**
  * CacheData.php
@@ -17,7 +18,7 @@ namespace Blink\Cache;
 class Data {
 	public String $id;
 
-	public int $age = \Cache::NO_EXPIRE;
+	public int $age = Cache::NO_EXPIRE;
 
 	public int $time = 0;
 

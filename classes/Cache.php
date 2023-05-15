@@ -2,6 +2,15 @@
 
 namespace Blink;
 
+use Throwable;
+
+/**
+ * Global variable to store created cache instances.
+ * @var Cache[]
+ */
+global $CACHES;
+$CACHES = Array();
+
 /**
  * Cache.php
  * 
@@ -19,43 +28,68 @@ class Cache {
 
 	public static String $CACHE_LOCATION;
 	public String $id;
-	public Cache\Data $data;
+	protected Cache\Data $data;
 	public String $file;
 	public String $path;
-	private FileIO $stream;
-	private Cache\Data $default;
+	protected FileIO $stream;
 
-	public function __construct($id, $defaultData = null) {
+	public function __construct($id) {
 		$this -> id = $id;
 		$this -> file = $this -> id . ".cache";
-		$this -> path = self::$CACHE_LOCATION ."/". $this -> file;
-
-		$this -> default = new Cache\Data();
-		$this -> default -> id = $this -> id;
-		$this -> default -> content = $defaultData;
-
-		$this -> fetch();
+		$this -> path = static::path($this -> id);
 	}
 
-	private function fetch() {
-		$this -> stream = new FileIO(
-			$this -> path,
-			$this -> default,
-			TYPE_SERIALIZED
-		);
+	protected function stream(): FileIO {
+		if (empty($this -> stream)) {
+			$this -> stream = new FileIO(
+				$this -> path,
+				FileIO::NO_DEFAULT,
+				TYPE_SERIALIZED
+			);
+		}
+
+		return $this -> stream;
+	}
+
+	/**
+	 * Try to fetch current data of this cache.
+	 * @return bool 
+	 */
+	public function fetch() {
+		if (!file_exists($this -> path))
+			return false;
 
 		try {
-			/** @var array */
-			$this -> data = $this -> stream -> read(TYPE_SERIALIZED);
-		} catch(Throwable) {
-			// Discard file and create new one.
-			$this -> save($this -> default);
-			$this -> data = $this -> default;
+			$this -> data = $this -> stream() -> read(TYPE_SERIALIZED);
+			return true;
+		} catch (Throwable) {
+			return false;
 		}
 	}
 
+	/**
+	 * Initialize clean record of this cache.
+	 * @return Cache
+	 */
+	public function initialize() {
+		$this -> data = new Cache\Data();
+		$this -> data -> id = $this -> id;
+		return $this;
+	}
+
+	public function initialized() {
+		return !empty($this -> data);
+	}
+
+	/**
+	 * Set cache age.
+	 * If set to `Cache::NO_EXPIRE`, this cache will never expire.
+	 * 
+	 * @param	int		$age
+	 */
 	public function setAge(int $age) {
 		$this -> data -> age = $age;
+		return $this;
 	}
 
 	/**
@@ -69,20 +103,35 @@ class Cache {
 			|| (time() - $this -> data -> time) < $this -> data -> age;
 	}
 
-	public function getData() {
+	public function data() {
+		return $this -> data;
+	}
+
+	public function content() {
 		return $this -> data -> content;
 	}
 
-	public function save($data) {
-		if (!empty($data))
-			$this -> data -> content = $data;
+	public function setContent($content) {
+		$this -> data -> content = $content;
+		return $this;
+	}
 
+	public function save() {
 		$this -> data -> time = time();
-		$this -> stream -> write($this -> data, TYPE_SERIALIZED);
+		$this -> stream() -> write($this -> data, TYPE_SERIALIZED);
+		return $this;
+	}
+
+	protected static function path(String $id) {
+		return static::$CACHE_LOCATION ."/{$id}.cache";
+	}
+
+	public function exist(String $id) {
+		return file_exists(static::path($id));
 	}
 
 	public static function remove(String $id) {
-		$path = self::$CACHE_LOCATION . "/{$id}.cache";
+		$path = static::path($id);
 		
 		if (file_exists($path))
 			unlink($path);
@@ -91,7 +140,7 @@ class Cache {
 	public static function clearAll() {
 		$counter = 0;
 
-		if (file_exists(self::$CACHE_LOCATION)) {
+		if (file_exists(static::$CACHE_LOCATION)) {
 			$di = new \RecursiveDirectoryIterator(self::$CACHE_LOCATION, \FilesystemIterator::SKIP_DOTS);
 			$ri = new \RecursiveIteratorIterator($di, \RecursiveIteratorIterator::CHILD_FIRST);
 

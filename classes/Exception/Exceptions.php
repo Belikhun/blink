@@ -29,7 +29,7 @@ class UnserializeError extends BaseException {
 		$file = getRelativePath($file);
 		$message = str_replace("unserialize(): ", "", $message);
 
-		parent::__construct(47, "unserialize({$file}): {$message}", 500, Array( "file" => $file, "data" => $data ));
+		parent::__construct(47, "unserialize(\"{$file}\"): {$message}", 500, Array( "file" => $file, "data" => $data ));
 	}
 }
 

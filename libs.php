@@ -562,13 +562,17 @@ function globFilesPriorityCached($pattern, int $flags = 0) {
 	$id = md5($pattern . $flags);
 	$cache = new Cache($id);
 
-	if (empty($cache -> getData())) {
+	if (!$cache -> fetch()) {
 		$data = globFilesPriority($pattern, $flags);
-		$cache -> save($data);
+
+		$cache -> initialize()
+			-> setContent($data)
+			-> save();
+
 		return $data;
 	}
 
-	return $cache -> getData();
+	return $cache -> content();
 }
 
 /**
