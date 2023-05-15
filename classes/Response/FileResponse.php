@@ -1,4 +1,10 @@
 <?php
+
+namespace Blink\Response;
+use Blink\Exception\FileNotFound;
+use Blink\File;
+use Blink\Response;
+
 /**
  * FileResponse.php
  * 
@@ -11,12 +17,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Response;
-use Blink\Exception\FileNotFound;
-use Blink\File;
-use Blink\Response;
-
 class FileResponse extends Response {
 	const BUFFER = 1024 * 8;
 

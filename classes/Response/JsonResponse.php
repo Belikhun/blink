@@ -1,8 +1,12 @@
 <?php
+
+namespace Blink\Response;
+use Blink\Response;
+
 /**
  * JsonResponse.php
  * 
- * File Description
+ * Return a json response of an object.
  * 
  * @author    Belikhun
  * @since     1.0.0
@@ -11,10 +15,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Response;
-use Blink\Response;
-
 class JsonResponse extends Response {
 
 	protected Array $json = Array();
