@@ -1205,7 +1205,7 @@ function stop(
 		
 		case "API":
 			$response -> header("Access-Control-Allow-Origin", "*");
-			$response -> serve();
+			echo $response -> serve();
 			break;
 
 		default:
