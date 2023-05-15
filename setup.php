@@ -142,6 +142,9 @@ foreach ($configProps as $prop) {
 if (!file_exists(DATA_ROOT . "/.htaccess"))
 	copy(CORE_ROOT . "/files/data.htaccess", DATA_ROOT . "/.htaccess");
 
+if (!file_exists(BASE_PATH . "/.gitignore"))
+	copy(CORE_ROOT . "/files/index.gitignore", BASE_PATH . "/.gitignore");
+
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";
