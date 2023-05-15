@@ -16,6 +16,7 @@
 use Blink\BacktraceFrame;
 use Blink\Cache;
 use Blink\Debug;
+use Blink\Environment;
 use Blink\Exception\BaseException;
 use Blink\Exception\FileNotFound;
 use Blink\Exception\FileReadError;
@@ -308,6 +309,22 @@ function validate($value, $type, $throw = true) {
 	}
 
 	return true;
+}
+
+/**
+ * Gets the value of an environment variable.
+ * 
+ * @param	string		$key		Environment variable name.
+ * @param	mixed		$default	Default value when it's not set.
+ * @param	string		$type
+ * 
+ * @return	mixed
+ */
+function env(String $key, $default = null, String $type = TYPE_TEXT) {
+	if (!isset(Environment::$values[$key]))
+		return $default;
+	
+	return cleanParam(Environment::$values[$key], $type);
 }
 
 /**
