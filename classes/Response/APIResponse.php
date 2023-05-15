@@ -122,7 +122,7 @@ class APIResponse extends JsonResponse {
 	}
 
 	public function process(): String {
-		$this -> json($this -> output());
+		$this -> json(array_merge($this -> output(), $this -> json));
 		return parent::process();
 	}
 }

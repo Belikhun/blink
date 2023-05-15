@@ -1185,7 +1185,7 @@ function stop(
 
 	// Create a new error page instance!
 	$instance = \Blink\ErrorPage\Instance::create($response -> output());
-	$response -> set("report", $instance -> url());
+	$response -> set("report", (String) $instance -> url());
 
 	if (!defined("PAGE_TYPE"))
 		define("PAGE_TYPE", "NORMAL");
@@ -1205,6 +1205,7 @@ function stop(
 		
 		case "API":
 			$response -> header("Access-Control-Allow-Origin", "*");
+			$response -> header("Report-ID", $instance -> id);
 			echo $response -> serve();
 			break;
 

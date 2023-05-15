@@ -203,9 +203,9 @@ class Instance {
 
 	/**
 	 * Return url to view this report.
-	 * @return string
+	 * @return \URL
 	 */
-	public function url() {
+	public function url(): \URL {
 		return new \URL("/error/{$this -> id}");
 	}
 
