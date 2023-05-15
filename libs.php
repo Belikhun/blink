@@ -155,7 +155,7 @@ function cleanUTF8($value) {
         if ((string)(int) $value === $value)
             return $value;
 
-        // No null bytes expected in our data, so let"s remove it.
+        // No null bytes expected in our data, so let's remove it.
         $value = str_replace("\0", "", $value);
 
         static $buggyiconv = null;

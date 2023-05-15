@@ -72,9 +72,10 @@ class Environment {
 		else if (in_array($lval, ["true", "false", "on", "off", "yes", "no"]))
 			$value = cleanParam($lval, TYPE_BOOL);
 		else {
-			if ($lval[0] === "'" || $lval[0] === "\"")
-				$value = trim($value, "'\"\n");
-			else
+			if ($value[0] === "'" || $value[0] === "\"") {
+				$value = trim($value, "'\"\"\n\x00\x0d\x0a");
+				$value = str_replace([ "\"", "'" ], "", $value);
+			} else
 				$value = trim($value);
 		}
 
