@@ -89,7 +89,9 @@ http_response_code($status);
 			<div class="content">
 				<div id="details" class="panel">
 					<div class="flex flex-row flex-g1 info">
-						<video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video>
+						<?php if (CONFIG::$W_MODE) { ?>
+							<video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video>
+						<?php } ?>
 	
 						<span class="flex-g1 block exception">
 							<div class="flex flex-row align-center justify-between flex-wrap top">

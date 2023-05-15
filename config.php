@@ -67,4 +67,5 @@ class CoreConfig {
 
 	public static Array		$IMAGE_ALLOW = Array("png", "jpg", "webp", "gif", "tif", "jpeg", "bmp");
 	public static int		$IMAGE_SIZE = 6291456;
+	public static bool		$W_MODE = true;
 }
