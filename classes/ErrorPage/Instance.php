@@ -3,6 +3,7 @@
 namespace Blink\ErrorPage;
 
 use Blink\BacktraceFrame;
+use Blink\Environment;
 use Blink\ErrorPage\Exception\ReportNotFound;
 use Blink\Router;
 use Blink\Session;
@@ -361,6 +362,10 @@ class Instance {
 				// Don't need to do any other action here.
 			}
 		}
+
+		$appEnvsContext = new ContextItem("environments", "Environments", Environment::$values, "leaf");
+		$appEnvsContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($appEnvsContext);
 
 		$appConstsContext = new ContextItem("consts", "Constants", Array(
 			"BASE_PATH" => BASE_PATH,

@@ -26,20 +26,32 @@ $CACHES = Array();
 class Cache {
 	const NO_EXPIRE = -1;
 
-	public static String $CACHE_LOCATION;
+	public static String $ROOT;
+	
 	public String $id;
 	protected Cache\Data $data;
 	public String $file;
 	public String $path;
 	protected FileIO $stream;
+	public bool $hit = false;
 
 	public function __construct($id) {
+		global $CACHES;
+
 		$this -> id = $id;
 		$this -> file = $this -> id . ".cache";
 		$this -> path = static::path($this -> id);
+
+		if (!empty($CACHES[$id])) {
+			$cache = $CACHES[$id];
+			$this -> stream = $cache -> stream();
+			$this -> data = $cache -> data();
+		} else {
+			$CACHES[$id] = $this;
+		}
 	}
 
-	protected function stream(): FileIO {
+	public function stream(): FileIO {
 		if (empty($this -> stream)) {
 			$this -> stream = new FileIO(
 				$this -> path,
@@ -108,6 +120,7 @@ class Cache {
 	}
 
 	public function content() {
+		$this -> hit = true;
 		return $this -> data -> content;
 	}
 
@@ -123,7 +136,7 @@ class Cache {
 	}
 
 	protected static function path(String $id) {
-		return static::$CACHE_LOCATION ."/{$id}.cache";
+		return static::$ROOT ."/{$id}.cache";
 	}
 
 	public function exist(String $id) {
@@ -140,8 +153,8 @@ class Cache {
 	public static function clearAll() {
 		$counter = 0;
 
-		if (file_exists(static::$CACHE_LOCATION)) {
-			$di = new \RecursiveDirectoryIterator(self::$CACHE_LOCATION, \FilesystemIterator::SKIP_DOTS);
+		if (file_exists(static::$ROOT)) {
+			$di = new \RecursiveDirectoryIterator(self::$ROOT, \FilesystemIterator::SKIP_DOTS);
 			$ri = new \RecursiveIteratorIterator($di, \RecursiveIteratorIterator::CHILD_FIRST);
 
 			foreach ($ri as $file) {
@@ -154,4 +167,4 @@ class Cache {
 	}
 }
 
-Cache::$CACHE_LOCATION = &\CONFIG::$CACHE_ROOT;
+Cache::$ROOT = &\CONFIG::$CACHE_ROOT;

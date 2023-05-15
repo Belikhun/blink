@@ -1,5 +1,6 @@
 <?php
 
+use Blink\Environment;
 use Blink\Router;
 use Blink\Session;
 
@@ -188,6 +189,9 @@ require_once CORE_ROOT . "/db/DB.Abstract.php";
 //*  Just initialize current session and run additional setup
 //*  process defined in application.
 //* ===========================================================
+
+// Initialize environment variables
+Environment::load(\CONFIG::$ENV);
 
 // Initialize session
 if (class_exists("Session"))

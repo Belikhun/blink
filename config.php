@@ -31,7 +31,7 @@ class CoreConfig {
 	public static int		$TOKEN_LIFETIME = 86400;
 	public static String	$BLINK_VERSION = "1.0.0";
 	public static String	$BLINK_URL = "https://github.com/Belikhun/blink";
-
+	public static String	$ENV = "default";
 
 	public static String	$DB_DRIVER = "MySQLi";
 	public static String	$DB_HOST = "127.0.0.1";
