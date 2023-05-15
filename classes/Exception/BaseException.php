@@ -35,28 +35,28 @@ class BaseException extends \Exception {
 	public int $status;
 
 	/**
-	 * Optional Error Data
+	 * Optional error data.
 	 * @var	array|\stdClass
 	 */
 	public $data;
 
 	/**
-	 * Optional Error Data
+	 * The file in which the error was created.
 	 * @var	string
 	 */
 	public String $file;
 
 	/**
-	 * Optional Error Data
+	 * The line of file in which the error was created.
 	 * @var	int
 	 */
 	public int $line;
 
 	/**
-	 * Optional Error Data
-	 * @var	\BacktraceFrame[]
+	 * Custom trace data of this error.
+	 * @var	array
 	 */
-	public Array $trace = [];
+	protected Array $trace = [];
 
 	/**
 	 * Exception class designed for detailed error report.
@@ -75,6 +75,19 @@ class BaseException extends \Exception {
 
 		$this -> file = getRelativePath(parent::getFile());
 		$this -> line = parent::getLine();
+	}
+
+	public function applyFrom(\Throwable $e) {
+		$this -> file = getRelativePath($e -> getFile());
+		$this -> line = $e -> getLine();
+		$this -> trace = $e -> getTrace();
+	}
+
+	public function trace() {
+		if (empty($this -> trace))
+			return parent::getTrace();
+
+		return $this -> trace;
 	}
 
 	public function __toString() {

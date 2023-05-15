@@ -1026,7 +1026,9 @@ function processBacktrace($data, bool $merges = true) {
 
 	if ($data instanceof \Throwable) {
 		$exception = $data;
-		$data = $exception -> getTrace();
+		$data = ($exception instanceof BaseException)
+			? $exception -> trace()
+			: $exception -> getTrace();
 	}
 
 	foreach ($data as $item) {

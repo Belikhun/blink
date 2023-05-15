@@ -16,7 +16,7 @@ namespace Blink\Exception;
 
 class ClassNotFound extends BaseException {
 	/**
-	 * Target class name that is not defined after
+	 * Target class name that does not exist after
 	 * autoloading target file.
 	 * @var string
 	 */
@@ -27,7 +27,7 @@ class ClassNotFound extends BaseException {
 
 		parent::__construct(
 			CLASS_NOT_FOUND,
-			"Class [{$class}] is not defined!",
+			"Class [{$class}] not found!",
 			500,
 			Array( "class" => $class )
 		);

@@ -53,6 +53,13 @@ class Handlers {
 				break;
 			}
 
+			case \Blink\Exception\ClassNotFound::class: {
+				$title = "Không tìm thấy class";
+				$content = "Kiểm tra xem bạn đã đặt đúng tên cho class này chưa. Nếu đã đúng hãy đảm bảo rằng class này
+							đã nằm trong thư mục của danh sách <code>CONFIG::\$INCLUDES</code>!";
+				break;
+			}
+
 			case \Blink\Exception\RouteNotFound::class: {
 				$title = "Đường dẫn không tồn tại";
 				$content = "Có vẻ như đường dẫn này không còn tồn tại trên máy chủ. Liên hệ quản trị viên nếu bạn thấy đây là lỗi.";

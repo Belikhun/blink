@@ -14,6 +14,7 @@
 
 namespace Blink\Handlers;
 use Blink\Exception\BaseException;
+use Blink\Exception\ClassNotFound;
 use Blink\Exception\FatalError;
 use Blink\Exception\RuntimeError;
 use Blink\Middleware\Exception\ClassNotDefined;
@@ -50,7 +51,18 @@ function ExceptionHandler(\Throwable $e) {
 	if ($e instanceof BaseException)
 		stop($e -> code, $e -> description, $e -> status, $e);
 	
-	stop(1000 + $e -> getCode(), $e -> getMessage(), 500, $e);
+		
+	// Little hack to check if we got class not found error, translate
+	// it to a proper class.
+	$error = $e;
+	$matches = null;
+	$cre = '/Class \"(.+)\" not found/';
+	if (preg_match($cre, $e -> getMessage(), $matches)) {
+		$error = new ClassNotFound($matches[1]);
+		$error -> applyFrom($e);
+	}
+
+	stop(1000 + $error -> getCode(), $error -> getMessage(), 500, $error);
 }
 
 function ShutdownHandler() {
