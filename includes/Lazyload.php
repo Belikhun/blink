@@ -1,5 +1,7 @@
 <?php
 
+namespace Blink;
+
 /**
  * Lazyload.php
  * 

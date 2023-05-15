@@ -1,8 +1,13 @@
 <?php
+
+namespace Blink\ErrorPage;
+
+use Blink\HtmlWriter;
+
 /**
  * ContextGroup.php
  * 
- * File Description
+ * Represent an error context group in error page.
  * 
  * @author    Belikhun
  * @since     1.0.0
@@ -11,10 +16,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\ErrorPage;
-use HtmlWriter;
-
 class ContextGroup {
 	public String $name;
 

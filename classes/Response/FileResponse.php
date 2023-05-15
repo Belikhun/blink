@@ -1,6 +1,7 @@
 <?php
 
 namespace Blink\Response;
+
 use Blink\Exception\FileNotFound;
 use Blink\File;
 use Blink\Response;

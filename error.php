@@ -13,8 +13,10 @@
  * See LICENSE in the project root for license information.
  */
 
+use Blink\BacktraceFrame;
 use Blink\ErrorPage\Instance;
 use Blink\ErrorPage\Renderer;
+use Blink\HtmlWriter;
 
 /** @var \Blink\ErrorPage\Instance */
 $instance = $_SESSION["LAST_ERROR"];

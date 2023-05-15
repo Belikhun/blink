@@ -1,5 +1,8 @@
 <?php
+
 use Blink\Router;
+use Blink\Session;
+
 /**
  * setup.php
  * 
@@ -188,7 +191,7 @@ require_once CORE_ROOT . "/db/DB.Abstract.php";
 
 // Initialize session
 if (class_exists("Session"))
-	\Session::start();
+	Session::start();
 
 // Add default endpoint for error page.
 Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);

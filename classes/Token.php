@@ -1,4 +1,7 @@
 <?php
+
+namespace Blink;
+
 use Blink\Exception\InvalidToken;
 use Blink\Exception\TokenExpired;
 
@@ -76,7 +79,7 @@ class Token {
 	 * Get usable token. Will always return a valid token.
 	 * 
 	 * @param	string	$username
-	 * @return	\Token
+	 * @return	Token
 	 */
 	public static function get(String $username) {
 		global $DB;
@@ -97,7 +100,7 @@ class Token {
 	 * Create a new token for the specified user.
 	 * 
 	 * @param	string	$username
-	 * @return	\Token
+	 * @return	Token
 	 */
 	public static function createToken(String $username) {
 		global $DB;
@@ -119,7 +122,7 @@ class Token {
 	/**
 	 * Process token record from database.
 	 * @param	object	$record
-	 * @return	\Token
+	 * @return	Token
 	 */
 	public static function processRecord($record) {
 		return new self(

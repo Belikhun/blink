@@ -1,8 +1,17 @@
 <?php
+
+namespace Blink\ErrorPage;
+
+use Blink\BacktraceFrame;
+use Blink\ErrorPage\Exception\ReportNotFound;
+use Blink\Router;
+use Blink\Session;
+use Blink\URL;
+
 /**
  * Instance.php
  * 
- * File Description
+ * An error page instance.
  * 
  * @author    Belikhun
  * @since     1.0.0
@@ -11,11 +20,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\ErrorPage;
-use Blink\ErrorPage\Exception\ReportNotFound;
-use Blink\Router;
-
 class Instance {
 	const ERROR_CLIENT = "client";
 	const ERROR_SERVER = "server";
@@ -170,7 +174,7 @@ class Instance {
 
 	/**
 	 * Return stack trace frames.
-	 * @return \BacktraceFrame[]
+	 * @return BacktraceFrame[]
 	 */
 	public function stacktrace() {
 		if ($this -> hasException())
@@ -203,10 +207,10 @@ class Instance {
 
 	/**
 	 * Return url to view this report.
-	 * @return \URL
+	 * @return URL
 	 */
-	public function url(): \URL {
-		return new \URL("/error/{$this -> id}");
+	public function url(): URL {
+		return new URL("/error/{$this -> id}");
 	}
 
 	public function __serialize() {
@@ -316,9 +320,9 @@ class Instance {
 		$app -> add($routesContext);
 
 		$sessionContext = new ContextItem("session", "Session", Array(
-			"Lifetime" => \Session::$lifetime,
+			"Lifetime" => Session::$lifetime,
 			"Session ID" => session_id() ?: "[NULL]",
-			"Username" => \Session::$username,
+			"Username" => Session::$username,
 			"Status" => [ "PHP_SESSION_DISABLED", "PHP_SESSION_NONE", "PHP_SESSION_ACTIVE" ][session_status()]
 		), "user-tag");
 		$sessionContext -> setRenderer([ ContextRenderer::class, "list" ]);

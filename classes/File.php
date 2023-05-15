@@ -1,5 +1,11 @@
 <?php
 
+namespace Blink;
+
+use Blink\DB\Exception\TableNotFound;
+use Blink\Exception\BaseException;
+use Blink\Exception\FileInstanceNotFound;
+
 /**
  * File.php
  * 
@@ -12,12 +18,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink;
-use Blink\DB\Exception\TableNotFound;
-use Blink\Exception\BaseException;
-use Blink\Exception\FileInstanceNotFound;
-
 class File {
 	public static String $ROOT;
 

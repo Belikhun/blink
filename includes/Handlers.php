@@ -1,5 +1,9 @@
 <?php
 
+namespace Blink;
+
+use Blink\ErrorPage\Renderer;
+
 /**
  * Handlers.php
  * 
@@ -13,10 +17,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink;
-use Blink\ErrorPage\Renderer;
-
 class Handlers {
 	/**
 	 * Give debug/fixing hint for user when they are faced with

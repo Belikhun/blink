@@ -1,5 +1,7 @@
 <?php
 
+namespace Blink;
+
 /**
  * HtmlWriter.php
  * 

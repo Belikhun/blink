@@ -16,9 +16,8 @@
 namespace Config;
 
 use Blink\Exception\CodingError;
+use Blink\FileIO;
 use CONFIG;
-use FileIO;
-use stdClass;
 
 class StoreGroup {
 	public String $title;
@@ -79,7 +78,7 @@ class Store {
 	public static $CONFIG_PATH;
 
 	public static function init() {
-		self::$CONFIG_FILE = new FileIO(self::$CONFIG_PATH, new stdClass, TYPE_JSON); 
+		self::$CONFIG_FILE = new FileIO(self::$CONFIG_PATH, new \stdClass, TYPE_JSON); 
 		self::load();
 	}
 
@@ -104,7 +103,7 @@ class Store {
 	 * @return object
 	 */
 	public static function config() {
-		$object = new stdClass;
+		$object = new \stdClass;
 		$names = self::names();
 		
 		foreach ($names as $name)

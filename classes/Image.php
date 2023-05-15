@@ -1,7 +1,11 @@
 <?php
+
+namespace Blink;
+
 use Blink\Exception\BaseException;
 use Blink\Exception\FileNotFound;
 use Blink\Exception\IllegalAccess;
+
 /**
  * Image.php
  * 

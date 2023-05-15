@@ -1,8 +1,14 @@
 <?php
+
+namespace Blink;
+
+use Blink\Exception\FileInstanceNotFound;
+use Blink\Exception\UploadedFileError;
+
 /**
  * UploadedFile.php
  * 
- * File Description
+ * Represent an uploaded file in the request form.
  * 
  * @author    Belikhun
  * @since     1.0.0
@@ -11,11 +17,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink;
-use Blink\Exception\FileInstanceNotFound;
-use Blink\Exception\UploadedFileError;
-
 class UploadedFile {
 	/**
 	 * The uploaded file name

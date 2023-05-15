@@ -1,5 +1,7 @@
 <?php
 
+namespace Blink;
+
 /**
  * Session.php
  * 
@@ -71,7 +73,7 @@ class Session {
 	 * @param	string	$token
 	 */
 	public static function token(String $token) {
-		$token = \Token::getToken($token);
+		$token = Token::getToken($token);
 
 		self::$username = $token -> username;
 		self::$user = \User::getByUsername($token -> username);
@@ -81,14 +83,14 @@ class Session {
 	/**
 	 * Create access token for this user.
 	 * @param	\User	$user
-	 * @return	\Token
+	 * @return	Token
 	 */
 	public static function createToken(\User $user) {
 		self::$username = $user -> username;
 		self::$user = $user;
 		self::$logoutToken = null;
 		
-		return \Token::createToken($user -> username);
+		return Token::createToken($user -> username);
 	}
 
 	public static function completeLogin(\User $user) {
@@ -119,4 +121,4 @@ class Session {
 	}
 }
 
-Session::$lifetime = &CONFIG::$SESSION_LIFETIME;
+Session::$lifetime = &\CONFIG::$SESSION_LIFETIME;

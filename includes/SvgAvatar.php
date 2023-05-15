@@ -1,4 +1,7 @@
 <?php
+
+namespace Blink;
+
 /**
  * SvgAvatar.php
  * 

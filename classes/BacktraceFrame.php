@@ -1,5 +1,7 @@
 <?php
 
+namespace Blink;
+
 /**
  * BacktraceFrame.php
  * 
@@ -12,7 +14,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
 class BacktraceFrame {
 	public ?String $file = null;
 	public int $line = -1;

@@ -1,4 +1,7 @@
 <?php
+
+namespace Blink;
+
 use Blink\Exception\InvalidURL;
 use Blink\Exception\CodingError;
 
@@ -60,11 +63,11 @@ class URL {
 	/**
 	 * Construct a new url with params.
 	 *
-	 * @param	string|\URL			$url
+	 * @param	string|URL			$url
 	 * @param	string[]|object		$params
 	 */
 	public function __construct($url, $params = []) {
-		if ($url instanceof \URL) {
+		if ($url instanceof URL) {
             $this -> scheme = $url -> scheme;
             $this -> host = $url -> host;
             $this -> port = $url -> port;

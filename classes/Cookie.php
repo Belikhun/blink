@@ -1,6 +1,7 @@
 <?php
 
 namespace Blink;
+
 use Blink\Exception\CodingError;
 
 /**

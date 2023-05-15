@@ -1,8 +1,14 @@
 <?php
+
+namespace Blink\ErrorPage;
+
+use Blink\URL;
+use Blink\HtmlWriter;
+
 /**
  * Renderer.php
  * 
- * File Description
+ * Error page context renderer.
  * 
  * @author    Belikhun
  * @since     1.0.0
@@ -11,10 +17,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\ErrorPage;
-use HtmlWriter;
-
 class Renderer {
 	const BUTTON_PRIMARY = "btn-primary";
 	const BUTTON_SECONDARY = "btn-secondary";
@@ -23,7 +25,7 @@ class Renderer {
 	public static function button(
 		String $text,
 		String $color = Renderer::BUTTON_PRIMARY,
-		String|\URL $link = "#",
+		String|URL $link = "#",
 		?String $icon = null,
 		Array $class = [],
 		bool $newTab = false,

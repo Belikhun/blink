@@ -1,5 +1,7 @@
 <?php
 
+namespace Blink;
+
 /**
  * Cache.php
  * 
@@ -17,18 +19,18 @@ class Cache {
 
 	public static String $CACHE_LOCATION;
 	public String $id;
-	public \Cache\Data $data;
+	public Cache\Data $data;
 	public String $file;
 	public String $path;
 	private FileIO $stream;
-	private \Cache\Data $default;
+	private Cache\Data $default;
 
 	public function __construct($id, $defaultData = null) {
 		$this -> id = $id;
 		$this -> file = $this -> id . ".cache";
 		$this -> path = self::$CACHE_LOCATION ."/". $this -> file;
 
-		$this -> default = new \Cache\Data();
+		$this -> default = new Cache\Data();
 		$this -> default -> id = $this -> id;
 		$this -> default -> content = $defaultData;
 
@@ -90,8 +92,8 @@ class Cache {
 		$counter = 0;
 
 		if (file_exists(self::$CACHE_LOCATION)) {
-			$di = new RecursiveDirectoryIterator(self::$CACHE_LOCATION, FilesystemIterator::SKIP_DOTS);
-			$ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
+			$di = new \RecursiveDirectoryIterator(self::$CACHE_LOCATION, \FilesystemIterator::SKIP_DOTS);
+			$ri = new \RecursiveIteratorIterator($di, \RecursiveIteratorIterator::CHILD_FIRST);
 
 			foreach ($ri as $file) {
 				$file -> isDir() ? rmdir($file) : unlink($file);
