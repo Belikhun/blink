@@ -102,10 +102,12 @@ if (!file_exists(BASE_PATH . "/config.define.php")) {
 	require_once BASE_PATH . "/config.define.php";
 }
 
-if (file_exists(BASE_PATH . "/config.default.php"))
-	copy(BASE_PATH . "/config.default.php", BASE_PATH . "/config.php");
-
-if (file_exists(BASE_PATH . "/config.php"))
+if (!file_exists(BASE_PATH . "/config.php")) {
+	if (file_exists(BASE_PATH . "/config.default.php")) {
+		copy(BASE_PATH . "/config.default.php", BASE_PATH . "/config.php");
+		require_once BASE_PATH . "/config.php";
+	}
+} else
 	require_once BASE_PATH . "/config.php";
 
 if (!class_exists("CONFIG")) {
