@@ -87,6 +87,9 @@ function updateAutoloadData() {
 	$clre = '/^(?:[\t\n]*|[\t\n]*abstract\s+)class ([a-zA-Z0-9\_]+)[\\a-zA-Z0-9\ \,\t\n]*\{/m';
 
 	foreach (\CONFIG::$INCLUDES as $include) {
+		if (!file_exists($include))
+			continue;
+		
 		$files = getFiles($include, "php");
 
 		foreach ($files as $file) {

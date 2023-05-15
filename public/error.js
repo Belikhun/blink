@@ -23,7 +23,7 @@ const toggle = {
 
 			this.buttons[name].push(button);
 
-			if (button.getAttribute("toggle-default")) {
+			if (button.getAttribute("toggle-default") !== null) {
 				this.activate(button, name);
 				activated[name] = true;
 

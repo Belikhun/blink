@@ -358,6 +358,15 @@ class Instance {
 			}
 		}
 
+		$appConstsContext = new ContextItem("consts", "Constants", Array(
+			"BASE_PATH" => BASE_PATH,
+			"CORE_ROOT" => CORE_ROOT,
+			"DATA_ROOT" => DATA_ROOT
+		), "feather");
+		$appConstsContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($appConstsContext);
+
+
 
 		$metrics = new ContextGroup("Metrics");
 
