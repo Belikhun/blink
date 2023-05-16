@@ -4,6 +4,7 @@ namespace Blink;
 use Blink\DB\Exception\InvalidSQLDriver;
 use Blink\DB\Exception\SQLDriverNotFound;
 use Blink\Exception\CodingError;
+use Blink\Metric\Timing;
 use CONFIG;
 
 /**
@@ -376,6 +377,8 @@ abstract class DB {
  * variable.
  */
 function initializeDB() {
+	$dbTiming = new Timing("database");
+
 	/**
 	 * Global Database Instance. Initialized based on type of
 	 * SQL driver specified in config.
@@ -400,13 +403,15 @@ function initializeDB() {
 		$DB = new $className();
 
 		switch (CONFIG::$DB_DRIVER) {
-			case "SQLite3":
+			case "SQLite3": {
 				$DB -> connect(Array(
 					"path" => CONFIG::$DB_PATH
 				));
+				
 				break;
+			}
 		
-			default:
+			default: {
 				// We default the config arguments to standard info
 				// like mysqli.
 				$DB -> connect(Array(
@@ -415,7 +420,12 @@ function initializeDB() {
 					"password" => CONFIG::$DB_PASS,
 					"database" => CONFIG::$DB_NAME
 				));
+
+				break;
+			}
 		}
+
+		$dbTiming -> time();
 	} else
 		throw new SQLDriverNotFound(CONFIG::$DB_DRIVER);
 }

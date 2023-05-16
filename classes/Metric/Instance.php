@@ -15,7 +15,7 @@
 namespace Blink\Metric;
 
 abstract class Instance {
-	public float $time;
+	public float $time = -1;
 	protected float $start;
 
 	abstract public function time(int $stat);

@@ -1,4 +1,7 @@
 <?php
+
+namespace Blink;
+
 /**
  * Metric.php
  * 
@@ -11,9 +14,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink;
-
 class Metric {
 	/** @var Metric\Request[] */
 	public static $requests = Array();
@@ -23,4 +23,7 @@ class Metric {
 
 	/** @var Metric\File[] */
 	public static $files = Array();
+
+	/** @var Metric\Timing[] */
+	public static $timing = Array();
 }

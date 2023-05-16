@@ -34,9 +34,7 @@ class Data {
 	}
 
 	public function __unserialize(Array $data) {
-		$this -> id = $data["id"];
-		$this -> age = $data["age"];
-		$this -> time = $data["time"];
-		$this -> content = $data["content"];
+		foreach ($data as $key => $value)
+			$this -> {$key} = $value;
 	}
 }

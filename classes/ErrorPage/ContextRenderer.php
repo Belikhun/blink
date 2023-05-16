@@ -2,7 +2,8 @@
 
 namespace Blink\ErrorPage;
 
-use Blink\HtmlWriter;
+use Blink\HtmlWriter as H;
+use Blink\Metric\Timing;
 
 /**
  * ContextRenderer.php
@@ -19,14 +20,14 @@ use Blink\HtmlWriter;
 class ContextRenderer {
 	public static function list(Array $data): String {
 		if (empty($data))
-			return HtmlWriter::build("pre", content: "[empty]");
+			return H::build("pre", content: "[empty]");
 
-		$output = HtmlWriter::startDIV([ "class" => "error-context-list" ]);
+		$output = H::startDIV([ "class" => "error-context-list" ]);
 		$seq = isSequential($data);
 
 		foreach ($data as $name => $value) {
 			$row = (!$seq)
-				? HtmlWriter::span([ "class" => "name", "title" => strip_tags($name) ], $name)
+				? H::span([ "class" => "name", "title" => strip_tags($name) ], $name)
 				: "";
 			
 			$attrs = Array( "class" => [] );
@@ -52,11 +53,78 @@ class ContextRenderer {
 				$value = htmlspecialchars($value);
 			}
 			
-			$row .= HtmlWriter::build("pre", $attrs, $value);
-			$output .= HtmlWriter::div([ "class" => "row" ], $row);
+			$row .= H::build("pre", $attrs, $value);
+			$output .= H::div([ "class" => "row" ], $row);
 		}
 
-		$output .= HtmlWriter::endDIV();
+		$output .= H::endDIV();
+		return $output;
+	}
+
+	public static function metricTiming(Array $data): String {
+		global $RUNTIME;
+
+		$start = $data["start"];
+		$end = $data["end"];
+		$duration = $end - $start;
+		$labels = Array();
+		$bars = Array();
+		$lines = Array();
+
+		/** @var Timing[] */
+		$timings = $data["timings"];
+
+		foreach ($timings as $timing) {
+			$labels[] = H::build("div.label", content: $timing -> name);
+			$color = "blue";
+
+			$left = ($timing -> start - $start) / $duration;
+			$right = ($timing -> time > 0)
+				? ($timing -> time - $start) / $duration
+				: 1;
+
+			$t = ($timing -> getTime() > 0)
+				? convertTime($timing -> getTime())
+				: "fail";
+
+			$lp = ($left * 100) . "%";
+			$rp = ((1 - $right) * 100) . "%";
+
+			if ($timing -> time <= 0)
+				$color = "red";
+
+			$bars[] = H::build(
+				"div.bar",
+				[ "data-color" => $color ],
+				content: H::build(
+					"div.inner",
+					[ "style" => "left: $lp; right: $rp;" ],
+					H::build("span", content: $t)
+				)
+			);
+		}
+
+		$lineStep = 0.05;
+		$lineTime = 0;
+
+		while ($lineTime < $duration) {
+			$lp = (($lineTime / $duration) * 100) . "%";
+			$lines[] = H::build(
+				"div.line",
+				[ "style" => "left: $lp" ],
+				H::build("span", content: ($lineTime * 1000) . "ms"));
+			
+			$lineTime += $lineStep;
+		}
+
+		$output = H::start("div.timing-context");
+		$output .= H::build("span.labels", content: implode("", $labels));
+		$output .= H::start("span.right");
+		$output .= H::build("div.lines", content: implode("", $lines));
+		$output .= H::build("div.bars", content: implode("", $bars));
+		$output .= H::end("span");
+		$output .= H::end("div");
+
 		return $output;
 	}
 
@@ -80,10 +148,10 @@ class ContextRenderer {
 				break;
 		}
 
-		return HtmlWriter::build("pre", [ "copyable" => $content ], htmlspecialchars($content));
+		return H::build("pre", [ "copyable" => $content ], htmlspecialchars($content));
 	}
 
 	public static function string(String $content) {
-		return HtmlWriter::build("pre", [], htmlspecialchars($content));
+		return H::build("pre", [], htmlspecialchars($content));
 	}
 }

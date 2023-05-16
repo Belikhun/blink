@@ -99,7 +99,7 @@ class BacktraceFrame {
 		);
 	}
 
-	public function __unserialize(array $data) {
+	public function __unserialize(Array $data) {
 		foreach ($data as $key => $value)
 			$this -> {$key} = $value;
 	}

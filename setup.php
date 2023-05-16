@@ -1,8 +1,11 @@
 <?php
 
 use Blink\Environment;
+use Blink\Metric\Timing;
 use Blink\Router;
 use Blink\Session;
+
+$BLINK_START = microtime(true);
 
 /**
  * setup.php
@@ -165,11 +168,19 @@ ob_start();
  */
 global $RUNTIME;
 
-if (!isset($RUNTIME))
+if (!isset($RUNTIME)) {
 	$RUNTIME = new StopClock();
+	$RUNTIME -> start = $BLINK_START;
+}
 
 if (!class_exists("User"))
 	require_once CORE_ROOT . "/defaults/User.php";
+
+$setupTiming = new Timing("setup");
+$setupTiming -> start = $BLINK_START;
+$setupTiming -> time();
+
+$configTiming = new Timing("config");
 
 // Initialize config store.
 if (file_exists(BASE_PATH . "/config.store.php")) {
@@ -177,6 +188,8 @@ if (file_exists(BASE_PATH . "/config.store.php")) {
 	require_once BASE_PATH . "/config.store.php";
 	\Config\Store::init();
 }
+
+$configTiming -> time();
 
 // Pre-setup DB
 require_once CORE_ROOT . "/db/DB.Abstract.php";
@@ -190,12 +203,16 @@ require_once CORE_ROOT . "/db/DB.Abstract.php";
 //*  process defined in application.
 //* ===========================================================
 
-// Initialize environment variables
-Environment::load(\CONFIG::$ENV);
+new Timing("env", function () {
+	// Initialize environment variables
+	Environment::load(\CONFIG::$ENV);
+});
 
-// Initialize session
-if (class_exists("Session"))
-	Session::start();
+new Timing("session", function() {
+	// Initialize session
+	if (class_exists("Session"))
+		Session::start();
+});
 
 // Add default endpoint for error page.
 Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);
@@ -215,12 +232,16 @@ if (file_exists(BASE_PATH . "/setup.php"))
 
 // Include routes definition before start routing.
 $routesPath = CONFIG::$ROUTES_ROOT;
+$routesTiming = new Timing("route init");
+
 foreach (glob("$routesPath/*.php") as $filename) {
 	// Isolate scope
 	(function ($currentFileLocation) {
 		require_once $currentFileLocation;
 	})($filename);
 }
+
+$routesTiming -> time();
 
 // Handle current request path
 Router::route($PATH, $_SERVER["REQUEST_METHOD"]);

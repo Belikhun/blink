@@ -1,4 +1,7 @@
 <?php
+
+namespace Blink\Metric;
+
 /**
  * Request.php
  * 
@@ -11,9 +14,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Metric;
-
 class Request extends Instance {
 	public String $url;
 	public String $method;

@@ -5,6 +5,7 @@ namespace Blink;
 use Blink\Exception\BaseException;
 use Blink\Exception\RouteInvalidResponse;
 use Blink\Exception\RouteNotFound;
+use Blink\Metric\Timing;
 use Middleware\Request as RequestMiddleware;
 use Middleware\Response as ResponseMiddleware;
 use Blink\Router\Route;
@@ -128,6 +129,7 @@ class Router {
 	public static function route(String $path, String $method) {
 		$args = Array();
 		$found = false;
+		$routingTiming = new Timing("routing");
 
 		// Up case method just to be sure
 		$method = strtoupper($method);
@@ -156,7 +158,9 @@ class Router {
 				continue;
 
 			$found = true;
+			$routingTiming -> time();
 			self::$active = $route;
+			$responseTiming = new Timing("responding");
 			
 			// Update the request instance.
 			$request -> route = $route;
@@ -179,11 +183,14 @@ class Router {
 				$response = ResponseMiddleware::handle($request, $response);
 			
 			static::handleResponse($route, $response);
+			$responseTiming -> time();
 			break;
 		}
 
-		if (!$found)
+		if (!$found) {
+			$routingTiming -> time();
 			throw new RouteNotFound($path, $method);
+		}
 	}
 
 	/**

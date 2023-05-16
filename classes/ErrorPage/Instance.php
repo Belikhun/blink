@@ -240,7 +240,7 @@ class Instance {
 	}
 
 	public static function create(Array $data = null): Instance {
-		global $PATH, $AUTOLOADED;
+		global $PATH, $AUTOLOADED, $RUNTIME;
 
 		$instance = new static(bin2hex(random_bytes(10)));
 		$instance -> data = $data;
@@ -393,6 +393,16 @@ class Instance {
 		$filesContext = new ContextItem("files", "Files", $files, "file-pen");
 		$filesContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$metrics -> add($filesContext);
+
+		$timingContext = new ContextItem("timings", "Timings", Array(
+			"start" => $RUNTIME -> start,
+			"end" => microtime(true),
+			"timings" => \Blink\Metric::$timing,
+		), "stopwatch");
+		$timingContext -> setRenderer([ ContextRenderer::class, "metricTiming" ]);
+		$metrics -> add($timingContext);
+
+
 
 		$instance -> contexts[] = $request;
 		$instance -> contexts[] = $app;

@@ -18,6 +18,7 @@ use Blink\Cache;
 use Blink\Debug;
 use Blink\Environment;
 use Blink\Exception\BaseException;
+use Blink\Exception\CodingError;
 use Blink\Exception\FileNotFound;
 use Blink\Exception\FileReadError;
 use Blink\Exception\InvalidValue;
@@ -44,7 +45,7 @@ if (!function_exists("getallheaders")) {
 }
 
 class StopClock {
-	private $start;
+	public float $start;
 
 	public function __construct() {
 		$this -> start = microtime(true);
@@ -209,7 +210,7 @@ function cleanUTF8($value) {
  */
 function cleanParam($param, $type) {
 	if (is_array($param) || is_object($param))
-		throw new BaseException(-1, "cleanParam(): this function does not accept array or object!");
+		throw new CodingError("cleanParam(): this function does not accept array or object!");
 
 	switch ($type) {
 		case TYPE_INT:
@@ -298,7 +299,7 @@ function validate($value, $type, $throw = true) {
 			break;
 
 		default:
-			throw new BaseException(-1, "validate(): unknown param type: $type", 400);
+			throw new CodingError("validate(): unknown param type: $type");
 	}
 
 	if (!$valid) {
@@ -498,16 +499,47 @@ function stringify($subject) {
 }
 
 /**
- * Return Human Readable Size
+ * Return human readable Size
  * 
  * @param	int		$bytes		Size in byte
  * @return	string	Readable Size
  */
 function convertSize(int $bytes) {
 	$sizes = array("B", "KB", "MB", "GB", "TB");
-	for ($i = 0; $bytes >= 1024 && $i < (count($sizes) -1); $bytes /= 1024, $i++);
+	for ($i = 0; $bytes >= 1024 && $i < (count($sizes) - 1); $bytes /= 1024, $i++);
 	
-	return (round($bytes, 2 ) . " " . $sizes[$i]);
+	return (round($bytes, 2) . " " . $sizes[$i]);
+}
+
+/**
+ * Return human readable Time
+ * 
+ * @param	float		$time		Time
+ * @return	string		Readable time
+ */
+function convertTime(float $time) {
+	$units = Array(
+		"µs" => 0.000001,
+		"ms" => 0.001,
+		"s" => 1,
+		"m" => 60,
+		"h" => 3600,
+		"d" => 86400
+	);
+
+	$value = 0;
+	$unit = "";
+
+	foreach ($units as $u => $uv) {
+		$v = $time / $uv;
+		if ($v < 1)
+			break;
+		
+		$unit = $u;
+		$value = $v;
+	}
+
+	return sprintf("%1.2f%s", $value, $unit);
 }
 
 class FileWithPriority {

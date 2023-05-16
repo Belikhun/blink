@@ -29,7 +29,7 @@ class HtmlWriter {
 		if (preg_match($re, $target, $tM)) {
 			$tag = $tM[1];
 
-			if (str_contains($tag, "#") || str_contains($tag, ".")) {
+			if (str_contains($target, "#") || str_contains($target, ".")) {
 				// Parse ID and classes.
 				$re = '/([.#])([a-zA-Z0-9\-\_]+)/m';
 	
@@ -43,7 +43,7 @@ class HtmlWriter {
 				}
 			}
 
-			if (str_contains($tag, "[")) {
+			if (str_contains($target, "[")) {
 				// Parse attributes
 				$re = '/\[([a-zA-Z0-9=\'\" ]+)\]/mU';
 	
@@ -149,6 +149,10 @@ class HtmlWriter {
 	 */
 	public static function tag(String $tag, String $content = "", Array $attributes = Array(), bool $end = true) {
 		return static::build($tag, $attributes, $content, $end);
+	}
+
+	public static function start(String $tag, Array $attributes = Array()) {
+		return static::build($tag, $attributes, "", end: false);
 	}
 
 	public static function end(String $tag) {
