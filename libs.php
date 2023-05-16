@@ -15,7 +15,6 @@
 
 use Blink\BacktraceFrame;
 use Blink\Cache;
-use Blink\Debug;
 use Blink\Environment;
 use Blink\Exception\BaseException;
 use Blink\Exception\CodingError;
@@ -28,6 +27,7 @@ use Blink\Exception\RuntimeError;
 use Blink\FileIO;
 use Blink\HtmlWriter;
 use Blink\Response\APIResponse;
+use Blink\Template;
 use Blink\URL;
 
 require_once "const.php";
@@ -326,6 +326,10 @@ function env(String $key, $default = null, String $type = TYPE_TEXT) {
 		return $default;
 	
 	return cleanParam(Environment::$values[$key], $type);
+}
+
+function template(String $name, Array $context) {
+	echo Template::render($name, $context);
 }
 
 /**

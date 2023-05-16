@@ -7,6 +7,8 @@ use Blink\Session;
 
 $BLINK_START = microtime(true);
 
+ini_set("short_open_tag", true);
+
 /**
  * setup.php
  * 

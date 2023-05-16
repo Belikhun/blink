@@ -51,8 +51,12 @@ class CoreConfig {
 	
 	#[ConfigPathProperty]
 	public static String	$ERRORS_ROOT = DATA_ROOT . "/errors";
+
 	#[ConfigPathProperty]
 	public static String	$ROUTES_ROOT = BASE_PATH . "/routes";
+	
+	#[ConfigPathProperty]
+	public static String	$TEMPLATES_ROOT = BASE_PATH . "/templates";
 
 	public static Array		$INCLUDES = Array(
 		CORE_ROOT . "/includes",
