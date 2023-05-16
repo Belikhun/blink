@@ -40,7 +40,11 @@ class Template {
 	}
 
 	public static function render(String $name, Array $context = []): String {
+		// In case we render another template inside another template,
+		// we back up current context and apply new context to process.
+		$prevContext = Functions::$context;
 		Functions::$context = $context;
+
 		$templatePath = static::path($name);
 		$templateContext = $context;
 
@@ -53,7 +57,7 @@ class Template {
 			return ob_get_clean();
 		})();
 
-		Functions::$context = null;
+		Functions::$context = $prevContext;
 		return static::process($content, $context);
 	}
 
