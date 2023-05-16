@@ -23,7 +23,7 @@ class Timing extends Instance {
 	public function __construct(String $name, Callable $handler = null) {
 		$this -> name = $name;
 		$this -> start = microtime(true);
-		Metric::$timing[] = $this;
+		Metric::$timings[] = $this;
 
 		if (!empty($handler)) {
 			$handler();
@@ -36,7 +36,7 @@ class Timing extends Instance {
 	}
 
 	public function __toString() {
-		return sprintf("%5s %s",
+		return sprintf("%5s  %s",
 			$this -> timeFormat(),
 			$this -> name);
 	}

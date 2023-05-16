@@ -397,7 +397,7 @@ class Instance {
 		$timingContext = new ContextItem("timings", "Timings", Array(
 			"start" => $RUNTIME -> start,
 			"end" => microtime(true),
-			"timings" => \Blink\Metric::$timing,
+			"timings" => \Blink\Metric::$timings,
 		), "stopwatch");
 		$timingContext -> setRenderer([ ContextRenderer::class, "metricTiming" ]);
 		$metrics -> add($timingContext);

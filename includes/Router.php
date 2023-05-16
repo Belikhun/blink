@@ -160,7 +160,6 @@ class Router {
 			$found = true;
 			$routingTiming -> time();
 			self::$active = $route;
-			$responseTiming = new Timing("responding");
 			
 			// Update the request instance.
 			$request -> route = $route;
@@ -183,7 +182,6 @@ class Router {
 				$response = ResponseMiddleware::handle($request, $response);
 			
 			static::handleResponse($route, $response);
-			$responseTiming -> time();
 			break;
 		}
 

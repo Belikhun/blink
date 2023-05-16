@@ -28,7 +28,7 @@ class FileIO {
 
 	public function __construct(
 		String $path,
-		mixed $default = NO_DEFAULT,
+		mixed $default = FileIO::NO_DEFAULT,
 		String $type = TYPE_TEXT
 	) {
 		$this -> path = $path;

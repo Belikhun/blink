@@ -25,5 +25,5 @@ class Metric {
 	public static $files = Array();
 
 	/** @var Metric\Timing[] */
-	public static $timing = Array();
+	public static $timings = Array();
 }
