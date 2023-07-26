@@ -26,6 +26,7 @@ use Blink\Exception\MissingParam;
 use Blink\Exception\RuntimeError;
 use Blink\FileIO;
 use Blink\HtmlWriter;
+use Blink\Response;
 use Blink\Response\APIResponse;
 use Blink\Template;
 use Blink\URL;
@@ -328,8 +329,12 @@ function env(String $key, $default = null, String $type = TYPE_TEXT) {
 	return cleanParam(Environment::$values[$key], $type);
 }
 
-function template(String $name, Array $context) {
+function template(String $name, Array $context = Array()) {
 	echo Template::render($name, $context);
+}
+
+function view(String $name, Array $context = Array()) {
+	return new Response(Template::render($name, $context));
 }
 
 /**
