@@ -135,6 +135,11 @@
 	color: #4f46e5;
 }
 
+.sourceCode > .lines > .line .sc-const,
+.sourceCode > .lines > .line .sc-number {
+	color: #f93816;
+}
+
 .sourceCode > .lines > .line .sc-meta {
 	color: #c22cfd;
 }

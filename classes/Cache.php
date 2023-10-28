@@ -6,9 +6,12 @@ use Throwable;
 
 /**
  * Global variable to store created cache instances.
- * @var Cache[]
+ * 
+ * @var		Cache[]	$CACHES
+ * @global	Cache[]	$CACHES
  */
 global $CACHES;
+
 $CACHES = Array();
 
 /**
@@ -29,10 +32,15 @@ class Cache {
 	public static String $ROOT;
 	
 	public String $id;
+
 	protected Cache\Data $data;
+
 	public String $file;
+
 	public String $path;
+
 	protected FileIO $stream;
+
 	public bool $hit = false;
 
 	public function __construct($id) {
@@ -65,6 +73,7 @@ class Cache {
 
 	/**
 	 * Try to fetch current data of this cache.
+	 * 
 	 * @return bool 
 	 */
 	public function fetch() {
@@ -81,6 +90,7 @@ class Cache {
 
 	/**
 	 * Initialize clean record of this cache.
+	 * 
 	 * @return Cache
 	 */
 	public function initialize() {

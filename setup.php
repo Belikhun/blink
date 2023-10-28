@@ -28,18 +28,35 @@ date_default_timezone_set("Asia/Ho_Chi_Minh");
 
 /**
  * Server's base path.
+ * 
  * @var	string
  */
-define("BASE_PATH", str_replace("\\", "/", $_SERVER["DOCUMENT_ROOT"]));
+define("BASE_PATH", str_replace("\\", "/", getcwd()));
+
+/**
+ * Server's application root folder. Alias to {@link BASE_PATH}
+ * 
+ * @var	string
+ */
+define("APP_ROOT", BASE_PATH);
+
+/**
+ * Path stores all the vendor packages.
+ * 
+ * @var	string
+ */
+define("VENDOR_ROOT", BASE_PATH . "/vendor");
 
 /**
  * Server's data path.
+ * 
  * @var	string
  */
 define("DATA_ROOT", BASE_PATH . "/data");
 
 /**
  * Core base path.
+ * 
  * @var	string
  */
 define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME)));

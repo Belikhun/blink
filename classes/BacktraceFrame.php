@@ -15,17 +15,37 @@ namespace Blink;
  * See LICENSE in the project root for license information.
  */
 class BacktraceFrame {
+	/**
+	 * Path to frame file.
+	 * 
+	 * @var ?string
+	 */
 	public ?String $file = null;
+
+	/**
+	 * Line in the file of the trace.
+	 * 
+	 * @var ?string
+	 */
 	public int $line = -1;
+
 	public ?String $class = null;
+
 	public ?String $type = null;
+
 	public String $function;
+
 	public Array $args = Array();
+
 	public bool $fault = false;
 
+
 	private ?String $id = null;
+
 	private ?String $fullpath = null;
+
 	private ?String $hash = null;
+
 
 	public function __construct(String $function = "[unknown]", bool $fault = false) {
 		$this -> function = $function;
@@ -77,12 +97,19 @@ class BacktraceFrame {
 		return $this -> hash;
 	}
 
-	public function isVendor() {
+	public function isBlink() {
 		if (!empty($this -> file))
 			return str_starts_with($this -> getFullPath(), CORE_ROOT);
 
 		if (!empty($this -> class))
 			return str_starts_with($this -> class, "Blink");
+
+		return false;
+	}
+
+	public function isVendor() {
+		if (!empty($this -> file))
+			return str_starts_with($this -> getFullPath(), VENDOR_ROOT);
 
 		return false;
 	}

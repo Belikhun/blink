@@ -189,6 +189,13 @@ http_response_code($status);
 											);
 										}
 
+										if ($trace -> isBlink()) {
+											$badges[] = HtmlWriter::span(
+												Array( "class" => "badge blink" ),
+												"blink"
+											);
+										}
+
 										if ($trace -> fault) {
 											$badges[] = HtmlWriter::span(
 												Array( "class" => "badge fault" ),

@@ -724,8 +724,9 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	// Keywords regex
 	$keywords = Array(	"try", "catch", "return", "public", "protected", "private", "static", "include_once",
 						"include", "require_once", "require", "global", "if", "else", "use", "throw",
-						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break", "instanceof" );
-	$re = '/(^|[\t\n\(\! ])(' . implode("|", $keywords) . ')(?=[\t\n\(\{\:\; ])/mi';
+						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break", "instanceof",
+						"null", "default", "while", "switch", "case", "match", "int", "string", "array", "object", "bool", "float" );
+	$re = '/(^|[\t\n\(\!\s\|])(' . implode("|", $keywords) . ')(?=[\t\n\(\{\:\;\)\|\s]|$)/mi';
 	$content = preg_replace($re, '$1<span class="sc-keyword">$2</span>', $content);
 
 	// Function regex
@@ -743,6 +744,14 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	// Variables
 	$re = '/(\$[a-zA-Z0-9_]+)/m';
 	$content = preg_replace($re, '<span class="sc-variable">$1</span>', $content);
+
+	// Constants
+	$re = '/(^|[\t\s\(\+\-\*\/])(?!\$)([A-Z][A-Z\_]{2,})/m';
+	$content = preg_replace($re, '$1<span class="sc-const">$2</span>', $content);
+
+	// Numbers
+	$re = '/([\s\=\+\-\*\/\(]|^)([0-9.]+)(?=[\)\;\+\-\*\/\,\s]|$)/m';
+	$content = preg_replace($re, '$1<span class="sc-number">$2</span>$3', $content);
 
 	// Functions
 	$re = '/([a-zA-Z0-9_]+)(\()/m';

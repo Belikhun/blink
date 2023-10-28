@@ -260,7 +260,6 @@ class Instance {
 
 
 
-
 		$request = new ContextGroup("Request");
 
 		$infoContext = new ContextItem("info", "Info", Array(
@@ -293,7 +292,6 @@ class Instance {
 		), "scroll");
 		$bodyContext -> setRenderer([ ContextRenderer::class, "body" ]);
 		$request -> add($bodyContext);
-
 
 
 
@@ -369,6 +367,8 @@ class Instance {
 
 		$appConstsContext = new ContextItem("consts", "Constants", Array(
 			"BASE_PATH" => BASE_PATH,
+			"APP_ROOT" => APP_ROOT,
+			"VENDOR_ROOT" => VENDOR_ROOT,
 			"CORE_ROOT" => CORE_ROOT,
 			"DATA_ROOT" => DATA_ROOT
 		), "feather");
