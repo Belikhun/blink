@@ -19,6 +19,6 @@ class UserNotFound extends BaseException {
 		$key = array_key_first($field);
 		$value = $field[$key];
 
-		parent::__construct(USER_NOT_FOUND, "Cannot find user with $key = $value", 404, $field);
+		parent::__construct(USER_NOT_FOUND, "Cannot find user with {$key} = {$value}", 404, $field);
 	}
 }

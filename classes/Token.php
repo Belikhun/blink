@@ -4,6 +4,7 @@ namespace Blink;
 
 use Blink\Exception\InvalidToken;
 use Blink\Exception\TokenExpired;
+use CONFIG;
 
 /**
  * Token.php
@@ -67,7 +68,7 @@ class Token {
 		if (empty($record))
 			throw new InvalidToken();
 
-		$token = self::processRecord($record);
+		$token = static::processRecord($record);
 
 		if (!$token -> validate())
 			throw new TokenExpired();
@@ -86,9 +87,9 @@ class Token {
 		$record = $DB -> record("tokens", Array( "username" => $username ));
 
 		if (empty($record))
-			return self::createToken($username);
+			return static::createToken($username);
 
-		$token = self::processRecord($record);
+		$token = static::processRecord($record);
 
 		if (!$token -> validate())
 			$token -> renew();
@@ -116,16 +117,17 @@ class Token {
 			"username" => $username
 		));
 
-		return new self($id, $token, $created, $expire, $username);
+		return new static($id, $token, $created, $expire, $username);
 	}
 
 	/**
 	 * Process token record from database.
+	 * 
 	 * @param	object	$record
 	 * @return	Token
 	 */
 	public static function processRecord($record) {
-		return new self(
+		return new static(
 			$record -> id,
 			$record -> token,
 			$record -> created,

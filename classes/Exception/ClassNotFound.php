@@ -28,7 +28,7 @@ class ClassNotFound extends BaseException {
 
 		parent::__construct(
 			CLASS_NOT_FOUND,
-			"Class [{$class}] not found!",
+			"Class <code>{$class}</code> not found!",
 			500,
 			Array( "class" => $class )
 		);

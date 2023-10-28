@@ -145,13 +145,13 @@ if (!file_exists(BASE_PATH . "/config.php")) {
 } else
 	require_once BASE_PATH . "/config.php";
 
-if (!class_exists("CONFIG")) {
+if (!class_exists(\CONFIG::class)) {
 	echo "Define your \"CONFIG\" class inside \"config.define.php\"!!!";
 	http_response_code(500);
 	die();
 }
 
-if (!in_array("CoreConfig", class_parents(CONFIG::class, false))) {
+if (!in_array(CoreConfig::class, class_parents(\CONFIG::class, false))) {
 	echo "Your \"CONFIG\" class MUST extend \"CoreConfig\"!!!";
 	http_response_code(500);
 	die();
@@ -202,7 +202,7 @@ if (!isset($RUNTIME)) {
 	$RUNTIME -> start = $BLINK_START;
 }
 
-if (!class_exists("User"))
+if (!class_exists(User::class))
 	require_once CORE_ROOT . "/defaults/User.php";
 
 $runtimeInitTiming = new Timing("runtime init");
@@ -243,7 +243,7 @@ new Timing("env", function () {
 
 new Timing("session", function() {
 	// Initialize session
-	if (class_exists("Session"))
+	if (class_exists(Session::class))
 		Session::start();
 });
 

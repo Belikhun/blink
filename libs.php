@@ -1115,8 +1115,7 @@ function stop(
 	array|object $data = Array(),
 	$hashData = false
 ) {
-	$response = new APIResponse($code, $description, $data, $hashData);
-	$response -> status($status);
+	$response = new APIResponse($code, $description, $status, $data, $hashData);
 
 	// Create a new error page instance!
 	$instance = \Blink\ErrorPage\Instance::create($response -> output());

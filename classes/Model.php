@@ -285,7 +285,6 @@ class Model implements JsonSerializable {
 
 		$this -> beforeSave();
 
-		$record = Array();
 		$insert = empty($this -> {static::$primaryKey});
 		static::normalizeMaps();
 
@@ -295,29 +294,7 @@ class Model implements JsonSerializable {
 		if (property_exists($this, static::$updatedKey))
 			$this -> {static::$updatedKey} = time();
 
-		foreach (static::$fillables as $objKey => $dbKey) {
-			if ($objKey === static::$primaryKey)
-				continue;
-
-			$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
-				&& !empty(static::$lazyloadMap[static::class][$objKey]);
-
-			if ($hasLazyloadMapping) {
-				$virtKey = static::$lazyloadMap[static::class][$objKey];
-
-				// Property is not initialized, fallback to saved lazyload mapping value.
-				if (!property_exists($this, $virtKey)) {
-					if (!isset(self::$lazyloads[static::class]) || empty(self::$lazyloads[static::class][$this -> getInstanceID()]))
-						throw new RuntimeError(-1, "Trying to access uninitialized property \"{$objKey}\" of [" . static::class . "]");
-
-					$value = self::$lazyloads[static::class][$this -> getInstanceID()][$objKey];
-					$record[$dbKey] = $value;
-					continue;
-				}
-			}
-
-			$record[$dbKey] = $this -> saveField($objKey);
-		}
+		$record = $this -> toRecord(!$insert);
 
 		if ($insert) {
 			// Record was newly created.
@@ -326,8 +303,8 @@ class Model implements JsonSerializable {
 			self::saveInstance($this -> {static::$primaryKey}, $this);
 			$this -> onCreated();
 		} else {
-			$record[static::mapDB(static::$primaryKey)] = $this -> saveField(static::$primaryKey);
-			$DB -> update(static::$table, (Object) $record);
+			$record -> {static::mapDB(static::$primaryKey)} = $this -> saveField(static::$primaryKey);
+			$DB -> update(static::$table, $record);
 		}
 
 		$this -> onSaved();
@@ -485,8 +462,8 @@ class Model implements JsonSerializable {
 	 * Get instance of this model, by ID.
 	 * Will return cached instance if available.
 	 *
-	 * @param	int								$id
-	 * @param	int								$strict				Strictness. Default to IGNORE_MISSING, which will return null when instance not found.
+	 * @param	int		$id
+	 * @param	int		$strict		Strictness. Default to IGNORE_MISSING, which will return null when instance not found.
 	 * @return	?M
 	 */
 	public static function getByID(
@@ -622,13 +599,49 @@ class Model implements JsonSerializable {
 	}
 
 	/**
-	 * Process the returned record from database.
-	 *
-	 * @param	object	The record object `$DB -> get_record()` API returned.
-	 * @return	M
+	 * Convert model into full, insertable record object.
+	 * 
+	 * @param	bool		$includePrimary		Include primary key value in record object.
+	 * @return	stdClass
 	 */
-	public static function processRecord(stdClass $record) {
-		$instance = new static();
+	public function toRecord(bool $includePrimary = true) {
+		static::normalizeMaps();
+		$record = new stdClass;
+
+		foreach (static::$fillables as $objKey => $dbKey) {
+			if (!$includePrimary && $objKey === static::$primaryKey)
+				continue;
+
+			$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
+				&& !empty(static::$lazyloadMap[static::class][$objKey]);
+
+			if ($hasLazyloadMapping) {
+				$virtKey = static::$lazyloadMap[static::class][$objKey];
+
+				// Property is not initialized, fallback to saved lazyload mapping value.
+				if (!property_exists($this, $virtKey)) {
+					if (!isset(self::$lazyloads[static::class]) || empty(self::$lazyloads[static::class][$this -> getInstanceID()]))
+						throw new RuntimeError(-1, "Trying to access uninitialized property \"{$objKey}\" of [" . static::class . "]");
+
+					$value = self::$lazyloads[static::class][$this -> getInstanceID()][$objKey];
+					$record -> {$dbKey} = $value;
+					continue;
+				}
+			}
+
+			$record -> {$dbKey} = $this -> saveField($objKey);
+		}
+
+		return $record;
+	}
+
+	/**
+	 * Fill data retrieved from database to this model instance.
+	 * 
+	 * @param	stdClass	$record
+	 * @return	static
+	 */
+	public function fillFromRecord(stdClass $record) {
 		static::normalizeMaps();
 
 		foreach (static::$fillables as $objKey => $dbKey) {
@@ -642,7 +655,7 @@ class Model implements JsonSerializable {
 				if (!isset(self::$lazyloads[static::class]))
 					self::$lazyloads[static::class] = Array();
 
-				$id = $instance -> getInstanceID();
+				$id = $this -> getInstanceID();
 
 				if (!isset(self::$lazyloads[static::class][$id]))
 					self::$lazyloads[static::class][$id] = Array();
@@ -652,17 +665,33 @@ class Model implements JsonSerializable {
 			}
 
 			$value = static::processField($objKey, $value);
-			$instance -> set($objKey, $value);
+			$this -> set($objKey, $value);
 		}
 
 		// Cache our instance for future use.
-		self::saveInstance($instance -> {static::$primaryKey}, $instance);
+		self::saveInstance($this -> {static::$primaryKey}, $this);
 
         // Invoke the onLoaded event.
-        $r = new ReflectionMethod($instance, "onLoaded");
+        $r = new ReflectionMethod($this, "onLoaded");
         $r -> setAccessible(true);
-        $r -> invoke($instance);
+        $r -> invoke($this);
 
+		return $this;
+	}
+
+	/**
+	 * Process the returned record from database.
+	 *
+	 * @param	object	The record object `$DB -> get_record()` API returned.
+	 * @return	M
+	 */
+	public static function processRecord(stdClass $record) {
+		// Return cached instance if available.
+		if ($instance = self::getInstance($record -> {static::$primaryKey}))
+			return $instance;
+
+		$instance = new static();
+		$instance -> fillFromRecord($record);
 		return $instance;
 	}
 
@@ -817,10 +846,6 @@ class Model implements JsonSerializable {
 		return $out;
 	}
 
-	public function __serialize() {
-		return $this -> out(false, true);
-	}
-
 	/**
 	 * Return json serializable data.
 	 *
@@ -830,6 +855,14 @@ class Model implements JsonSerializable {
     #[ReturnTypeWillChange]
 	public function jsonSerialize(int $depth = -1) {
 		return $this -> out(false, true, $depth);
+	}
+
+	public function __serialize() {
+		return (Array) $this -> toRecord();
+	}
+
+	public function __unserialize(Array $data) {
+		$this -> fillFromRecord((Object) $data);
 	}
 
 	/**

@@ -179,7 +179,7 @@ class Router {
 				$response = (String) $data;
 			} else if (is_object($data) || is_array($data)) {
 				// Response the data as object.
-				$response = new JsonResponse($data);
+				$response = $data;
 			} else if ($data === null) {
 				// Just response empty string.
 				$response = "";

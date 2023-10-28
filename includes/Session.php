@@ -18,18 +18,21 @@ namespace Blink;
 class Session {
 	/**
 	 * Session lifespan. Default to 1 day.
+	 * 
 	 * @var	int
 	 */
 	public static $lifetime;
 
 	/**
 	 * Current active username in session.
+	 * 
 	 * @var	string
 	 */
 	public static $username = null;
 
 	/**
 	 * Current logged-in user.
+	 * 
 	 * @var \User
 	 */
 	public static $user = null;
@@ -37,6 +40,7 @@ class Session {
 	/**
 	 * Store logout token user need to perform
 	 * logout.
+	 * 
 	 * @var string
 	 */
 	public static $logoutToken = null;
@@ -48,14 +52,14 @@ class Session {
 			session_id($sessionID);
 
 		if (session_status() !== PHP_SESSION_ACTIVE) {
-			ini_set("session.gc_maxlifetime", self::$lifetime);
-			session_cache_expire(self::$lifetime / 60);
+			ini_set("session.gc_maxlifetime", static::$lifetime);
+			session_cache_expire(static::$lifetime / 60);
 			session_set_cookie_params(Array(
-				"lifetime" => self::$lifetime
+				"lifetime" => static::$lifetime
 			));
 
 			session_start();
-			setcookie(session_name(), session_id(), time() + self::$lifetime, "/");
+			setcookie(session_name(), session_id(), time() + static::$lifetime, "/");
 		}
 
 		if (empty($_SESSION["username"])) {
@@ -63,32 +67,34 @@ class Session {
 			return;
 		}
 
-		self::$username = $_SESSION["username"];
-		self::$user = $_SESSION["user"];
-		self::$logoutToken = $_SESSION["logoutToken"];
+		static::$username = $_SESSION["username"];
+		static::$user = $_SESSION["user"];
+		static::$logoutToken = $_SESSION["logoutToken"];
 	}
 
 	/**
 	 * Start session using token string.
+	 * 
 	 * @param	string	$token
 	 */
 	public static function token(String $token) {
 		$token = Token::getToken($token);
 
-		self::$username = $token -> username;
-		self::$user = \User::getByUsername($token -> username);
-		self::$logoutToken = null;
+		static::$username = $token -> username;
+		static::$user = \User::getByUsername($token -> username);
+		static::$logoutToken = null;
 	}
 
 	/**
 	 * Create access token for this user.
+	 * 
 	 * @param	\User	$user
 	 * @return	Token
 	 */
 	public static function createToken(\User $user) {
-		self::$username = $user -> username;
-		self::$user = $user;
-		self::$logoutToken = null;
+		static::$username = $user -> username;
+		static::$user = $user;
+		static::$logoutToken = null;
 		
 		return Token::createToken($user -> username);
 	}
@@ -97,7 +103,7 @@ class Session {
 		$_SESSION["username"] = $user -> username;
 		$_SESSION["user"] = $user;
 		$_SESSION["logoutToken"] = bin2hex(random_bytes(12));
-		self::$user = $user;
+		static::$user = $user;
 
 		session_regenerate_id();
 	}
@@ -106,15 +112,15 @@ class Session {
 		unset($_SESSION["username"]);
 		unset($_SESSION["user"]);
 		unset($_SESSION["logoutToken"]);
-		self::$username = null;
-		self::$user = null;
-		self::$logoutToken = null;
+		static::$username = null;
+		static::$user = null;
+		static::$logoutToken = null;
 
 		session_destroy();
 	}
 
 	public static function loggedIn() {
-		if (session_status() !== PHP_SESSION_NONE && !empty(self::$username))
+		if (session_status() !== PHP_SESSION_NONE && !empty(static::$username))
 			return true;
 		else
 			return false;

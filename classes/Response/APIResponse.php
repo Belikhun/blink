@@ -18,23 +18,54 @@ use Blink\Exception\BaseException;
  */
 class APIResponse extends JsonResponse {
 
+	/**
+	 * Response code. Mapped in `consts.php`
+	 * 
+	 * @var	int
+	 */
 	public int $code = 0;
+
+	/**
+	 * Response description. This will tell developer most of the information about the request.
+	 * 
+	 * @var	string
+	 */
 	public String $description = "";
+
+	/**
+	 * Additional data passed to the client.
+	 * 
+	 * @var	array|object|null
+	 */
 	protected Array|Object|null $data = Array();
+
+	/**
+	 * Data computed hash. Used to indicate that changes happend to response data.
+	 * 
+	 * @var	?string
+	 */
 	protected ?String $hash = null;
+
+	/**
+	 * Generated output data, to make sure output does not get computed twice.
+	 * 
+	 * @var	array
+	 */
 	private ?Array $output = null;
 
 	public function __construct(
 		int $code = 0,
 		String $description = "Success!",
+		int $status = 200,
 		Array|Object $data = Array(),
 		bool|Array|String $hash = false
 	) {
-		$this -> code($code);
-		$this -> description($description);
-		$this -> data($data);
-		$this -> hash($hash);
-		$this -> header("Content-Type", "application/json; charset=utf-8");
+		$this -> code($code)
+			-> description($description)
+			-> status($status)
+			-> data($data)
+			-> hash($hash)
+			-> header("Content-Type", "application/json; charset=utf-8");
 	}
 
 	public function code(int $code) {
@@ -77,7 +108,9 @@ class APIResponse extends JsonResponse {
 		$exception = null;
 	
 		if ($this -> data instanceof \Throwable) {
+			/** @var \Throwable */
 			$exception = $this -> data;
+
 			$stacktrace = null;
 			$additionalData = null;
 	
