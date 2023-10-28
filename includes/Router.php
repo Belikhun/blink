@@ -6,6 +6,7 @@ use Blink\Exception\BaseException;
 use Blink\Exception\RouteInvalidResponse;
 use Blink\Exception\RouteNotFound;
 use Blink\Metric\Timing;
+use Blink\Response\JsonResponse;
 use Middleware\Request as RequestMiddleware;
 use Middleware\Response as ResponseMiddleware;
 use Blink\Router\Route;
@@ -165,17 +166,29 @@ class Router {
 			$request -> route = $route;
 			$request -> args = $args;
 
-			$response = $route -> callback($request);
+			$data = $route -> callback($request);
+			$response = null;
 
-			$valid = is_string($response)
-				|| is_numeric($response)
-				|| $response instanceof Response
-				|| (is_object($response) && method_exists($response, "__toString"));
+			if (is_callable($data, true)) {
+				// Get the actual response data from callable.
+				$data = $data();
+			}
 
-			if (!$valid)
+			if (is_string($data) || is_numeric($data) || is_bool($data)) {
+				// Response the data as string.
+				$response = (String) $data;
+			} else if (is_object($data) || is_array($data)) {
+				// Response the data as object.
+				$response = new JsonResponse($data);
+			} else if ($data === null) {
+				// Just response empty string.
+				$response = "";
+			}
+
+			if ($response === null)
 				throw new RouteInvalidResponse($route -> uri, stringify($response));
 
-			if (!$response instanceof Response)
+			if (!($response instanceof Response))
 				$response = new Response($response);
 
 			if (!\Blink\Middleware::disabled())

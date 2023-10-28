@@ -45,6 +45,15 @@ define("DATA_ROOT", BASE_PATH . "/data");
 define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME)));
 
 
+// Set up intellisense for global variables.
+
+/**
+ * Global Database Instance. Initialized based on type of
+ * SQL driver specified in config.
+ * 
+ * @var		\Blink\DB	$DB
+ * @global	\Blink\DB	$DB
+ */
 
 //* ===========================================================
 //*  Parse Current Path Information
@@ -166,7 +175,8 @@ ob_start();
 
 /**
  * Clock for tracking runtime since request started.
- * @var StopClock
+ * 
+ * @var	StopClock	$RUNTIME
  */
 global $RUNTIME;
 
@@ -177,6 +187,10 @@ if (!isset($RUNTIME)) {
 
 if (!class_exists("User"))
 	require_once CORE_ROOT . "/defaults/User.php";
+
+$runtimeInitTiming = new Timing("runtime init");
+$runtimeInitTiming -> start = $_SERVER["REQUEST_TIME_FLOAT"];
+$runtimeInitTiming -> time = $BLINK_START;
 
 $setupTiming = new Timing("setup");
 $setupTiming -> start = $BLINK_START;

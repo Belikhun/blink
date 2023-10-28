@@ -1,6 +1,13 @@
 <?php
+
+namespace Blink\Exception;
+
+use Blink\Exception\BaseException;
+
 /**
  * ClassNotDefined.php
+ * 
+ * A class has not been defined in the included file.
  * 
  * @author    Belikhun
  * @since     1.0.0
@@ -9,10 +16,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Exception;
-use Blink\Exception\BaseException;
-
 class ClassNotDefined extends BaseException {
 	/**
 	 * Target class name that is not defined after

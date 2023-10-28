@@ -96,7 +96,7 @@ function updateAutoloadData() {
 	$nsre = "/namespace ([a-zA-Z0-9\\\\]+);/mi";
 
 	// Class name regex
-	$clre = '/^(?:[\t\n]*|[\t\n]*abstract\s+)class ([a-zA-Z0-9\_]+)[\\a-zA-Z0-9\ \,\t\n]*\{/m';
+	$clre = '/^(?:[\t\n]*|[\t\n]*abstract\s+|[\t\n]*final\s+)(?:class|trait) ([a-zA-Z0-9\_]+)[\\a-zA-Z0-9\ \,\t\n]*\{/m';
 
 	foreach (\CONFIG::$INCLUDES as $include) {
 		if (!file_exists($include))

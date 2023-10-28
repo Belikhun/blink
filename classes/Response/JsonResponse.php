@@ -3,6 +3,7 @@
 namespace Blink\Response;
 
 use Blink\Response;
+use JsonSerializable;
 
 /**
  * JsonResponse.php
@@ -26,6 +27,11 @@ class JsonResponse extends Response {
 	}
 
 	public function json(Array|Object $json) {
+		if ($json instanceof JsonSerializable) {
+			$this -> json = $json -> jsonSerialize();
+			return $this;
+		}
+
 		$this -> json = (Array) $json;
 		return $this;
 	}

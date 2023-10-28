@@ -1,4 +1,7 @@
 <?php
+
+namespace Blink\Exception;
+
 /**
  * FatalError.php
  * 
@@ -12,7 +15,4 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Exception;
-
 class FatalError extends BaseException {}

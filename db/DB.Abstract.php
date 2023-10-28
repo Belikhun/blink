@@ -1,6 +1,7 @@
 <?php
 
 namespace Blink;
+
 use Blink\DB\Exception\InvalidSQLDriver;
 use Blink\DB\Exception\SQLDriverNotFound;
 use Blink\Exception\CodingError;
@@ -383,7 +384,7 @@ function initializeDB() {
 	 * Global Database Instance. Initialized based on type of
 	 * SQL driver specified in config.
 	 * 
-	 * @var \Blink\DB
+	 * @var	\Blink\DB	$DB
 	 */
 	global $DB;
 

@@ -1,4 +1,9 @@
 <?php
+
+namespace Blink\Exception;
+
+use Blink\Exception\BaseException;
+
 /**
  * InvalidDefinition.php
  * 
@@ -9,10 +14,6 @@
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Exception;
-use Blink\Exception\BaseException;
-
 class InvalidDefinition extends BaseException {
 	/**
 	 * Target class name that is not defined after
@@ -40,7 +41,7 @@ class InvalidDefinition extends BaseException {
 		
 		parent::__construct(
 			AUTOLOAD_CLASS_INVALID,
-			"Class [{$class}] is not valid! It's must be extended from [{$from}]",
+			"Class <code>{$class}</code> is not valid! It's must be extended from <code>{$from}</code>",
 			500,
 			Array( "class" => $class, "from" => $from, "file" => $file )
 		);
