@@ -55,11 +55,11 @@ class Route {
 	/**
 	 * Construct a new Route object
 	 * 
-     * @param  array			$verbs
-     * @param  string			$uri
-     * @param  callable			$action
+     * @param  array					$verbs
+     * @param  string					$uri
+     * @param  array|string|callable	$action
 	 */
-	public function __construct(Array $verbs, String $uri, Callable $action) {
+	public function __construct(Array $verbs, String $uri, Array|String|Callable $action) {
 		$this -> verbs = $verbs;
 		$this -> uri = $uri;
 		$this -> action = $action;
@@ -75,7 +75,7 @@ class Route {
 	public function callback(Request $request) {
 		$args = $this -> args = $request -> args;
 
-		if (is_callable($this -> action)) {
+		if (is_callable($this -> action, true)) {
 			if (is_array($this -> action)) {
 				$class = new \ReflectionClass($this -> action[0]);
 				$info = $class -> getMethod($this -> action[1]);
@@ -134,7 +134,7 @@ class Route {
 			}
 		} else {
 			$callbackName = stringify($this -> action);
-			throw new BaseException(ROUTE_CALLBACK_INVALID, "Callback [{$callbackName}] for route \"{$this -> uri}\" is missing or not callable.", 500);
+			throw new BaseException(ROUTE_CALLBACK_INVALID, "Callback <code>{$callbackName}</code> for route \"{$this -> uri}\" is missing or not callable.", 500);
 		}
 	}
 

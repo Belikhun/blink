@@ -441,12 +441,23 @@ function expire(int $time) {
  */
 function getRelativePath(String $fullPath, String $separator = "/", String $base = BASE_PATH) {
 	if ($separator === "/") {
-		$search = BASE_PATH;
+		$search = ($base === BASE_PATH)
+			? $base
+			: str_replace("\\", "/", $base);
+
 		$subject = str_replace("\\", "/", $fullPath);
 	} else {
-		$search = preg_replace("/(\\\\|\/)/m", $separator, $base);
-		$subject = preg_replace("/(\\\\|\/)/m", $separator, $fullPath);
+		$search = preg_replace('/(\\\\|\/)/m', $separator, $base);
+		$subject = preg_replace('/(\\\\|\/)/m', $separator, $fullPath);
 	}
+
+	$result = str_replace($search, "", $subject);
+
+	// If the result does not end up with directory slash (`/`),
+	// it might be that the directory name has been chopped in half.
+	// Return the original path instead.
+	if ($result[0] !== $separator)
+		return $fullPath;
 
 	return str_replace($search, "", $subject);
 }
@@ -466,7 +477,7 @@ function getClientIP() {
 function stringify($subject) {
 	$output = "";
 
-	if (is_callable($subject)) {
+	if (is_callable($subject, true)) {
 		if (is_array($subject)) {
 			$class = new \ReflectionClass($subject[0]);
 			$info = $class -> getMethod($subject[1]);
@@ -722,7 +733,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	$content = preg_replace($re, '$1<span class="sc-function">$2</span>', $content);
 		
 	// Class name regex
-	$re = '/(^| |\(|\t)([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
+	$re = '/(^| |\(|\t|!)([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
 	$content = preg_replace($re, '$1<span class="sc-class">$2</span>$3', $content);
 
 	// String
@@ -1102,22 +1113,42 @@ function stop(
 	$instance = \Blink\ErrorPage\Instance::create($response -> output());
 	$response -> set("report", (String) $instance -> url());
 
-	if (!defined("PAGE_TYPE"))
-		define("PAGE_TYPE", "NORMAL");
+	$pageType = "NORMAL";
+	$errored = ($status >= 300 || $code !== 0);
+	$accepts = explode(",", getHeader("Accept"));
 
-	switch (strtoupper(PAGE_TYPE)) {
+	if ($errored) {
+		foreach ($accepts as $accept) {
+			if (str_starts_with($accept, "text/html")) {
+				$pageType = "NORMAL";
+				break;
+			}
+
+			if (str_starts_with($accept, "application/json")) {
+				$pageType = "API";
+				break;
+			}
+		}
+	} else {
+		if (!defined("PAGE_TYPE"))
+			define("PAGE_TYPE", "NORMAL");
+
+		$pageType = strtoupper(PAGE_TYPE);
+	}
+
+	switch ($pageType) {
 		case "NORMAL":
 			if (!headers_sent()) {
-				$response -> header("Output", "[{$response -> code}] {$response -> description}");
+				$response -> header("Output", $response -> code);
 				$response -> header("Report-ID", $instance -> id);
 				$response -> serve();
 			}
 
-			if ($status >= 300 || $code !== 0)
+			if ($errored)
 				renderErrorPage($instance, headers_sent());
 
 			break;
-		
+
 		case "API":
 			$response -> header("Access-Control-Allow-Origin", "*");
 			$response -> header("Report-ID", $instance -> id);

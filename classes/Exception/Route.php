@@ -19,12 +19,14 @@ use Blink\Router\Route;
 class RouteArgumentMismatch extends BaseException {
 	/**
      * The Route object associated with the exception.
+	 * 
      * @var Route
      */
     public $route;
 
     /**
      * The error message associated with the exception.
+	 * 
      * @var string
      */
     public $message;
@@ -39,12 +41,14 @@ class RouteArgumentMismatch extends BaseException {
 class RouteNotFound extends BaseException {
 	/**
 	 * Requested URI path from user.
+	 * 
 	 * @var string
 	 */
 	public $path;
 
 	/**
 	 * Requested URI method from user.
+	 * 
 	 * @var string
 	 */
 	public $method;
@@ -64,12 +68,14 @@ class RouteNotFound extends BaseException {
 class RouteCallbackInvalidParam extends BaseException {
 	/**
 	 * Route URI
+	 * 
 	 * @var string
 	 */
 	public String $uri;
 
 	/**
 	 * Param name defined in route callback
+	 * 
 	 * @var string
 	 */
 	public String $param;
@@ -90,6 +96,7 @@ class RouteCallbackInvalidParam extends BaseException {
 class RouteInvalidResponse extends BaseException {
 	/**
 	 * Route URI
+	 * 
 	 * @var string
 	 */
 	public String $uri;
@@ -102,7 +109,7 @@ class RouteInvalidResponse extends BaseException {
 
 		parent::__construct(
 			ROUTE_INVALID_RESPONSE,
-			"Callback for route \"{$uri}\" must return either String, Number or Blink\Response, got [{$got}]",
+			"Callback for route \"{$uri}\" must return either String, Number or <code>Blink\Response</code>, got <code>{$got}</code>",
 			500,
 			Array( "uri" => $uri, "got" => $got )
 		);

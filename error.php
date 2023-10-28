@@ -21,7 +21,7 @@ use Blink\HtmlWriter;
 /** @var \Blink\ErrorPage\Instance */
 $instance = $_SESSION["LAST_ERROR"];
 
-list($statusText, $description) = $instance -> info();
+list($statusText, $description, $details) = $instance -> info();
 list($tipTitle, $tipContent) = $instance -> tips();
 $status = $instance -> status;
 $sticker = $instance -> sticker();
@@ -82,7 +82,7 @@ http_response_code($status);
 				<div class="bottom">
 					<div class="inner">
 						<span class="truncate">
-							<?php echo htmlspecialchars($description); ?>
+							<?php echo strip_tags($description, [ "code", "b", "i", "u" ]); ?>
 						</span>
 					</div>
 				</div>
@@ -129,7 +129,11 @@ http_response_code($status);
 								</span>
 							</div>
 	
-							<div class="description"><?php echo htmlspecialchars($description); ?></div>
+							<div class="description"><?php echo strip_tags($description, [ "code", "b", "i", "u" ]); ?></div>
+
+							<?php if (!empty($details)) { ?>
+								<div class="details"><?php echo $details; ?></div>
+							<?php } ?>
 						</span>
 					</div>
 

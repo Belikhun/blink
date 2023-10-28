@@ -58,7 +58,7 @@ class Instance {
 
 	public function info() {
 		if ($this -> hasException() && !empty($this -> data["description"]))
-			return [ $this -> data["exception"]["class"], $this -> data["description"] ];
+			return [ $this -> data["exception"]["class"], $this -> data["description"], null ];
 
 		return $this -> httpInfo();
 	}
@@ -132,7 +132,7 @@ class Instance {
 		if (!empty($this -> data) && !empty($this -> data["description"]))
 			$description = $this -> data["description"];
 
-		return [ $statusText, $description ];
+		return [ $statusText, $description, null ];
 	}
 
 	public function type() {

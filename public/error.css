@@ -292,6 +292,13 @@ header > .bottom > .inner {
 	font-weight: 600;
 }
 
+#details > .info > .exception > .description code {
+	background-color: var(--badge-background);
+    margin: -0.2rem 0.1rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.5rem;
+}
+
 #details > .tips {
 	display: none;
 	width: 33%;
