@@ -241,20 +241,47 @@ new Timing("env", function () {
 	Environment::load(\CONFIG::$ENV);
 });
 
+if (file_exists(BASE_PATH . "/setup.php")) {
+	new Timing("page setup", function () {
+		// Include page setup file.
+		require_once BASE_PATH . "/setup.php";
+	});
+}
+
 new Timing("session", function() {
 	// Initialize session
-	if (class_exists(Session::class))
-		Session::start();
+	if (class_exists(Session::class)) {
+		$auth = getHeader("Authorization");
+
+		if (!empty($auth)) {
+			$auth = explode(" ", $auth);
+
+			if (empty($auth[1])) {
+				$token = $auth[0];
+				$type = "Basic";
+			} else {
+				list($type, $token) = $auth;
+			}
+
+			switch ($type) {
+				case "Basic":
+					Session::start();
+					Session::token($token);
+					break;
+				
+				case "Session":
+					Session::start($token);
+					break;
+			}
+		} else {
+			Session::start();
+		}
+	}
 });
 
 // Add default endpoint for error page.
 Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);
 Router::GET("/error", [ \Blink\ErrorPage\Instance::class, "index" ], -1);
-
-if (file_exists(BASE_PATH . "/setup.php"))
-	require_once BASE_PATH . "/setup.php";
-
-
 
 //* ===========================================================
 //*  Handle Routing

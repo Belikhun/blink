@@ -16,6 +16,10 @@ namespace Blink;
  */
 
 class Session {
+	const METHOD_SESSION = "session";
+
+	const METHOD_TOKEN = "token";
+
 	/**
 	 * Session lifespan. Default to 1 day.
 	 * 
@@ -45,6 +49,22 @@ class Session {
 	 */
 	public static $logoutToken = null;
 
+	/**
+	 * Current authentication method.
+	 * Can be `Session::METHOD_SESSION` or `Session::METHOD_TOKEN`
+	 * 
+	 * @var ?string
+	 */
+	public static ?String $method = null;
+
+	/**
+	 * Authenticated token.
+	 * Only populated when using token authentication method.
+	 * 
+	 * @var ?string
+	 */
+	public static ?Token $token = null;
+
 	public static function start(String $sessionID = null) {
 		session_name("Session");
 
@@ -70,6 +90,8 @@ class Session {
 		static::$username = $_SESSION["username"];
 		static::$user = $_SESSION["user"];
 		static::$logoutToken = $_SESSION["logoutToken"];
+		static::$method = static::METHOD_SESSION;
+		static::$token = null;
 	}
 
 	/**
@@ -83,6 +105,8 @@ class Session {
 		static::$username = $token -> username;
 		static::$user = \User::getByUsername($token -> username);
 		static::$logoutToken = null;
+		static::$method = static::METHOD_TOKEN;
+		static::$token = $token;
 	}
 
 	/**
@@ -96,7 +120,11 @@ class Session {
 		static::$user = $user;
 		static::$logoutToken = null;
 		
-		return Token::createToken($user -> username);
+		$token = Token::createToken($user -> username);
+		static::$method = static::METHOD_TOKEN;
+		static::$token = $token;
+
+		return $token;
 	}
 
 	public static function completeLogin(\User $user) {
@@ -115,6 +143,8 @@ class Session {
 		static::$username = null;
 		static::$user = null;
 		static::$logoutToken = null;
+		static::$method = null;
+		static::$token = null;
 
 		session_destroy();
 	}

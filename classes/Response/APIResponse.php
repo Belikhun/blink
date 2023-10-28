@@ -3,6 +3,7 @@
 namespace Blink\Response;
 
 use Blink\Exception\BaseException;
+use Blink\Session;
 
 /**
  * APIResponse.php
@@ -143,8 +144,8 @@ class APIResponse extends JsonResponse {
 			"status" => $this -> status,
 			"description" => $this -> description,
 			"caller" => "{$caller}()",
-			"user" => class_exists("Session", true)
-				? \Session::$username
+			"user" => class_exists(Session::class, true)
+				? Session::$username
 				: null,
 			"data" => $this -> data,
 			"hash" => $this -> hash,
