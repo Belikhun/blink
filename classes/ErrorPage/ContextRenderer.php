@@ -104,13 +104,13 @@ class ContextRenderer {
 			);
 		}
 
-		$lineSteps = array_reverse([0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 240]);
-		$lineStep = 0.05;
+		$lineSteps = array_reverse([0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 240]);
+		$lineStep = 0.005;
 		$lineTime = 0;
 
 		// Find suitable time step.
 		foreach ($lineSteps as $step) {
-			if ($duration / $step > 4) {
+			if ($duration / $step > 5) {
 				$lineStep = $step;
 				break;
 			}

@@ -66,6 +66,7 @@ class Instance {
 	public function httpInfo() {
 		$statusText = "OK";
 		$description = "Everything is good and dandy!";
+		$info = null;
 
 		switch ($this -> status) {
 			case 400:
@@ -125,14 +126,14 @@ class Instance {
 			
 			default:
 				$statusText = "HTTP\SampleText";
-				$description = "Much strangery page, Such magically error, wow";
+				$description = "Much strangely page, Such magically error, wow!";
 				break;
 		}
 
 		if (!empty($this -> data) && !empty($this -> data["description"]))
 			$description = $this -> data["description"];
 
-		return [ $statusText, $description, null ];
+		return [ $statusText, $description, $info ];
 	}
 
 	public function type() {
@@ -395,7 +396,9 @@ class Instance {
 		$metrics -> add($filesContext);
 
 		$timingContext = new ContextItem("timings", "Timings", Array(
-			"start" => $RUNTIME -> start,
+			"start" => (!empty(\Blink\Metric::$timings))
+				? \Blink\Metric::$timings[0] -> start
+				: $RUNTIME -> start,
 			"end" => microtime(true),
 			"timings" => \Blink\Metric::$timings,
 		), "stopwatch");
