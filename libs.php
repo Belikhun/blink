@@ -146,6 +146,7 @@ function relativeTime(int $timestamp, int $to = null) {
 
 /**
  * Makes sure the data is using valid utf8, invalid characters are discarded.
+ * 
  * @param	mixed	$value
  * @return	mixed	with proper utf-8 encoding
  */
@@ -859,9 +860,10 @@ function isSequential($array) {
 
 /**
  * Generate Random Number
- * @param	int|float		$min		Minimum Random Number
- * @param	int|float		$max		Maximum Random Number
- * @param   bool			$toInt		To return an Integer Value
+ * 
+ * @param	int|float		$min		Minimum random number
+ * @param	int|float		$max		Maximum random number
+ * @param   bool			$toInt		To return an Integer value
  * @return	int|float		Generated number
  */
 function randBetween($min, $max, bool $toInt = true) {
@@ -872,11 +874,25 @@ function randBetween($min, $max, bool $toInt = true) {
 		: ($rand * ($max - $min) + $min);
 }
 
+/**
+ * Pick a random item in an array.
+ * 
+ * @template	Item
+ * @param		array<Item>		$array		The array
+ * @param		int				$index		The randomized item index
+ * @return		Item			Item in the array
+ */
+function randItem($array, &$index = 0) {
+	$index = randBetween(0, count($array) - 1, true);
+	return $array[$index];
+}
+
 define("RAND_CHARSET_TEXT", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
 define("RAND_CHARSET_HEX", "0123456789abcdef");
 
 /**
  * Generate Random String
+ * 
  * @param	int			$len		Length of the randomized string
  * @param	string		$charset	Charset
  * @return	string		Generated String
