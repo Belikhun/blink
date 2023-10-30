@@ -1,6 +1,7 @@
 <?php
 
 namespace Blink;
+use Blink\Exception\NotLoggedIn;
 
 /**
  * Session.php
@@ -154,6 +155,11 @@ class Session {
 			return true;
 		else
 			return false;
+	}
+
+	public static function requireLogin() {
+		if (!static::loggedIn())
+			throw new NotLoggedIn();
 	}
 }
 

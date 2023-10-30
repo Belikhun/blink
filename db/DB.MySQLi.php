@@ -46,6 +46,7 @@ class MySQLi extends DB {
 			$options["database"]
 		);
 
+		$this -> mysqli -> set_charset("utf8mb4");
 		$this -> connected = true;
 	}
 

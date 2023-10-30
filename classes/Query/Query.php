@@ -180,7 +180,7 @@ final class Query extends Builder {
 		list($query, $params) = $builder -> build();
 
 		if (!empty($query)) {
-			$this -> joins[] = "{$type} {{$table}} ON ({$query})";
+			$this -> joins[] = "{$type} {$table} ON ({$query})";
 			$this -> joinValues = array_merge($this -> joinValues, $params);
 		}
 
@@ -602,7 +602,8 @@ final class Query extends Builder {
 
 		$record = (Array) $DB -> execute($sql, $params, 0, 1);
 		$record = reset($record);
-		return (int) $record;
+		$record = get_object_vars($record);
+		return (int) (reset($record));
 	}
 
 	/**
