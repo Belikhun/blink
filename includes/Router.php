@@ -169,7 +169,7 @@ class Router {
 			$data = $route -> callback($request);
 			$response = null;
 
-			if (is_callable($data, true)) {
+			if (is_callable($data)) {
 				// Get the actual response data from callable.
 				$data = $data();
 			}
