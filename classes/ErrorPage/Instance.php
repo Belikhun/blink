@@ -191,20 +191,20 @@ class Instance {
 	}
 
 	public function sticker() {
-		$sticker = "/core/public/stickers/sticker-default.webm";
+		$sticker = "sticker-default.webm";
 
 		switch ($this -> type()) {
 			case static::ERROR_SERVER:
 				$sticker = match ($this -> status) {
-					503 => "/core/public/stickers/sticker-503.webm",
-					default => "/core/public/stickers/sticker-50x.webm"
+					503 => "sticker-503.webm",
+					default => "sticker-50x.webm"
 				};
 				break;
 
 			case static::ERROR_CLIENT:
 				$sticker = match ($this -> status) {
-					404 => "/core/public/stickers/sticker-404.webm",
-					default => "/core/public/stickers/sticker-40x.webm"
+					404 => "sticker-404.webm",
+					default => "sticker-40x.webm"
 				};
 				break;
 		}

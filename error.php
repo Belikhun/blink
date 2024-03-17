@@ -17,6 +17,7 @@ use Blink\BacktraceFrame;
 use Blink\ErrorPage\Instance;
 use Blink\ErrorPage\Renderer;
 use Blink\HtmlWriter;
+use Blink\URL;
 
 /** @var \Blink\ErrorPage\Instance */
 $instance = $_SESSION["LAST_ERROR"];
@@ -24,8 +25,10 @@ $instance = $_SESSION["LAST_ERROR"];
 list($statusText, $description, $details) = $instance -> info();
 list($tipTitle, $tipContent) = $instance -> tips();
 $status = $instance -> status;
-$sticker = $instance -> sticker();
+$sticker = new URL(getRelativePath(CORE_ROOT . "/public/stickers/" . $instance -> sticker()));
 $exception = $instance -> exception();
+$basePublic = new URL(getRelativePath(CORE_ROOT . "/public"));
+$tipDeco = new URL(getRelativePath(CORE_ROOT . "/public/imgs/tip-deco.svg"));
 $statusColor = match ($instance -> type()) {
 	Instance::ERROR_CLIENT => "yellow",
 	Instance::ERROR_SERVER => "red",
@@ -40,6 +43,8 @@ $class = (!empty($exception) && !empty($exception["class"]))
 $stacktrace = $instance -> stacktrace();
 $contexts = $instance -> contexts;
 http_response_code($status);
+header("Access-Control-Allow-Private-Network: true");
+
 ?>
 
 <!DOCTYPE html>
@@ -48,8 +53,8 @@ http_response_code($status);
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="/core/public/default.css">
-		<link rel="stylesheet" href="/core/public/error.css">
+		<link rel="stylesheet" href="<?php echo $basePublic; ?>/default.css">
+		<link rel="stylesheet" href="<?php echo $basePublic; ?>/error.css">
 		<title><?php echo (!empty($class) ? $class : $statusText) . ": {$description}"; ?></title>
 	</head>
 
@@ -92,7 +97,7 @@ http_response_code($status);
 				<div id="details" class="panel">
 					<div class="flex flex-row flex-g1 info">
 						<?php if (CONFIG::$W_MODE) { ?>
-							<video id="sticker" src="<?php echo $sticker; ?>" autoplay loop></video>
+							<video id="sticker" src="<?php echo $sticker -> out(false); ?>" autoplay loop></video>
 						<?php } ?>
 	
 						<span class="flex-g1 block exception">
@@ -139,7 +144,7 @@ http_response_code($status);
 
 					<?php if (!empty($tipTitle)) { ?>
 						<div class="flex flex-row flex-g0 tips active" toggle-target="tip1">
-							<div class="block tip">
+							<div class="block tip" style="background-image: url('<?php echo $tipDeco -> out(true); ?>')">
 								<div class="title"><?php echo $tipTitle; ?></div>
 								<div class="content"><?php echo $tipContent; ?></div>
 							</div>
@@ -310,6 +315,6 @@ http_response_code($status);
 			</div>
 		</div>
 
-		<script src="/core/public/error.js"></script>
+		<script src="<?php echo $basePublic; ?>/error.js"></script>
 	</body>
 </html>
