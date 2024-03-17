@@ -86,7 +86,7 @@ final class Condition {
 	public static function validateColumnValue(String $field) {
 		global $DB;
 
-		if (!str_contains($field, "."))
+		if (!str_contains($field, ".") || str_contains($field, "("))
 			return false;
 
 		//! CRITICAL: Validate table and column value. Currently we don't have any method of

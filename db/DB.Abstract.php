@@ -255,16 +255,17 @@ abstract class DB {
 	 * 
 	 * @param	string			$table		The database table to be inserted into
      * @param	object|array	$object		A data object with values for one or more fields in the record
+     * @param	string			$primary	Primary key name
      * @return	bool
 	 */
-	public function update(String $table, Array|Object $object) {
+	public function update(String $table, Array|Object $object, String $primary = "id") {
 		$object = (Array) $object;
 
-		if (empty($object["id"]))
+		if (empty($object[$primary]))
 			throw new CodingError("\$DB -> update(): id field must be specified");
 
-		$id = $object["id"];
-		unset($object["id"]);
+		$id = $object[$primary];
+		unset($object[$primary]);
 
 		if (empty($object))
 			throw new CodingError("\$DB -> update(): no fields found");
@@ -285,7 +286,7 @@ abstract class DB {
 		$values[] = $id;
 
 		$sets = implode(", ", $sets);
-		$sql = "UPDATE $table SET $sets WHERE id = ?";
+		$sql = "UPDATE {$table} SET $sets WHERE {$table}.{$primary} = ?";
 
 		// Record Metric
 		$metric = new \Blink\Metric\Query("INSERT", $table);

@@ -9,6 +9,6 @@ class SQLError extends BaseException {
 			"code" => $code,
 			"description" => $description,
 			"query" => $query
-		));
+		), $query);
 	}
 }

@@ -340,7 +340,7 @@ class Model implements JsonSerializable {
 			$this -> onCreated();
 		} else {
 			$record -> {static::mapDB(static::$primaryKey)} = $this -> saveField(static::$primaryKey);
-			$DB -> update(static::$table, $record);
+			$DB -> update(static::$table, $record, static::$primaryKey);
 		}
 
 		$this -> onSaved();

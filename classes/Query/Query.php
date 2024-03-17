@@ -234,7 +234,7 @@ class Query extends Builder {
 		list($query, $params) = $builder -> build();
 
 		if (!empty($query)) {
-			$this -> joins[] = "{$type} {{$table}} ON ({$query})";
+			$this -> joins[] = "{$type} {$table} ON ({$query})";
 			$this -> joinValues = array_merge($this -> joinValues, $params);
 		}
 
@@ -493,7 +493,7 @@ class Query extends Builder {
 			$table = $this -> table;
 
 			$selects = array_map(function ($i) use ($table) {
-				return "{{$table}}.{$i}";
+				return "{$table}.{$i}";
 			}, $this -> fillables);
 
 			$selects = implode(", ", $selects);
@@ -522,7 +522,7 @@ class Query extends Builder {
 			$params = array_merge($sParams, $params);
 			$from = "({$sSql})";
 		} else {
-			$from = "{{$this -> table}}";
+			$from = "{$this -> table}";
 		}
 
 		if (!empty($this -> aliases["@this"]))
@@ -777,7 +777,7 @@ class Query extends Builder {
 			return "{$k} = ?";
 		}, array_keys($this -> sets), $this -> sets);
 
-		$sql = "UPDATE {{$this -> table}}\n"
+		$sql = "UPDATE {$this -> table}\n"
 			. "SET " . implode(", ", $sets);
 
 		list($where, $wparams) = parent::build();

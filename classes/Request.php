@@ -118,4 +118,19 @@ class Request {
 			|| $this -> param($name, $type)
 			|| $default;
 	}
+
+	public function accept(String $mimetype) {
+		$accept = $this -> header("Accept", TYPE_RAW);
+
+		if (empty($accept))
+			return false;
+
+		list($accept) = explode(";", $accept);
+		return (strcasecmp($accept, $mimetype) === 0);
+	}
+
+	public function json(bool $assoc = false) {
+		$json = file_get_contents("php://input");
+		return safeJSONParsing($json, "[request:body]", $assoc);
+	}
 }
