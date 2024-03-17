@@ -2,21 +2,22 @@
 
 namespace Blink\Router;
 
+use Blink\Exception\RouteInvalidCallback;
+use Blink\Request;
+use Blink\Router;
 use Blink\Exception\BaseException;
 use Blink\Exception\RouteArgumentMismatch;
 use Blink\Exception\RouteCallbackInvalidParam;
-use Blink\Request;
-use Blink\Router;
 
 /**
  * Route.php
- * 
+ *
  * Represent a valid route for our router to go.
- * 
+ *
  * @author    Belikhun
  * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -44,38 +45,72 @@ class Route {
 	 * Route additional arguments taken from request URI.
 	 * @var array
 	 */
-	public $args = Array();
+	public array $args = Array();
 
 	/**
 	 * Route priority.
 	 * Higher mean will be checked and executed first.
 	 */
-	public $priority = 0;
+	public int $priority = 0;
+
+	/**
+	 * The plugin name that registered this route.
+	 *
+	 * @param ?string
+	 */
+	public ?String $plugin = null;
 
 	/**
 	 * Construct a new Route object
-	 * 
-     * @param  array					$verbs
-     * @param  string					$uri
-     * @param  array|string|callable	$action
+	 *
+     * @param  array			$verbs
+     * @param  string			$uri
+     * @param  callable|array	$action
+     * @param  int				$priority
 	 */
-	public function __construct(Array $verbs, String $uri, Array|String|Callable $action) {
+	public function __construct(Array $verbs, String $uri, Callable|Array $action, int $priority = 0) {
 		$this -> verbs = $verbs;
 		$this -> uri = $uri;
 		$this -> action = $action;
+		$this -> priority = $priority + $this -> tokenWeight();
+	}
+
+	public function tokenWeight() {
+		$weight = 0;
+		$tokens = Router::uriTokens($this -> uri);
+
+		foreach ($tokens as $token) {
+			if (strlen($token) >= 2 && $token[0] === "{" && substr($token, -1) === "}") {
+				// Argument match weight 1 point only, this is to make sure path with
+				// literal match will come first.
+				$weight += 1;
+				continue;
+			} else if ($token === "*") {
+				$weight += 1;
+				continue;
+			} else if ($token === "**") {
+				// Don't count all match to weight.
+				continue;
+			}
+
+			// Literal match weight 2 points.
+			$weight += 2;
+		}
+
+		return $weight;
 	}
 
 	/**
 	 * Call to the action of this Route. Return the result
 	 * of the callback
-	 * 
+	 *
 	 * @param	Request		$request
 	 * @return	mixed
 	 */
 	public function callback(Request $request) {
 		$args = $this -> args = $request -> args;
 
-		if (is_callable($this -> action, true)) {
+		if (is_callable($this -> action)) {
 			if (is_array($this -> action)) {
 				$class = new \ReflectionClass($this -> action[0]);
 				$info = $class -> getMethod($this -> action[1]);
@@ -103,8 +138,14 @@ class Route {
 					break;
 				}
 
-				if (!isset($args[$name]))
-					throw new RouteCallbackInvalidParam($this -> uri, $name);
+				if (!isset($args[$name])) {
+					// Check if our param here is optional?
+
+					if (!$param -> isOptional())
+						throw new RouteCallbackInvalidParam($this -> uri, $name);
+					else
+						$args[$name] = $param -> getDefaultValue();
+				}
 
 				$callArgs[] = $args[$name];
 				unset($args[$name]);
@@ -133,8 +174,7 @@ class Route {
 				throw new BaseException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
 			}
 		} else {
-			$callbackName = stringify($this -> action);
-			throw new BaseException(ROUTE_CALLBACK_INVALID, "Callback <code>{$callbackName}</code> for route \"{$this -> uri}\" is missing or not callable.", 500);
+			throw new RouteInvalidCallback($this -> action, $this -> uri);
 		}
 	}
 
@@ -144,7 +184,8 @@ class Route {
 			: implode(" ", $this ->  verbs);
 
 		return str_pad($this -> priority, 2, "0", STR_PAD_LEFT)
-			. " " . str_pad($verb, 6, " ", STR_PAD_LEFT)
+			. " " . str_pad($verb, 16, " ", STR_PAD_LEFT)
+			. " " . str_pad($this -> plugin ?? "unknown_plugin", 24, " ", STR_PAD_LEFT)
 			. " " . $this -> uri;
 	}
 }

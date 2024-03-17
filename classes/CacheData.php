@@ -1,6 +1,7 @@
 <?php
 
 namespace Blink\Cache;
+
 use Blink\Cache;
 
 /**

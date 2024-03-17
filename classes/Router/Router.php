@@ -2,46 +2,57 @@
 
 namespace Blink;
 
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionAttribute;
 use Blink\Exception\BaseException;
+use Blink\Exception\ClassNotFound;
 use Blink\Exception\RouteInvalidResponse;
 use Blink\Exception\RouteNotFound;
 use Blink\Metric\Timing;
 use Blink\Response\JsonResponse;
-use Middleware\Request as RequestMiddleware;
-use Middleware\Response as ResponseMiddleware;
+use Blink\Router\Attribute\HttpMethod;
 use Blink\Router\Route;
-use CONFIG;
 
 /**
  * Router.php
- * 
+ *
  * Router interface.
- * 
+ *
  * @author    Belikhun
  * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class Router {
 	/**
 	 * All routes for this router.
-	 * @var	Router\Route[]
+	 *
+	 * @var	Route[]
 	 */
 	protected static $routes = Array();
 
 	/**
 	* All of the verbs supported by the router.
+
 	* @var	string[]
 	*/
-	public static $verbs = Array("GET", "POST", "PATCH", "DELETE");
+	public static $verbs = Array("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE");
 
 	/**
 	 * Currently active route.
-	 * @var	Router\Route
+	 * @var	Route
 	 */
 	public static $active = null;
+
+	/**
+	 * Currently processing plugin.
+	 *
+	 * @var	?string
+	 */
+	public static ?String $processingPlugin = null;
 
 	/**
 	* Register a new GET route with the router.
@@ -50,7 +61,7 @@ class Router {
 	* @param  string|callable	$action
 	*/
 	public static function GET($uri, $action, $priority = 0) {
-		return Router::match("GET", $uri, $action, $priority);
+		return static::match("GET", $uri, $action, $priority);
 	}
 
 	/**
@@ -60,7 +71,7 @@ class Router {
 	* @param  string|callable	$action
 	*/
     public static function POST($uri, $action, $priority = 0) {
-		return Router::match("POST", $uri, $action, $priority);
+		return static::match("POST", $uri, $action, $priority);
     }
 
 	/**
@@ -70,7 +81,7 @@ class Router {
 	* @param  string|callable	$action
 	*/
     public static function PATCH($uri, $action, $priority = 0) {
-		return Router::match("PATCH", $uri, $action, $priority);
+		return static::match("PATCH", $uri, $action, $priority);
     }
 
 	/**
@@ -80,7 +91,7 @@ class Router {
 	* @param  string|callable	$action
 	*/
     public static function DELETE($uri, $action, $priority = 0) {
-		return Router::match("DELETE", $uri, $action, $priority);
+		return static::match("DELETE", $uri, $action, $priority);
     }
 
 	/**
@@ -91,7 +102,7 @@ class Router {
 	* @param  string|callable	$action
 	*/
     public static function ANY($uri, $action, $priority = 0) {
-		return Router::match(self::$verbs, $uri, $action, $priority);
+		return static::match(static::$verbs, $uri, $action, $priority);
     }
 
 	/**
@@ -100,30 +111,100 @@ class Router {
 	* @param  array|string		$methods
 	* @param  string			$uri
 	* @param  string|callable	$action
-	* @return Router\Route
+	* @return Route
 	*/
 	public static function match($methods, $uri, $action, $priority = 0) {
 		if (is_string($methods))
 			$methods = Array($methods);
 
 		foreach ($methods as $method)
-			if (!in_array($method, Router::$verbs))
+			if (!in_array($method, static::$verbs))
 				throw new BaseException(-1, "HTTP Method \"{$method}\" is not supported!");
 
-		$route = new Route($methods, $uri, $action);
-		$route -> priority = $priority;
-		Router::$routes[] = $route;
-		
+		$route = new Route($methods, $uri, $action, $priority);
+		$route -> plugin = static::$processingPlugin;
+		static::$routes[] = $route;
+
 		return $route;
 	}
 
 	public static function getRoutes() {
-		return self::$routes;
+		return static::$routes;
+	}
+
+	/**
+	 * Register all defined routes in this controller.
+	 * This function will scan all methods inside the controller that has the {@link Route} attribute defined.
+	 *
+	 * @param	class-string	$controller		The controller class name.
+	 */
+	public static function useController(String $controller) {
+		if (!class_exists($controller))
+			throw new ClassNotFound($controller);
+
+		$refClass = new ReflectionClass($controller);
+
+		/** @var ReflectionMethod[] */
+		$methods = $refClass -> getMethods(ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_STATIC);
+
+		foreach ($methods as $method) {
+			// We skip methods that's in the parent class.
+			if ($method -> class !== $controller)
+				continue;
+
+			$uris = Array();
+			$methods = Array();
+			$priority = 0;
+
+			/** @var ReflectionAttribute[] */
+			$attributes = $method -> getAttributes(\Blink\Router\Attribute\Route::class);
+
+			if (empty($attributes))
+				continue;
+
+			// Try getting the priority attribute from method.
+			$priorityAttr = $method -> getAttributes(\Blink\Router\Attribute\RoutePriority::class);
+			if (!empty($priorityAttr)) {
+				$priorityAttr = array_pop($priorityAttr);
+				$priority = intval($priorityAttr -> getArguments()[0]);
+			}
+
+			foreach ($attributes as $attribute) {
+				$args = $attribute -> getArguments();
+				$uris[] = $args[0];
+
+				/** @var ReflectionAttribute[] */
+				$methodAttrs = $method -> getAttributes(
+					HttpMethod::class,
+					ReflectionAttribute::IS_INSTANCEOF
+				);
+
+				foreach ($methodAttrs as $attr) {
+					$class = $attr -> getName();
+
+					if ($class === HttpMethod::class) {
+						$verbs = array_map("strtoupper", $attr -> getArguments());
+						$methods = array_merge($methods, $verbs);
+					} else {
+						// Child of HttpMethod. Get VERB from class directly.
+						$methods[] = $attr -> getName()::VERB;
+					}
+				}
+			}
+
+			if (empty($methods)) {
+				foreach ($uris as $uri)
+					static::ANY($uri, [$controller, $method -> getName()], $priority);
+			} else {
+				foreach ($uris as $uri)
+					static::match($methods, $uri, [$controller, $method -> getName()], $priority);
+			}
+		}
 	}
 
 	/**
 	 * Handle the requested path.
-	 * 
+	 *
 	 * @param	string	$path
 	 * @param	string	$method
 	 */
@@ -140,28 +221,25 @@ class Router {
 			$_GET, $_POST, getallheaders(),
 			$_COOKIE, $_FILES);
 
-		if (!\Blink\Middleware::disabled())
-			$request = RequestMiddleware::handle($request);
-
 		$path = $request -> path;
 		$method = $request -> method;
 
 		// Sort routes by priority
-		usort(self::$routes, function ($a, $b) {
+		usort(static::$routes, function ($a, $b) {
 			return $b -> priority <=> $a -> priority;
 		});
 
-		foreach (self::$routes as $route) {
+		foreach (static::$routes as $route) {
 			if (!in_array($method, $route -> verbs))
 				continue;
 
-			if (!self::isRouteMatch($route, $path, $args))
+			if (!static::isRouteMatch($route, $path, $args))
 				continue;
 
 			$found = true;
 			$routingTiming -> time();
-			self::$active = $route;
-			
+			static::$active = $route;
+
 			// Update the request instance.
 			$request -> route = $route;
 			$request -> args = $args;
@@ -193,9 +271,6 @@ class Router {
 			if (!($response instanceof Response))
 				$response = new Response($response);
 
-			if (!\Blink\Middleware::disabled())
-				$response = ResponseMiddleware::handle($request, $response);
-			
 			static::handleResponse($route, $response);
 			break;
 		}
@@ -208,10 +283,11 @@ class Router {
 
 	/**
 	 * Parse URI to array of tokens
+	 *
 	 * @param      string		$uri
 	 * @return     string[]
 	 */
-	private static function uriTokens(String $uri) {
+	public static function uriTokens(String $uri) {
 		$uri = ltrim($uri, "/");
 
 		if (empty($uri))
@@ -222,13 +298,14 @@ class Router {
 
 	/**
 	 * Check if Route match current URI
-	 * @param      Router\Route  $route
-	 * @param      string         $path
-	 * @return     bool
+	 *
+	 * @param		Route		$route
+	 * @param		string		$path
+	 * @return		bool
 	 */
-	private static function isRouteMatch(Route $route, String $path, Array &$args = Array()) {
-		$pathTokens = self::uriTokens($path);
-		$uriTokens = self::uriTokens($route -> uri);
+	protected static function isRouteMatch(Route $route, String $path, Array &$args = Array()) {
+		$pathTokens = static::uriTokens($path);
+		$uriTokens = static::uriTokens($route -> uri);
 
 		if (in_array("**", $uriTokens)) {
 			// If route contains match rest, number of tokens don't
@@ -258,11 +335,11 @@ class Router {
 				$args[$key] = $value;
 				continue;
 			}
-			
+
 			// Check block
 			if ($token === "*")
 				continue;
-			
+
 			if ($token === "**") {
 				// Pretend the rest are matched.
 				return true;
@@ -276,6 +353,7 @@ class Router {
 
 	/**
 	 * Handle response returned from route callback.
+	 *
 	 * @param Response $response
 	 */
 	protected static function handleResponse(Route $route, Response $response) {
@@ -284,8 +362,19 @@ class Router {
 		while (ob_get_level())
 			ob_end_clean();
 
-		$response -> header("X-Powered-By", "PHP/" . phpversion() . " Blink/" . CONFIG::$BLINK_VERSION);
+		$response -> header("X-Powered-By", "PHP/" . phpversion() . " Blink/" . \Blink::version());
 		echo $response -> serve();
 		return;
+	}
+
+	/**
+	 * Return endpoint url based on route path.
+	 *
+	 * @param	string		$path
+	 * @param	?string[]	$params
+	 * @return	URL
+	 */
+	public static function url(String $path, Array $params = null) {
+		return new URL("/vloom/router/route.php{$path}", $params);
 	}
 }
