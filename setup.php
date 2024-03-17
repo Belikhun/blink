@@ -280,8 +280,10 @@ new Timing("session", function() {
 });
 
 // Add default endpoint for error page.
+Router::$processingFile = "blink:core";
 Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);
 Router::GET("/error", [ \Blink\ErrorPage\Instance::class, "index" ], -1);
+Router::$processingFile = null;
 
 //* ===========================================================
 //*  Handle Routing
@@ -297,7 +299,7 @@ $routesTiming = new Timing("route init");
 foreach (glob("$routesPath/*.php") as $filename) {
 	// Isolate scope
 	(function ($currentFileLocation) {
-		Router::$processingFile = pathinfo($currentFileLocation, PATHINFO_BASENAME);
+		Router::$processingFile = pathinfo($currentFileLocation, PATHINFO_FILENAME);
 		require_once $currentFileLocation;
 	})($filename);
 

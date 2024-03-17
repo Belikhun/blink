@@ -104,29 +104,42 @@ class URL {
     /**
      * Add an array of params to the params for this url.
      *
-     * @param	array	$params		Defaults to null. If null then returns all params.
-     * @return	array	Array of params for this url.
+     * @param	array	        $params		Defaults to null. If null then returns all params.
+     * @return	static
      * @throws	CodingError
      */
     public function params(Array $params = null) {
         $params = (Array) $params;
 
-        foreach ($params as $key => $value) {
-            if (is_int($key))
-                throw new CodingError("Url parameters can not have numeric keys!");
+        foreach ($params as $key => $value)
+            $this -> param($key, $value);
 
-            if (!is_string($value)) {
-                if (is_array($value))
-                    throw new CodingError("Url parameters values can not be arrays!");
-				
-                if (is_object($value) and !method_exists($value, "__toString"))
-                    throw new CodingError("Url parameters values can not be objects, unless __toString() is defined!");
-            }
+        return $this;
+    }
 
-            $this -> params[$key] = (String) $value;
+    /**
+     * Set a param value by param name.
+     *
+     * @param	string	        $key		Param key name
+     * @param	string	        $value		Param value
+     * @return	static
+     * @throws	CodingError
+     */
+    public function param(String $key, $value) {
+        if (is_int($key))
+            throw new CodingError("Url parameters can not have numeric keys!");
+
+        if (!is_string($value)) {
+            if (is_array($value))
+                throw new CodingError("Url parameters values can not be arrays!");
+            
+            if (is_object($value) and !method_exists($value, "__toString"))
+                throw new CodingError("Url parameters values can not be objects, unless __toString() is defined!");
         }
 
-        return $this -> params;
+        $this -> params[$key] = (String) $value;
+
+        return $this;
     }
 
     /**
@@ -137,16 +150,16 @@ class URL {
      * or `remove_params(array("param1", "param2"))`.
      *
      * @param	string[]|string $params
-     * @return	array			New url parameters.
+     * @return	static
      */
     public function removeParams($params = null) {
         if (!is_array($params))
             $params = func_get_args();
         
         foreach ($params as $param)
-            unset($this->params[$param]);
+            unset($this -> params[$param]);
 		
-        return $this->params;
+        return $this;
     }
 
     /**
@@ -224,7 +237,9 @@ class URL {
 
     /**
      * Sets the scheme for the URI (the bit before ://)
+     * 
      * @param	string	$scheme
+     * @return  static
      */
     public function setScheme(String $scheme) {
         // See http://www.ietf.org/rfc/rfc3986.txt part 3.1.
@@ -233,5 +248,7 @@ class URL {
         } else {
             throw new CodingError("Bad URL scheme: \"$scheme\"");
         }
+
+        return $this;
     }
 }
