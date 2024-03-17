@@ -17,21 +17,31 @@ use Blink\Exception\CodingError;
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-class Builder {
+abstract class Builder {
 	/**
 	 * Indicate that the output of this query is flipped.
+	 *
 	 * @var bool
 	 */
 	public bool $flip = false;
 
 	/**
+	 * Output process in raw mode.
+	 *
+	 * @var bool
+	 */
+	public bool $raw = false;
+
+	/**
 	 * Indicate that the output of this query should be treated with OR instead of AND.
+	 *
 	 * @var bool
 	 */
 	public bool $or = false;
 
 	/**
 	 * Conditions in this builder.
+	 *
 	 * @var	array<Condition|Builder>
 	 */
 	public Array $conditions = Array();
@@ -53,7 +63,7 @@ class Builder {
 			return $this;
 
 		if ($values[0] instanceof \Closure) {
-			$child = new self();
+			$child = new QueryBuilder();
 			$child -> flip = $flip;
 			$child -> or = $or;
 			$child -> raw = $raw;
@@ -75,6 +85,11 @@ class Builder {
 
 			return $this;
 		} else if (count($values) === 3) {
+			if ($values[2] instanceof Query) {
+				// Force operator to be IN.
+				$values[1] = "IN";
+			}
+
 			$condititon = new Condition($values[0], $values[1], $values[2]);
 			$condititon -> flip = $flip;
 			$condititon -> or = $or;
@@ -83,7 +98,10 @@ class Builder {
 			$this -> conditions[] = $condititon;
 			return $this;
 		} else if (count($values) === 2) {
-			$condititon = new Condition($values[0], "=", $values[1]);
+			$condititon = ($values[1] instanceof Query)
+				? new Condition($values[0], "IN", $values[1])
+				: new Condition($values[0], "=", $values[1]);
+
 			$condititon -> flip = $flip;
 			$condititon -> or = $or;
 			$condititon -> raw = $raw;
@@ -193,8 +211,12 @@ class Builder {
 			$params = array_merge($params, $p);
 		}
 
-		if ($this -> flip)
-			$query = "NOT ({$query})";
+		if (!empty($query)) {
+			if ($this -> flip)
+				$query = "NOT ({$query})";
+
+			$query = "({$query})";
+		}
 
 		return Array( $query, $params );
 	}

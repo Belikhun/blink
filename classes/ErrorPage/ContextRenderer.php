@@ -160,6 +160,16 @@ class ContextRenderer {
 		return H::build("pre", [ "copyable" => $content ], htmlspecialchars($content));
 	}
 
+	public static function html(String $data): String {
+		$id = "context-renderer-html-" . randString(8);
+		$data = strip_tags($data, [
+			"div", "span", "ul", "li", "table", "thead", "tbody", "tr", "th", "td", "ol",
+			"img", "h1", "h2", "h3", "h4", "h5", "h6", "b", "i", "strong", "pre", "a" ]);
+
+		$script = H::tag("script", "document.getElementById(`{$id}`).innerHTML = `" . addcslashes($data, "\"") . "`;");
+		return H::div([ "id" => $id, "class" => ["raw-html", "expandable"] ], "") . $script;
+	}
+
 	public static function string(String $content) {
 		return H::build("pre", [], htmlspecialchars($content));
 	}

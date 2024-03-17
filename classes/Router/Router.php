@@ -52,7 +52,7 @@ class Router {
 	 *
 	 * @var	?string
 	 */
-	public static ?String $processingPlugin = null;
+	public static ?String $processingFile = null;
 
 	/**
 	* Register a new GET route with the router.
@@ -122,7 +122,7 @@ class Router {
 				throw new BaseException(-1, "HTTP Method \"{$method}\" is not supported!");
 
 		$route = new Route($methods, $uri, $action, $priority);
-		$route -> plugin = static::$processingPlugin;
+		$route -> file = static::$processingFile;
 		static::$routes[] = $route;
 
 		return $route;

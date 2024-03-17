@@ -1,18 +1,19 @@
+/* stylelint-disable */
 /**
  * error.css
- * 
+ *
  * Generic error page styles.
- * 
+ *
  * @author    Belikhun
  * @since     1.0.0
  * @license   https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
 html {
-	font-size: 15px;
+	font-size: 16px;
 }
 
 body {
@@ -29,7 +30,7 @@ body {
 					Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif,
 					BlinkMacSystemFont, Helvetica Neue, Arial, Apple Color Emoji,
 					Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-	
+
     line-height: 1.5;
 	color: var(--text-primary);
 	font-feature-settings: "calt" 0;
@@ -187,7 +188,7 @@ header > .bottom > .inner {
 	flex-direction: row;
 
 	background-color: var(--panel-color);
-	box-shadow: 
+	box-shadow:
 		rgba(0, 0, 0, 0) 0px 0px 0px 0px,
 		rgba(0, 0, 0, 0) 0px 0px 0px 0px,
 		rgba(107, 114, 128, 0.2) 0px 25px 50px -12px;
@@ -331,7 +332,6 @@ header > .bottom > .inner {
 	position: relative;
 	flex-grow: 1;
 	background-color: var(--color-green);
-	background-image: url("/core/public/imgs/tip-deco.svg");
 	background-position: center right;
 	background-repeat: no-repeat;
 }
@@ -746,6 +746,44 @@ header > .bottom > .inner {
 	font-size: 0.8rem;
 	font-weight: 600;
 	line-height: 1;
+}
+
+.raw-html {
+	padding: 0.5rem 1rem;
+	background-color: rgba(107, 114, 128, .05);
+}
+
+.expandable {
+	position: relative;
+	max-height: 12rem;
+	overflow: hidden;
+}
+
+.expandable.expandable-expand {
+	max-height: unset;
+}
+
+.expandable > .expand-btn {
+	position: absolute;
+	bottom: 1rem;
+	left: 50%;
+	padding: 0.2rem 2rem;
+	transform: translateX(-50%);
+	border-radius: 1rem;
+	cursor: pointer;
+
+	font-size: 0.9rem;
+	font-weight: 600;
+	background-color: #ececec;
+	box-shadow: rgba(0, 0, 0, 0.05) 0 0.5rem 2rem 0, rgba(0, 0, 0, 0.08) 0 0 0 1px;
+}
+
+.expandable > .expand-btn:hover {
+	background-color: #d6d6d6;
+}
+
+.expandable > .expand-btn:active {
+	background-color: #c4c4c4;
 }
 
 #footer.content {

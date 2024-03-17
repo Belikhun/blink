@@ -297,8 +297,11 @@ $routesTiming = new Timing("route init");
 foreach (glob("$routesPath/*.php") as $filename) {
 	// Isolate scope
 	(function ($currentFileLocation) {
+		Router::$processingFile = pathinfo($currentFileLocation, PATHINFO_BASENAME);
 		require_once $currentFileLocation;
 	})($filename);
+
+	Router::$processingFile = null;
 }
 
 $routesTiming -> time();

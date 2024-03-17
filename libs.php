@@ -726,16 +726,17 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	$keywords = Array(	"try", "catch", "return", "public", "protected", "private", "static", "include_once",
 						"include", "require_once", "require", "global", "if", "else", "use", "throw",
 						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break", "instanceof",
-						"null", "default", "while", "switch", "case", "match", "int", "string", "array", "object", "bool", "float" );
-	$re = '/(^|[\t\n\(\!\s\|])(' . implode("|", $keywords) . ')(?=[\t\n\(\{\:\;\)\|\s]|$)/mi';
+						"default", "while", "switch", "case", "match", "class", "extends", "implement", "parent",
+						"namespace" );
+	$re = '/(^|[\t\n\(\! ])(' . implode("|", $keywords) . ')(?=[\t\n\(\{\:\; ])/mi';
 	$content = preg_replace($re, '$1<span class="sc-keyword">$2</span>', $content);
 
 	// Function regex
 	$re = '/([\t\n\( ]|^)(function)(?=[\t\n\(\{ ])/mi';
 	$content = preg_replace($re, '$1<span class="sc-function">$2</span>', $content);
-		
+
 	// Class name regex
-	$re = '/(^| |\(|\t|!)([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
+	$re = '/(^| |\(|\t)([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
 	$content = preg_replace($re, '$1<span class="sc-class">$2</span>$3', $content);
 
 	// String
@@ -746,14 +747,6 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	$re = '/(\$[a-zA-Z0-9_]+)/m';
 	$content = preg_replace($re, '<span class="sc-variable">$1</span>', $content);
 
-	// Constants
-	$re = '/(^|[\t\s\(\+\-\*\/])(?!\$)([A-Z][A-Z\_]{2,})/m';
-	$content = preg_replace($re, '$1<span class="sc-const">$2</span>', $content);
-
-	// Numbers
-	$re = '/([\s\=\+\-\*\/\(]|^)([0-9.]+)(?=[\)\;\+\-\*\/\,\s]|$)/m';
-	$content = preg_replace($re, '$1<span class="sc-number">$2</span>$3', $content);
-
 	// Functions
 	$re = '/([a-zA-Z0-9_]+)(\()/m';
 	$content = preg_replace($re, '<span class="sc-function-name">$1</span>$2', $content);
@@ -761,7 +754,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	// Comments
 	$re = '/([\t ]|^)(\/\/|\*|\/\*\*)(.*)$/m';
 	$content = preg_replace($re, '$1<span class="sc-comment">$2$3</span>', $content);
-	
+
 	// PHP tag
 	$content = str_replace("&lt;?php", '<span class="sc-meta">&lt;?php</span>', $content);
 	$content = str_replace("?&gt;", '<span class="sc-meta">?&gt;</span>', $content);

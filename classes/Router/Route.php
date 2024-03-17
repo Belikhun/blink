@@ -54,11 +54,11 @@ class Route {
 	public int $priority = 0;
 
 	/**
-	 * The plugin name that registered this route.
+	 * The file name that registered this route.
 	 *
 	 * @param ?string
 	 */
-	public ?String $plugin = null;
+	public ?String $file = null;
 
 	/**
 	 * Construct a new Route object
@@ -185,7 +185,7 @@ class Route {
 
 		return str_pad($this -> priority, 2, "0", STR_PAD_LEFT)
 			. " " . str_pad($verb, 16, " ", STR_PAD_LEFT)
-			. " " . str_pad($this -> plugin ?? "unknown_plugin", 24, " ", STR_PAD_LEFT)
+			. " " . str_pad($this -> file ?? "unknown_file", 24, " ", STR_PAD_LEFT)
 			. " " . $this -> uri;
 	}
 }

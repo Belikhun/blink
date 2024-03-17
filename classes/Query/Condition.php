@@ -46,18 +46,21 @@ final class Condition {
 
 	/**
 	 * Condition key value.
+	 *
 	 * @var string
 	 */
 	public String $key;
 
 	/**
 	 * Condition value.
-	 * @var mixed
+	 *
+	 * @var mixed|Query
 	 */
 	public mixed $value;
 
 	/**
 	 * Valid SQL compare operator. `(=, >, <, >=, <=, <>, LIKE)`
+	 *
 	 * @var string
 	 */
 	public String $operator = "=";
@@ -69,6 +72,9 @@ final class Condition {
 		$this -> key = $key;
 		$this -> operator = $operator;
 		$this -> value = $value;
+
+		if ($this -> value instanceof Query)
+			$this -> operator = "IN";
 	}
 
 	/**
@@ -99,6 +105,7 @@ final class Condition {
 	public function build() {
 		$query = "";
 		$params = Array();
+		$inOp = false;
 
 		if (!$this -> raw) {
 			$kVal = $this -> validateColumnValue($this -> key);
@@ -120,23 +127,35 @@ final class Condition {
 				}
 
 				$values = implode(", ", array_fill(0, count($this -> value), "?"));
-				$query = "{$key} IN ({$values})";
-				$params = array_values($this -> value);
-			} else {
-				if ($this -> value === null) {
-					$query = "{$key} IS NULL";
-				} else {
-					$vVal = static::validateColumnValue($this -> value);
 
-					if ($vVal) {
-						// Treat as table column.
-						list($table, $column) = $vVal;
-						$query = "{$key} {$this -> operator} {$table}.{$column}";
-					} else {
-						// Treat as normal value.
-						$query = "{$key} {$this -> operator} ?";
-						$params[] = $this -> value;
-					}
+				$query = ($this -> flip)
+					? "{$key} NOT IN ({$values})"
+					: "{$key} IN ({$values})";
+
+				$inOp = true;
+				$params = array_values($this -> value);
+			} else if ($this -> value instanceof Query) {
+				list($sSql, $sParams) = $this -> value -> makeSQLCall();
+
+				$query = ($this -> flip)
+					? "{$key} NOT IN ({$sSql})"
+					: "{$key} IN ({$sSql})";
+
+				$params = $sParams;
+				$inOp = true;
+			} else if ($this -> value === null) {
+				$query = "{$key} IS NULL";
+			} else {
+				$vVal = static::validateColumnValue($this -> value);
+
+				if ($vVal) {
+					// Treat as table column.
+					list($table, $column) = $vVal;
+					$query = "{$key} {$this -> operator} {$table}.{$column}";
+				} else {
+					// Treat as normal value.
+					$query = "{$key} {$this -> operator} ?";
+					$params[] = $this -> value;
 				}
 			}
 		} else {
@@ -147,7 +166,7 @@ final class Condition {
 			));
 		}
 
-		if ($this -> flip)
+		if ($this -> flip && !$inOp)
 			$query = "NOT ({$query})";
 
 		return Array( $query, $params );

@@ -34,11 +34,10 @@ class Instance {
 	public ?String $protocol = null;
 	public ?String $ip = null;
 
-	/**
-	 * @var ContextGroup[]
-	 */
+	/** @var ContextGroup[] */
 	public Array $contexts = [];
 
+	/** @var array|null */
 	public $data = null;
 
 	public ?String $php = null;
@@ -57,8 +56,13 @@ class Instance {
 	}
 
 	public function info() {
-		if ($this -> hasException() && !empty($this -> data["description"]))
-			return [ $this -> data["exception"]["class"], $this -> data["description"], null ];
+		if ($this -> hasException() && !empty($this -> data["description"])) {
+			return Array(
+				$this -> data["exception"]["class"],
+				$this -> data["description"],
+				$this -> data["details"] ?: null
+			);
+		}
 
 		return $this -> httpInfo();
 	}
@@ -152,6 +156,7 @@ class Instance {
 		if (!$this -> hasException() || !class_exists("Handlers"))
 			return [ null, null ];
 
+		/** @var array */
 		$exception = $this -> data["exception"];
 
 		if (!defined("DISABLE_HANDLERS")) {
@@ -375,6 +380,12 @@ class Instance {
 		), "feather");
 		$appConstsContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($appConstsContext);
+
+		if (!empty($data["output"])) {
+			$appOutputContext = new ContextItem("outbuff", "Output Buffer", $data["output"], "buffer");
+			$appOutputContext -> setRenderer([ ContextRenderer::class, "html" ]);
+			$app -> add($appOutputContext);
+		}
 
 
 

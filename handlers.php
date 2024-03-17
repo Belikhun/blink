@@ -13,6 +13,7 @@
  */
 
 namespace Blink\Handlers;
+
 use Blink\Exception\BaseException;
 use Blink\Exception\ClassNotFound;
 use Blink\Exception\FatalError;

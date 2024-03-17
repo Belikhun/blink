@@ -3,7 +3,7 @@ const toggle = {
 
 	/** @type {Object<string, HTMLElement>} */
 	active: {},
-	
+
 	/** @type {Object<string, HTMLElement[]>} */
 	buttons: {},
 
@@ -106,7 +106,7 @@ const nav = {
 			let id = link.getAttribute("nav-target")
 				? link.getAttribute("nav-target")
 				: link.getAttribute("href").substring(1);
-			
+
 			let target = document.getElementById(id);
 
 			if (!target)
@@ -120,7 +120,7 @@ const nav = {
 	},
 
 	/**
-	 * @param {Event} e 
+	 * @param {Event} e
 	 */
 	updateScroll(e) {
 		let scroll = e.target.scrollTop;
@@ -128,8 +128,8 @@ const nav = {
 
 		this.container.classList[scroll > 0 ? "add" : "remove"]("scrolling");
 		this.container.classList[scroll >= 140 ? "add" : "remove"]("details");
-		
-		for (let [id, item] of Object.entries(this.links)) {
+
+		for (let item of Object.values(this.links)) {
 			let from = item.target.offsetTop;
 			let to = from + item.target.clientHeight;
 
@@ -182,6 +182,33 @@ const copyable = {
 	}
 }
 
+const expandable = {
+	init() {
+		let targets = document.getElementsByClassName("expandable");
+
+		for (let target of targets) {
+			let expandBtn = document.createElement("span");
+			expandBtn.classList.add("expand-btn");
+			expandBtn.innerText = `Click To Expand`;
+			target.appendChild(expandBtn);
+
+			let expanding = false;
+
+			expandBtn.addEventListener("click", () => {
+				if (expanding) {
+					target.classList.remove("expandable-expand");
+					expandBtn.innerText = `Click To Expand`;
+				} else {
+					target.classList.add("expandable-expand");
+					expandBtn.innerText = `Click To Collapse`;
+				}
+
+				expanding = !expanding;
+			});
+		}
+	}
+}
+
 const error = {
 	container: document.getElementById("app"),
 
@@ -189,6 +216,7 @@ const error = {
 		toggle.init();
 		nav.init();
 		copyable.init();
+		expandable.init();
 
 		if (window.sticker) {
 			const handler = () => {
@@ -210,7 +238,10 @@ const error = {
 				navigator.clipboard.writeText(value);
 				inner.innerText = "Report Link Copied!";
 				clearTimeout(reset);
-				reset = setTimeout(() => inner.innerText = "Copy Report Link", 3000);
+
+				reset = setTimeout(() => {
+					inner.innerText = "Copy Report Link";
+				}, 3000);
 			});
 		}
 	},

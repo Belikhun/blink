@@ -5,6 +5,7 @@ namespace Blink;
 use Blink\Exception\CodingError;
 use Blink\Query\Builder;
 use Blink\Query\Condition;
+use Blink\Query\QueryBuilder;
 
 /**
  * Query.php
@@ -20,7 +21,7 @@ use Blink\Query\Condition;
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-final class Query extends Builder {
+class Query extends Builder {
 	const JOIN_LEFT = "LEFT JOIN";
 	const JOIN_RIGHT = "RIGHT JOIN";
 	const JOIN_INNER = "INNER JOIN";
@@ -36,36 +37,63 @@ final class Query extends Builder {
 
 	/**
 	 * Table name of this query.
-	 * @var string
+	 *
+	 * @var string|Query
 	 */
-	protected String $table;
+	protected String|Query $table;
+
+	/**
+	 * All registered table name aliases of this query.
+	 *
+	 * @var string[]
+	 */
+	protected Array $aliases = Array();
+
+	/**
+	 * Table name alias of this query.
+	 *
+	 * @var ?int
+	 */
+	protected ?int $limitFrom = null;
+
+	/**
+	 * Table name alias of this query.
+	 *
+	 * @var int
+	 */
+	protected ?int $limitCount = null;
 
 	/**
 	 * Fillable keys from target class.
+	 *
 	 * @var array
 	 */
 	protected Array $fillables;
 
 	/**
 	 * List of select fields.
-	 * @var string
+	 *
+	 * @var string[]|string[][]
 	 */
 	protected Array $selects = Array();
 
 	/**
 	 * List of groups condition.
-	 * @var string
+	 *
+	 * @var string[]
 	 */
 	protected Array $groupBy = Array();
 
 	/**
 	 * Order to sort the results in.
+	 *
 	 * @var string[]
 	 */
 	protected Array $sortBy = Array();
 
 	/**
 	 * Set values for update statement.
+	 *
 	 * @var string[]
 	 */
 	protected Array $sets = Array();
@@ -73,59 +101,45 @@ final class Query extends Builder {
 	/**
 	 * Raw SQL call for this query.
 	 * If set, this will be run instead of the query built with other APIs.
+	 *
 	 * @var ?string
 	 */
 	protected ?String $sql = null;
 
 	/**
+	 * When set to true, the select query will also have the `DISTINCT` statement.
+	 * Used to return only distinct (different) values.
+	 */
+	protected bool $distinct = false;
+
+	/**
 	 * Params used to call the raw SQL command.
+	 *
 	 * @var array
 	 */
 	protected ?Array $sqlParams = Array();
 
 	/**
 	 * List of joins condition.
-	 * @var string
+	 *
+	 * @var string[]
 	 */
 	protected Array $joins = Array();
 
 	/**
 	 * List of join param values.
-	 * @var string
+	 *
+	 * @var string[]
 	 */
 	protected Array $joinValues = Array();
-
-	/**
-	 * Context role.
-	 * @var ?int
-	 */
-	protected ?int $contextRole = null;
-
-	/**
-	 * Context perm.
-	 * @var ?int
-	 */
-	protected ?int $contextPerm = null;
-
-	/**
-	 * Permission's path string.
-	 * @var ?int
-	 */
-	protected ?String $permissionName = null;
-
-	/**
-	 * Permission's perm bitmask.
-	 * @var ?int
-	 */
-	protected ?int $permissionPerm = null;
 
 	/**
 	 * Create a new query.
 	 *
 	 * @param	class-string<G>		$class		Class to create new instance to.
-	 * @param	string				$table		Table name to fetch data from.
+	 * @param	string|Query		$table		Table name or subquery to fetch data from.
 	 */
-	public function __construct(String $class, String $table) {
+	public function __construct(String $class, String|Query $table) {
 		$this -> class = $class;
 		$this -> table = $table;
 
@@ -135,7 +149,46 @@ final class Query extends Builder {
 		}
 	}
 
-	protected function isModelQuery() {
+	/**
+	 * Change table to select from.
+	 *
+	 * @param	string|Query	$table	Table name or subquery to fetch data from.
+	 * @param	string			$alias	Table alias.
+	 * @return	static<G>
+	 */
+	public function table(String|Query $table, String $alias = null) {
+		$this -> table = $table;
+		$this -> alias($alias);
+		return $this;
+	}
+
+	/**
+	 * Set table name alias.
+	 *
+	 * @param	string	$alias	Table alias.
+	 * @return	static<G>
+	 */
+	public function alias(String $alias = null) {
+		$this -> aliases["@this"] = $alias;
+		return $this;
+	}
+
+	public function getTableName(): String {
+		return ($this -> table instanceof Query)
+			? $this -> table -> table
+			: $this -> table;
+	}
+
+	/**
+	 * Get model class name for this query.
+	 *
+	 * @return	class-string<Model>
+	 */
+	public function getClass(): String {
+		return $this -> class;
+	}
+
+	public function isModelQuery() {
 		return ($this -> class !== "stdClass" && $this -> class !== DB::class);
 	}
 
@@ -145,7 +198,7 @@ final class Query extends Builder {
 	 *
 	 * @param	string	$sql		Raw SQL command.
 	 * @param	array	$params		SQL params.
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function sql(String $sql, Array $params = Array()): Query {
 		$this -> sql = $sql;
@@ -157,17 +210,18 @@ final class Query extends Builder {
 	/**
 	 * Perform a join from another table.
 	 *
-	 * @param	string	$type			Join type.
-	 * @param	string	$table			Table name to join with, shorthand can be used in table name (ex. users u)
-	 * @param	array	$args			Call argument.
-	 * @return	$this
+	 * @param	string	$table		Table name to join with (ex. users).
+	 * @param	array	$args		Call argument.
+	 * @param	string	$type		Join type.
+	 * @return	static<G>
 	 */
 	protected function processJoin(
 		String $table,
 		Array $args,
 		String $type = Query::JOIN_INNER
 	): Query {
-		$builder = new Builder();
+		/** @var QueryBuilder */
+		$builder = new QueryBuilder();
 
 		if (count($args) === 3) {
 			$builder -> where($args[0], $args[1], $args[2]);
@@ -180,7 +234,7 @@ final class Query extends Builder {
 		list($query, $params) = $builder -> build();
 
 		if (!empty($query)) {
-			$this -> joins[] = "{$type} {$table} ON ({$query})";
+			$this -> joins[] = "{$type} {{$table}} ON ({$query})";
 			$this -> joinValues = array_merge($this -> joinValues, $params);
 		}
 
@@ -191,7 +245,7 @@ final class Query extends Builder {
 	 * Perform an inner join from another table.
 	 *
 	 * @param	string	$table			Table name to join with, shorthand can be used in table name (ex. users u)
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function join(String $table, ...$args) {
 		return $this -> processJoin($table, $args, static::JOIN_INNER);
@@ -201,7 +255,7 @@ final class Query extends Builder {
 	 * Perform a left join from another table.
 	 *
 	 * @param	string	$table			Table name to join with, shorthand can be used in table name (ex. users u)
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function leftJoin(String $table, ...$args): Query {
 		return $this -> processJoin($table, $args, static::JOIN_LEFT);
@@ -211,7 +265,7 @@ final class Query extends Builder {
 	 * Perform a right join from another table.
 	 *
 	 * @param	string	$table			Table name to join with, shorthand can be used in table name (ex. users u)
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function rightJoin(String $table, ...$args): Query {
 		return $this -> processJoin($table, $args, static::JOIN_RIGHT);
@@ -220,17 +274,26 @@ final class Query extends Builder {
 	/**
 	 * Add field select to this query.
 	 *
-	 * @param	string	...$selects		Select fields to add.
-	 * @return	$this
+	 * @param	string|array	...$selects		Select fields to add.
+	 * @return	static<G>
 	 */
-	public function select(String ...$selects): Query {
+	public function select(String|Array ...$selects): Query {
 		foreach ($selects as &$select) {
-			$sVal = Condition::validateColumnValue($select);
+			$col = (is_array($select))
+				? $select[0]
+				: $select;
+
+			$sVal = Condition::validateColumnValue($col);
 
 			if ($sVal) {
 				list($sTable, $sColumn) = $sVal;
-				$select = "{$sTable}.{$sColumn}";
+				$col = "{$sTable}.{$sColumn}";
 			}
+
+			if (is_array($select))
+				$select[0] = $col;
+			else
+				$select = $col;
 		}
 
 		$this -> selects = array_merge($this -> selects, $selects);
@@ -245,7 +308,7 @@ final class Query extends Builder {
 	 *
 	 * @param	string		$query
 	 * @param	string[]	$columns		Columns where normal search query will apply.
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function search(String $query, Array $columns) {
 		$query = trim($query);
@@ -298,26 +361,20 @@ final class Query extends Builder {
 			}
 
 			if (empty($group) && !empty($columns)) {
-				$group = new Builder();
+				$group = new QueryBuilder();
 				$colKeys = Array();
 
 				// Build where clause using CONCAT_WS.
 				foreach ($columns as $column) {
-					if ($this -> isModelQuery()) {
-						if (!str_contains($column, ".")) {
-							// Apply current table name to column.
-							$column = $this -> class::$table . ".{$column}";
-						}
-
-						$validate = Condition::validateColumnValue($column);
-
-						if ($validate)
-							$colKeys[] = $validate[0] . "." . $validate[1];
-					} else {
-						// We don't need to validate column name in raw mode. Just
-						// let the dev do it.
-						$colKeys[] = $column;
+					if (!str_contains($column, ".")) {
+						// Apply current table name to column.
+						$column = $this -> class::$table . ".{$column}";
 					}
+
+					$validate = Condition::validateColumnValue($column);
+
+					if ($validate)
+						$colKeys[] = $validate[0] . "." . $validate[1];
 				}
 
 				$searchWhere = "CONCAT_WS(' ', " . implode(", ", $colKeys) . ")";
@@ -334,17 +391,24 @@ final class Query extends Builder {
 	}
 
 	/**
+	 * Perform a select distinct that return only distinct (different) values.
+	 *
+	 * @param	bool		$distinct
+	 * @return	static<G>
+	 */
+	public function distinct(bool $distinct = true) {
+		$this -> distinct = $distinct;
+		return $this;
+	}
+
+	/**
 	 * Groups rows that have the same values into summary rows.
 	 *
-	 * @param	string|string[]		$by		Column name to group by.
-	 * @return	$this
+	 * @param	string		$by		Column name to group by.
+	 * @return	static<G>
 	 */
-	public function group(String|Array $by) {
-		if (is_array($by))
-			$this -> groupBy = array_merge($this -> groupBy, $by);
-		else
-			$this -> groupBy[] = $by;
-
+	public function group(String ...$by) {
+		$this -> groupBy = array_merge($this -> groupBy, $by);
 		return $this;
 	}
 
@@ -354,7 +418,7 @@ final class Query extends Builder {
 	 *
 	 * @param	string		$by			Column name to sort by.
 	 * @param	string		$direction	Direction to sort by.
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function sort(String $by, String $direction = "ASC") {
 		return $this -> order($by, $direction);
@@ -365,7 +429,7 @@ final class Query extends Builder {
 	 *
 	 * @param	string		$by			Column name to sort by.
 	 * @param	string		$direction	Direction to sort by.
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function order(String $by, String $direction = "ASC") {
 		$this -> sortBy[$by] = $direction;
@@ -378,14 +442,28 @@ final class Query extends Builder {
 	 *
 	 * @param	string		$column		Column name to change value
 	 * @param	string		$column		The new value
-	 * @return	$this
+	 * @return	static<G>
 	 */
 	public function set(String $column, $value) {
 		$this -> sets[$column] = $value;
 		return $this;
 	}
 
-	protected function makeSQLCall(?Array $selects = null) {
+	/**
+	 * Limit number of records to be returned in the query.
+	 *
+	 * @param	int			$from
+	 * @param	int			$count
+	 * @return	static<G>
+	 */
+	public function limit(int $from = 0, int $count = 0) {
+		$this -> limitFrom = $from;
+		$this -> limitCount = $count;
+
+		return $this;
+	}
+
+	public function makeSQLCall(?Array $selects = null, bool $limit = true) {
 		if (!empty($this -> sql))
 			return Array( $this -> sql, $this -> sqlParams );
 
@@ -393,17 +471,32 @@ final class Query extends Builder {
 		if (!empty($selects)) {
 			// Select in function args has most priority.
 			$selects = implode(", ", $selects);
+		} else if (!empty($this -> selects)) {
+			// Use selects defined with `-> select()`
+			// Process select AS first.
+			$selects = Array();
+
+			foreach ($this -> selects as $select) {
+				if (is_array($select)) {
+					$selects[] = $select[0] . " AS " . $select[1];
+					continue;
+				}
+
+				$selects[] = $select;
+			}
+
+			$selects = implode(", ", $selects);
+		} else if ($this -> table instanceof Query) {
+			// Subquery mode. Select all available columns.
+			$selects = "*";
 		} else if (!empty($this -> fillables)) {
 			$table = $this -> table;
 
 			$selects = array_map(function ($i) use ($table) {
-				return "{$table}.{$i}";
+				return "{{$table}}.{$i}";
 			}, $this -> fillables);
 
 			$selects = implode(", ", $selects);
-		} else if (!empty($this -> selects)) {
-			// Use selects defined with `-> select()`
-			$selects = implode(", ", $this -> selects);
 		} else {
 			// Raw query mode. Select all available columns.
 			$selects = "*";
@@ -420,20 +513,44 @@ final class Query extends Builder {
 		if (!empty($where))
 			$where = "WHERE ({$where})";
 
-		$sql = "SELECT {$selects} FROM {$this -> table}
-				{$joins}
-				{$where}";
+		$from = "";
+		if ($this -> table instanceof Query) {
+			if (empty($this -> aliases["@this"]))
+				throw new CodingError("Table alias is required when using subquery!");
+
+			list($sSql, $sParams) = $this -> table -> makeSQLCall();
+			$params = array_merge($sParams, $params);
+			$from = "({$sSql})";
+		} else {
+			$from = "{{$this -> table}}";
+		}
+
+		if (!empty($this -> aliases["@this"]))
+			$from .= (" " . $this -> aliases["@this"]);
+
+		$sql = ($this -> distinct)
+			? "SELECT DISTINCT"
+			: "SELECT";
+
+		$sql = "{$sql} {$selects} FROM {$from}
+			{$joins}
+			{$where}";
+
+		$groupBy = Array();
 
 		foreach ($this -> groupBy as $by) {
 			$gVal = Condition::validateColumnValue($by);
 
 			if ($gVal) {
 				list($gTable, $gCol) = $gVal;
-				$sql .= "\nGROUP BY {$gTable}.{$gCol}";
+				$groupBy[] = "{$gTable}.{$gCol}";
 			} else {
-				$sql .= "\nGROUP BY {$by}";
+				$groupBy[] = $by;
 			}
 		}
+
+		if (!empty($groupBy))
+			$sql .= "\nGROUP BY " . implode(", ", $groupBy);
 
 		if (!empty($this -> sortBy)) {
 			$bys = Array();
@@ -452,6 +569,10 @@ final class Query extends Builder {
 
 						if ($sVal) {
 							list($sTable, $sCol) = $sVal;
+
+							if (!empty($this -> aliases["@this"]))
+								$sTable = $this -> aliases["@this"];
+
 							$bys[] = "{$sTable}.{$sCol} {$direction}";
 						} else {
 							$bys[] = "{$by} {$direction}";
@@ -465,6 +586,19 @@ final class Query extends Builder {
 			}
 
 			$sql .= "\nORDER BY " . implode(", ", $bys);
+		}
+
+		if ($limit) {
+			// Process limit if set in query.
+			$from = empty($this -> limitFrom) ? 0 : $this -> limitFrom;
+			$count = empty($this -> limitCount) ? 0 : $this -> limitCount;
+
+			if ($from || $count) {
+				if ($count < 1)
+					$count = "18446744073709551615";
+
+				$sql .= "\nLIMIT {$from}, {$count}";
+			}
 		}
 
 		return Array( $sql, $params );
@@ -520,6 +654,9 @@ final class Query extends Builder {
 	public function delete() {
 		global $DB;
 
+		if ($this -> table instanceof Query)
+			throw new CodingError("Cannot perform DELETE operation on subquery!");
+
 		list($where, $params) = parent::build();
 
 		if (empty($where))
@@ -538,33 +675,49 @@ final class Query extends Builder {
 	 */
 	public function truncate() {
 		global $DB;
+
+		if ($this -> table instanceof Query)
+			throw new CodingError("Cannot perform TRUNCATE operation on subquery!");
+		
 		return $DB -> execute("TRUNCATE TABLE {$this -> table}");
 	}
 
 	/**
 	 * Fetch all the matching records and return it.
 	 *
-	 * @param	$from		Return a subset of records, starting at this point.
-	 * @param	$count		Return a subset comprising this many records in total.
+	 * @param	int		$from			Return a subset of records, starting at this point.
+	 * @param	int		$count			Return a subset comprising this many records in total.
+	 * @param	bool	$idIndexed		Make returned array id indexed.
 	 * @return	G[]
 	 */
-	public function all(int $from = 0, int $count = 0) {
+	public function all(int $from = 0, int $count = 0, bool $idIndexed = false) {
 		global $DB;
 
 		$instances = Array();
 
-		list($sql, $params) = $this -> makeSQLCall();
+		list($sql, $params) = $this -> makeSQLCall(limit: false);
 
 		if (empty($sql))
 			return Array();
 
 		$records = $DB -> execute($sql, $params, $from, $count);
 
-		if (!$this -> isModelQuery())
-			return $records;
+		if (!$this -> isModelQuery()) {
+			if (!$idIndexed)
+				return array_values($records);
 
-		foreach ($records as $record)
-			$instances[] = $this -> class::processRecord($record);
+			return $records;
+		}
+
+		if ($idIndexed) {
+			foreach ($records as $record) {
+				$record = $this -> class::processRecord($record);
+				$instances[$record -> getPrimaryValue()] = $record;
+			}
+		} else {
+			foreach ($records as $record)
+				$instances[] = $this -> class::processRecord($record);
+		}
 
 		return $instances;
 	}
@@ -595,7 +748,7 @@ final class Query extends Builder {
 		if ($over)
 			$select = "{$select} OVER()";
 
-		list($sql, $params) = $this -> makeSQLCall([ $select ]);
+		list($sql, $params) = $this -> makeSQLCall([ "{$select} AS count" ]);
 
 		if (empty($sql))
 			return 0;
@@ -614,6 +767,9 @@ final class Query extends Builder {
 	 */
 	public function update() {
 		global $DB;
+
+		if ($this -> table instanceof Query)
+			throw new CodingError("Cannot perform UPDATE operation on subquery!");
 
 		$params = Array();
 		$sets = array_map(function ($k, $v) use (&$params) {

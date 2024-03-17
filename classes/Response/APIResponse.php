@@ -107,6 +107,7 @@ class APIResponse extends JsonResponse {
 		$exceptionData = null;
 		$caller = "hidden";
 		$exception = null;
+		$details = null;
 	
 		if ($this -> data instanceof \Throwable) {
 			/** @var \Throwable */
@@ -123,8 +124,10 @@ class APIResponse extends JsonResponse {
 				$caller = $stacktrace[0] -> getCallString();
 			}
 	
-			if ($exception instanceof BaseException)
+			if ($exception instanceof BaseException) {
 				$additionalData = $exception -> data;
+				$details = $exception -> details;
+			}
 	
 			$exceptionData = Array(
 				"class" => get_class($exception),
@@ -143,6 +146,7 @@ class APIResponse extends JsonResponse {
 			"code" => $this -> code,
 			"status" => $this -> status,
 			"description" => $this -> description,
+			"details" => $details,
 			"caller" => "{$caller}()",
 			"user" => class_exists(Session::class, true)
 				? Session::$username
