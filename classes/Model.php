@@ -160,6 +160,7 @@ class Model implements JsonSerializable {
 	 * @param	string	$name	Model's key name. Must be defined in fillable.
 	 */
 	public static function col(String $name) {
+		static::normalizeMaps();
 		return static::$table . "." . static::mapDB($name);
 	}
 
