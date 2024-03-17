@@ -198,7 +198,7 @@ class Model implements JsonSerializable {
 	 */
 	public static function query() {
 		if (empty(static::$table))
-			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use Vloom\\DB::table()");
+			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use <code>Blink\\DB::table()</code>");
 
 		return new Query(static::class, static::$table);
 	}
@@ -212,7 +212,7 @@ class Model implements JsonSerializable {
 		global $DB;
 
 		if (empty(static::$table))
-			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use Vloom\\DB::table()");
+			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use <code>Blink\\DB::table()</code>");
 
 		$records = $DB -> records(static::$table);
 		return static::processRecords($records);
@@ -225,7 +225,7 @@ class Model implements JsonSerializable {
 	 * @return	M
 	 */
 	public static function create(Array $fill = Array()) {
-		if (static::class === self::class || static::class === 'Vloom\DB')
+		if (static::class === self::class || static::class === DB::class)
 			throw new CodingError(self::class . "::create(): this function can only be used on an inherited Model.");
 
 		$instance = new static();
@@ -603,7 +603,7 @@ class Model implements JsonSerializable {
 		?int $id = null,
 		int $strict = Model::IGNORE_MISSING
 	) {
-		if (static::class === self::class || static::class === 'Vloom\DB')
+		if (static::class === self::class || static::class === DB::class)
 			throw new CodingError(self::class . "::getByID(): this function can only be used on an inherited Model.");
 
 		if (empty($id)) {

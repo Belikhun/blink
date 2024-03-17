@@ -15,7 +15,7 @@ namespace Blink\Exception;
  * See LICENSE in the project root for license information.
  */
 class CodingError extends BaseException {
-	public function __construct($message, Array $data = null) {
-		parent::__construct(CODING_ERROR, $message, 500, $data);
+	public function __construct(string $message, string $details = null) {
+		parent::__construct(CODING_ERROR, $message, 500, details: $details);
 	}
 }

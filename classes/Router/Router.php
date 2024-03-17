@@ -366,15 +366,4 @@ class Router {
 		echo $response -> serve();
 		return;
 	}
-
-	/**
-	 * Return endpoint url based on route path.
-	 *
-	 * @param	string		$path
-	 * @param	?string[]	$params
-	 * @return	URL
-	 */
-	public static function url(String $path, Array $params = null) {
-		return new URL("/vloom/router/route.php{$path}", $params);
-	}
 }
