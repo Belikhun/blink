@@ -16,7 +16,8 @@ A high-performance, zero-dependencies and lightweight PHP Web Framework. Run on 
 - [x] Uploaded File/Image Management
 - [x] User Session Management
 - [x] API Session With Access Token Management
-- [ ] Database Model
+- [x] Database Model
+- [x] Query Builder
 - [ ] Template Engine
 
 ## 🤔 how to use
