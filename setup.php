@@ -3,6 +3,7 @@
 use Blink\Environment;
 use Blink\Metric\Timing;
 use Blink\Router;
+use Blink\Server;
 use Blink\Session;
 
 $BLINK_START = microtime(true);
@@ -241,6 +242,9 @@ new Timing("env", function () {
 	Environment::load(\CONFIG::$ENV);
 });
 
+// We can now proceed to parse current Server info.
+Server::setup();
+
 if (file_exists(BASE_PATH . "/setup.php")) {
 	new Timing("page setup", function () {
 		// Include page setup file.
@@ -309,4 +313,4 @@ foreach (glob("$routesPath/*.php") as $filename) {
 $routesTiming -> time();
 
 // Handle current request path
-Router::route($PATH, $_SERVER["REQUEST_METHOD"]);
+Router::route($PATH, Server::$METHOD);

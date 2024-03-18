@@ -22,7 +22,8 @@ class ConfigPathProperty {}
  */
 class CoreConfig {
 	/**
-	 * Page title
+	 * App Name
+	 * 
 	 * @var string
 	 */
 	public static String	$APP_NAME = "My Web App";
@@ -71,5 +72,6 @@ class CoreConfig {
 
 	public static Array		$IMAGE_ALLOW = Array("png", "jpg", "webp", "gif", "tif", "jpeg", "bmp");
 	public static int		$IMAGE_SIZE = 6291456;
+	public static bool		$REVERSE_PROXY = false;
 	public static bool		$W_MODE = true;
 }

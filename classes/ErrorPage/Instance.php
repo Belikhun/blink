@@ -6,6 +6,7 @@ use Blink\BacktraceFrame;
 use Blink\Environment;
 use Blink\ErrorPage\Exception\ReportNotFound;
 use Blink\Router;
+use Blink\Server;
 use Blink\Session;
 use Blink\URL;
 
@@ -251,17 +252,15 @@ class Instance {
 		$instance = new static(bin2hex(random_bytes(10)));
 		$instance -> data = $data;
 		$instance -> path = $PATH;
-		$instance -> method = $_SERVER["REQUEST_METHOD"];
-		$instance -> protocol = $_SERVER["SERVER_PROTOCOL"];
+		$instance -> method = Server::$METHOD;
+		$instance -> protocol = Server::$PROTOCOL;
 		$instance -> ip = getClientIP();
 		$instance -> status = !empty($data)
 			? $data["status"]
 			: (http_response_code() || 200);
 
 		$instance -> php = phpversion();
-		$instance -> server = (!empty($_SERVER["SERVER_SOFTWARE"]))
-			? $_SERVER["SERVER_SOFTWARE"]
-			: null;
+		$instance -> server = Server::$SOFTWARE;
 		$instance -> blink = \CONFIG::$BLINK_VERSION;
 
 
@@ -460,14 +459,12 @@ class Instance {
 		if (empty($_SESSION["LAST_ERROR"])) {
 			$instance = new static("invalid");
 			$instance -> path = $PATH;
-			$instance -> method = $_SERVER["REQUEST_METHOD"];
-			$instance -> protocol = $_SERVER["SERVER_PROTOCOL"];
+			$instance -> method = Server::$METHOD;
+			$instance -> protocol = Server::$PROTOCOL;
 			$instance -> ip = getClientIP();
 			$instance -> status = 200;
 			$instance -> php = phpversion();
-			$instance -> server = (!empty($_SERVER["SERVER_SOFTWARE"]))
-				? $_SERVER["SERVER_SOFTWARE"]
-				: null;
+			$instance -> server = Server::$SOFTWARE;
 			$instance -> blink = \CONFIG::$BLINK_VERSION;
 			$instance -> data = [ "exception" => [ "stacktrace" => backtrace() ] ];
 

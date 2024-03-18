@@ -28,6 +28,7 @@ use Blink\FileIO;
 use Blink\HtmlWriter;
 use Blink\Response;
 use Blink\Response\APIResponse;
+use Blink\Server;
 use Blink\Template;
 use Blink\URL;
 
@@ -315,6 +316,34 @@ function validate($value, $type, $throw = true) {
 }
 
 /**
+ * Return the first item that make the callback return true.
+ * 
+ * @template	T
+ * @param		T[]						$items
+ * @param		string|callable|null	$callable	A callable function that will ran though each item.
+ * @return		?T
+ */
+function first(Array $items, $callable = null) {
+	if (!empty($callable) && !is_callable($callable))
+		throw new CodingError("first(): callable is not callable!");
+
+	foreach ($items as $item) {
+		if (is_callable($item))
+			$item = $item();
+
+		if (!empty($callable)) {
+			if (!!$callable($item))
+				return $item;
+		} else {
+			if (!!$item)
+				return $item;
+		}
+	}
+
+	return null;
+}
+
+/**
  * Gets the value of an environment variable.
  * 
  * @param	string		$key		Environment variable name.
@@ -435,8 +464,7 @@ function expire(int $time) {
 }
 
 /**
- * Return new path relative to webserver"s
- * root path
+ * Return new path relative to webserver's root path.
  * 
  * @return	string
  */
@@ -463,18 +491,21 @@ function getRelativePath(String $fullPath, String $separator = "/", String $base
 	return str_replace($search, "", $subject);
 }
 
-function getClientIP() {
-	return $_SERVER["REMOTE_ADDR"]
-		?? $_SERVER["HTTP_CLIENT_IP"]
-		?? getenv("HTTP_CLIENT_IP")
-		?? getenv("HTTP_X_FORWARDED_FOR")
-		?? getenv("HTTP_X_FORWARDED")
-		?? getenv("HTTP_FORWARDED_FOR")
-		?? getenv("HTTP_FORWARDED")
-		?? getenv("REMOTE_ADDR")
-		?? "UNKNOWN";
+/**
+ * Return the requestor's client IP address.
+ * 
+ * @return	string
+ */
+function getClientIP(): string {
+	return Server::$CLIENT_IP;
 }
 
+/**
+ * Stringify a subject for displaying purpose.
+ * 
+ * @param	mixed		$subject
+ * @return	string
+ */
 function stringify($subject) {
 	$output = "";
 

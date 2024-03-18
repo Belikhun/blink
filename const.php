@@ -12,12 +12,6 @@
  * See LICENSE in the project root for license information.
  */
 
-/**
- * Host name, based on user's request.
- * @var	string
- */
-define("HOST", $_SERVER["HTTP_HOST"]);
-
 // Constants
 define("FILE_STORE_FS", "fs");
 define("FILE_STORE_DB", "db");

@@ -93,10 +93,10 @@ class URL {
 			$this -> $key = $value;
 
 		if (empty($this -> host))
-			$this -> host = getHeader("Host", TYPE_TEXT, "");
+			$this -> host = Server::$HOST;
 
 		if (empty($this -> scheme))
-			$this -> scheme = "http";
+			$this -> scheme = Server::$SCHEME;
 
 		$this -> params($params);
 	}
