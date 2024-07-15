@@ -21,7 +21,7 @@ use stdClass;
 /**
  * Model.php
  * 
- * A dababase model.
+ * Represent a database model.
  * 
  * @template	M
  * @author		Belikhun
@@ -131,6 +131,14 @@ class Model implements JsonSerializable {
 	public static bool $canHandleModelEvents = true;
 
 	/**
+	 * Specical signal to indicate we are initializing
+	 * this model instance and populating the model data from database.
+	 *
+	 * @var bool
+	 */
+	public bool $isPopulatingData = false;
+
+	/**
 	 * Current query conditions for this model.
 	 *
 	 * @var string
@@ -157,11 +165,18 @@ class Model implements JsonSerializable {
 	/**
 	 * Return full column name of this model, based on model's key name.
 	 *
-	 * @param	string	$name	Model's key name. Must be defined in fillable.
+	 * @param	string	$name		Model's key name. Must be defined in fillable.
+	 * @param	bool	$prefix		Add database prefix to column name.
 	 */
-	public static function col(string $name) {
-		static::normalizeMaps();
-		return static::$table . "." . static::mapDB($name);
+	public static function col(string $name, bool $prefix = false) {
+		global $CFG;
+
+		if ($name === "#")
+			return static::col(static::$primaryKey);
+
+		return ($prefix)
+			? $CFG -> prefix . static::$table . "." . static::mapDB($name)
+			: static::$table . "." . static::mapDB($name);
 	}
 
 	/**
@@ -596,8 +611,8 @@ class Model implements JsonSerializable {
 	 * Get instance of this model, by ID.
 	 * Will return cached instance if available.
 	 *
-	 * @param	int		$id
-	 * @param	int		$strict		Strictness. Default to IGNORE_MISSING, which will return null when instance not found.
+	 * @param	int								$id
+	 * @param	int								$strict				Strictness. Default to IGNORE_MISSING, which will return null when instance not found.
 	 * @return	?M
 	 */
 	public static function getByID(
@@ -691,14 +706,41 @@ class Model implements JsonSerializable {
 	}
 
 	/**
+	 * Invalidate a lazyloaded field of this model instance.
+	 */
+	public function invalidateLazyloadProperty(string $key) {
+		$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
+			&& !empty(static::$lazyloadMap[static::class][$key]);
+
+		if (!$hasLazyloadMapping)
+			return $this;
+
+		$virtKey = static::$lazyloadMap[static::class][$key];
+		unset($this -> {$virtKey});
+
+		$id = $this -> getInstanceID();
+		self::$lazyloadWillProcess[static::class][$id][$key] = true;
+
+		return $this;
+	}
+
+	/**
 	 * Process the returned record from database.
 	 *
 	 * @param	object	The record object `$DB -> get_record()` API returned.
 	 * @return	M
 	 */
 	public static function processRecord(stdClass $record) {
-		$instance = new static();
+
+		// Use currently existing instance of this record if available to
+		// save memory space and make sure we are working on the same thing.
+		$instance = self::getInstance($record -> {static::$primaryKey});
+
+		if (empty($instance))
+			$instance = new static();
+
 		static::normalizeMaps();
+		$instance -> isPopulatingData = true;
 
 		foreach (static::$fillables as $objKey => $dbKey) {
 			$value = $record -> {$dbKey};
@@ -716,17 +758,29 @@ class Model implements JsonSerializable {
 				if (!isset(self::$lazyloads[static::class][$id]))
 					self::$lazyloads[static::class][$id] = array();
 
+				if (!empty(self::$lazyloads[static::class][$id][$objKey])) {
+					// Lazyloaded value is the same with database. We don't need to touch this
+					// property and invalidate lazyloaded data.
+					if (self::$lazyloads[static::class][$id][$objKey] == $value)
+						continue;
+
+					$instance -> invalidateLazyloadProperty($objKey);
+				}
+
 				self::$lazyloads[static::class][$id][$objKey] = (is_numeric($value))
 					? (float) $value
 					: $value;
 
 				self::$lazyloadWillProcess[static::class][$id][$objKey] = true;
+
 				continue;
 			}
 
 			$value = static::processField($objKey, $value);
 			$instance -> set($objKey, $value);
 		}
+
+		$instance -> isPopulatingData = false;
 
 		// Cache our instance for future use.
 		self::saveInstance($instance -> {static::$primaryKey}, $instance);
@@ -778,16 +832,18 @@ class Model implements JsonSerializable {
 	 * @return	mixed
 	 */
 	public function get(string $name, bool $sensitive = false, bool $safe = false) {
-		// Remove ID prefix.
-		if (str_ends_with($name, "ID") && !property_exists($this, $name)) {
-			$realName = preg_replace('/ID$/', "", $name);
+		// Getting ID from a instance inside this model (Eg. `$model -> parentID`).
+		// Remove ID prefix and return the instance ID directly if loaded, else
+		// return the lazyload mapping value.
+		if ((str_ends_with($name, "ID") || str_ends_with($name, "Id")) && !property_exists($this, $name)) {
+			$realName = preg_replace('/ID$/i', "", $name);
 			$lazyloadMap = static::getLazyloadMapName($realName);
 
 			if ($lazyloadMap && empty($this -> {$lazyloadMap})) {
 				$id = $this -> getInstanceID();
 				$hasLazyloading = !empty(self::$lazyloads[static::class])
 					&& !empty(self::$lazyloads[static::class][$id])
-					&& !empty(self::$lazyloads[static::class][$id][$realName]);
+					&& array_key_exists($realName, self::$lazyloads[static::class][$id]);
 
 				if ($hasLazyloading)
 					return self::$lazyloads[static::class][$id][$realName];
