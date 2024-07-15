@@ -17,7 +17,7 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class WrongPassword extends BaseException {
-	public function __construct(String $username) {
+	public function __construct(string $username) {
 		parent::__construct(
 			ACCESS_DENIED,
 			"Wrong password supplied to login into \"{$username}\"",

@@ -38,18 +38,18 @@ class Response {
 	 * multiple values, while a string indicate a single value header.
 	 * @var string[]|array
 	 */
-	protected Array $headers = Array();
+	protected array $headers = array();
 
 	/**
 	 * The cookie bag 🍪.
 	 * Key represent the cookie name, while the value is the cookie itself.
 	 * @var \Blink\Cookie[]
 	 */
-	protected Array $cookies = Array();
+	protected array $cookies = array();
 
-	protected String $body;
+	protected string $body;
 
-	public function __construct(String $body = "") {
+	public function __construct(string $body = "") {
 		$this -> body($body);
 		$this -> header("Content-Type", "text/html; charset=utf-8");
 	}
@@ -78,25 +78,25 @@ class Response {
 	 * Add multiple cookie 🍪 to this response.
 	 * @param	Cookie[]	$cookies
 	 */
-	public function cookies(Array $cookies) {
+	public function cookies(array $cookies) {
 		foreach ($cookies as $cookie)
 			$this -> cookie($cookie);
 		
 		return $this;
 	}
 
-	public function addCookie(String $name, String $value) {
+	public function addCookie(string $name, string $value) {
 		$cookie = new Cookie($name, $value);
 		$this -> cookie($cookie);
 		return $cookie;
 	}
 
-	protected function normalizeHeaderName(String $name) {
+	protected function normalizeHeaderName(string $name) {
 		$name = str_replace("_", "-", trim($name));
 		return ucwords($name, "-");
 	}
 
-	public function header(String $name, String|Array $value, bool $overwrite = true) {
+	public function header(string $name, string|array $value, bool $overwrite = true) {
 		$name = $this -> normalizeHeaderName($name);
 
 		if (is_array($value))
@@ -115,10 +115,10 @@ class Response {
 			return $this;
 
 		if (!isset($this -> headers[$name]))
-			$this -> headers[$name] = Array();
+			$this -> headers[$name] = array();
 
 		if (!is_array($this -> headers[$name])) {
-			$header = Array();
+			$header = array();
 			if (!empty($this -> headers[$name]))
 				$header[] = $this -> headers[$name];
 			
@@ -131,7 +131,7 @@ class Response {
 		return $this;
 	}
 
-	public function removeHeader(String $name) {
+	public function removeHeader(string $name) {
 		$name = $this -> normalizeHeaderName($name);
 
 		if (isset($this -> headers[$name]))
@@ -140,18 +140,18 @@ class Response {
 		return $this;
 	}
 
-	public function headers(Array $headers, bool $overwrite = true) {
+	public function headers(array $headers, bool $overwrite = true) {
 		foreach ($headers as $name => $value)
 			$this -> header($name, $value, $overwrite);
 
 		return $this;
 	}
 
-	public function headerSet(String $name) {
+	public function headerSet(string $name) {
 		return isset($this -> headers[$name]);
 	}
 
-	public function body(String $body) {
+	public function body(string $body) {
 		$this -> body = $body;
 		return $this;
 	}
@@ -169,7 +169,7 @@ class Response {
 		return $this;
 	}
 
-	protected function process(): String {
+	protected function process(): string {
 		return $this -> body;
 	}
 
@@ -178,7 +178,7 @@ class Response {
 	 * calling {@link process()} to get the response body.
 	 * @return	string	Return outputted body.
 	 */
-	public function serve(): ?String {
+	public function serve(): ?string {
 		$body = $this -> process();
 		
 		http_response_code($this -> status);

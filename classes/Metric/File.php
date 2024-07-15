@@ -15,12 +15,12 @@
 namespace Blink\Metric;
 
 class File extends Instance {
-	public String $mode;
-	public String $type;
-	public String $file;
+	public string $mode;
+	public string $type;
+	public string $file;
 	public int $size;
 
-	public function __construct(String $mode, String $type, String $file) {
+	public function __construct(string $mode,string $$type,string $$file) {
 		// Cache file is treated differently.
 		if (str_ends_with($file, ".cache")) {
 			$name = pathinfo($file, PATHINFO_FILENAME);

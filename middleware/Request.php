@@ -24,7 +24,7 @@ class Request {
      *
      * @var array<int, class-string|string>
      */
-	protected static Array $middleware = Array(
+	protected static array $middleware = array(
 		// Define your request middleware here.
 	);
 

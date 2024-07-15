@@ -31,35 +31,35 @@ class APIResponse extends JsonResponse {
 	 * 
 	 * @var	string
 	 */
-	public String $description = "";
+	public string $description = "";
 
 	/**
 	 * Additional data passed to the client.
 	 * 
 	 * @var	array|object|null
 	 */
-	protected Array|Object|null $data = Array();
+	protected array|Object|null $data = array();
 
 	/**
 	 * Data computed hash. Used to indicate that changes happend to response data.
 	 * 
 	 * @var	?string
 	 */
-	protected ?String $hash = null;
+	protected ?string $hash = null;
 
 	/**
 	 * Generated output data, to make sure output does not get computed twice.
 	 * 
 	 * @var	array
 	 */
-	private ?Array $output = null;
+	private ?array $output = null;
 
 	public function __construct(
 		int $code = 0,
-		String $description = "Success!",
+		string $description = "Success!",
 		int $status = 200,
-		Array|Object $data = Array(),
-		bool|Array|String $hash = false
+		array|Object $data = array(),
+		bool|array|string $hash = false
 	) {
 		$this -> code($code)
 			-> description($description)
@@ -74,18 +74,18 @@ class APIResponse extends JsonResponse {
 		return $this;
 	}
 
-	public function description(String $description) {
+	public function description(string $description) {
 		// Remove absolute path.
 		$this -> description = str_replace(BASE_PATH, "", $description);
 		return $this;
 	}
 
-	public function data(Array|Object $data) {
+	public function data(array|Object $data) {
 		$this -> data = $data;
 		return $this;
 	}
 
-	public function hash(bool|Array|String $hash) {
+	public function hash(bool|array|string $hash) {
 		if (is_bool($hash)) {
 			if ($hash && (is_array($this -> data) || $this -> data instanceof \stdClass))
 				$this -> hash = md5(serialize($this -> data));
@@ -98,7 +98,7 @@ class APIResponse extends JsonResponse {
 		return $this;
 	}
 
-	public function output(): Array {
+	public function output(): array {
 		global $RUNTIME, $ERROR_STACK;
 
 		if (!empty($this -> output))
@@ -129,7 +129,7 @@ class APIResponse extends JsonResponse {
 				$details = $exception -> details;
 			}
 	
-			$exceptionData = Array(
+			$exceptionData = array(
 				"class" => get_class($exception),
 				"file" => $file,
 				"line" => $exception -> getLine(),
@@ -142,7 +142,7 @@ class APIResponse extends JsonResponse {
 				: null;
 		}
 	
-		$this -> output = Array(
+		$this -> output = array(
 			"code" => $this -> code,
 			"status" => $this -> status,
 			"description" => $this -> description,
@@ -160,7 +160,7 @@ class APIResponse extends JsonResponse {
 		return $this -> output;
 	}
 
-	public function process(): String {
+	public function process(): string {
 		$this -> json(array_merge($this -> output(), $this -> json));
 		return parent::process();
 	}

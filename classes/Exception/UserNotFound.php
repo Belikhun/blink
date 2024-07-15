@@ -15,7 +15,7 @@ namespace Blink\Exception;
  * See LICENSE in the project root for license information.
  */
 class UserNotFound extends BaseException {
-	public function __construct(Array $field) {
+	public function __construct(array $field) {
 		$key = array_key_first($field);
 		$value = $field[$key];
 

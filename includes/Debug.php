@@ -15,7 +15,7 @@ namespace Blink;
  * See LICENSE in the project root for license information.
  */
 class Debug {
-	public static String $output = "";
+	public static string $output = "";
 
 	public static function write(...$content) {
 		static::$output .= implode(" ", $content);

@@ -18,7 +18,7 @@ use Blink\Metric\Timing;
  * See LICENSE in the project root for license information.
  */
 class ContextRenderer {
-	public static function list(Array $data): String {
+	public static function list(array $data): string {
 		if (empty($data))
 			return H::build("pre", content: "[empty]");
 
@@ -30,7 +30,7 @@ class ContextRenderer {
 				? H::span([ "class" => "name", "title" => strip_tags($name) ], $name)
 				: "";
 			
-			$attrs = Array( "class" => [] );
+			$attrs = array( "class" => [] );
 
 			if (is_bool($value) || in_array($value, [ "true", "false", "1", "0" ])) {
 				$value = cleanParam($value, TYPE_BOOL);
@@ -40,7 +40,7 @@ class ContextRenderer {
 			} else {
 				if (is_object($value)) {
 					if (method_exists($value, "__toString"))
-						$value = (String) $value;
+						$value = (string) $value;
 					else
 						$value = get_class($value);
 				} else if (is_array($value)) {
@@ -61,15 +61,15 @@ class ContextRenderer {
 		return $output;
 	}
 
-	public static function metricTiming(Array $data): String {
+	public static function metricTiming(array $data): string {
 		global $RUNTIME;
 
 		$start = $data["start"];
 		$end = $data["end"];
 		$duration = $end - $start;
-		$labels = Array();
-		$bars = Array();
-		$lines = Array();
+		$labels = array();
+		$bars = array();
+		$lines = array();
 
 		/** @var Timing[] */
 		$timings = $data["timings"];
@@ -137,7 +137,7 @@ class ContextRenderer {
 		return $output;
 	}
 
-	public static function body(Array $data): String {
+	public static function body(array $data): string {
 		$content = $data["content"];
 		$type = $data["type"];
 
@@ -160,7 +160,7 @@ class ContextRenderer {
 		return H::build("pre", [ "copyable" => $content ], htmlspecialchars($content));
 	}
 
-	public static function html(String $data): String {
+	public static function html(string $data): string {
 		$id = "context-renderer-html-" . randString(8);
 		$data = strip_tags($data, [
 			"div", "span", "ul", "li", "table", "thead", "tbody", "tr", "th", "td", "ol",
@@ -170,7 +170,7 @@ class ContextRenderer {
 		return H::div([ "id" => $id, "class" => ["raw-html", "expandable"] ], "") . $script;
 	}
 
-	public static function string(String $content) {
+	public static function string(string $content) {
 		return H::build("pre", [], htmlspecialchars($content));
 	}
 }

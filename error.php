@@ -170,7 +170,7 @@ header("Access-Control-Allow-Private-Network: true");
 								$foundfault = false;
 
 								foreach ($stacktrace as $i => $trace) {
-									$attrs = Array(
+									$attrs = array(
 										"class" => ["frame", "flex", "flex-col", "align-start", "text-sm"]
 									);
 
@@ -185,44 +185,44 @@ header("Access-Control-Allow-Private-Network: true");
 										}
 
 										echo HtmlWriter::startDIV($attrs);
-										$badges = Array();
+										$badges = array();
 
 										if ($trace -> isVendor()) {
 											$badges[] = HtmlWriter::span(
-												Array( "class" => "badge vendor" ),
+												array( "class" => "badge vendor" ),
 												"vendor"
 											);
 										}
 
 										if ($trace -> isBlink()) {
 											$badges[] = HtmlWriter::span(
-												Array( "class" => "badge blink" ),
+												array( "class" => "badge blink" ),
 												"blink"
 											);
 										}
 
 										if ($trace -> fault) {
 											$badges[] = HtmlWriter::span(
-												Array( "class" => "badge fault" ),
+												array( "class" => "badge fault" ),
 												"fault"
 											);
 										}
 
 										if (!empty($badges)) {
 											echo HtmlWriter::div(
-												Array( "class" => "badges" ),
+												array( "class" => "badges" ),
 												implode("", $badges)
 											);
 										}
 
 										echo HtmlWriter::div(
-											Array( "class" => "path" ),
+											array( "class" => "path" ),
 											$trace -> file . "<code>:{$trace -> line}</code>");
 									} else {
 										echo HtmlWriter::startDIV($attrs);
 									}
 
-									echo HtmlWriter::div(Array(
+									echo HtmlWriter::div(array(
 										"class" => "font-semibold"
 									), $trace -> getCallString());
 
@@ -231,7 +231,7 @@ header("Access-Control-Allow-Private-Network: true");
 
 										if (is_array($arg)) {
 											echo HtmlWriter::code(
-												Array( "class" => "arg" ),
+												array( "class" => "arg" ),
 												"$prefix <b>{$arg[0]}</b> " . htmlspecialchars($arg[1])
 											);
 
@@ -239,7 +239,7 @@ header("Access-Control-Allow-Private-Network: true");
 										}
 
 										echo HtmlWriter::code(
-											Array( "class" => "arg" ),
+											array( "class" => "arg" ),
 											htmlspecialchars($prefix . $arg));
 									}
 
@@ -259,7 +259,7 @@ header("Access-Control-Allow-Private-Network: true");
 								if (empty($trace -> file))
 									continue;
 
-								$attrs = Array(
+								$attrs = array(
 									"class" => ["flex", "flex-col", "view"],
 									"toggle-target" => $trace -> getID()
 								);
@@ -271,14 +271,14 @@ header("Access-Control-Allow-Private-Network: true");
 
 								echo HtmlWriter::startDIV($attrs);
 
-								echo HtmlWriter::startDIV(Array(
+								echo HtmlWriter::startDIV(array(
 									"class" => "header text-sm font-semibold"
 								));
 								
 								echo HtmlWriter::a(
 									"vscode://file/" . urlencode($trace -> getFullPath() . ":{$trace -> line}"),
 									$trace -> file . "<code>:{$trace -> line}</code>",
-									Array( "class" => "open-file" )
+									array( "class" => "open-file" )
 								);
 
 								echo HtmlWriter::endDIV();

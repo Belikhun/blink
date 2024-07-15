@@ -28,7 +28,7 @@ class BaseException extends \Exception {
 	 *
 	 * @var	string
 	 */
-	public String $description;
+	public string $description;
 
 	/**
 	 * HTTP Status Code
@@ -49,21 +49,21 @@ class BaseException extends \Exception {
 	 *
 	 * @var	?string
 	 */
-	public ?String $details = null;
+	public ?string $details = null;
 
 	/**
 	 * Custom trace data of this error.
 	 *
 	 * @var	array
 	 */
-	protected Array $trace = [];
+	protected array $trace = [];
 
 	/**
 	 * The file that generated this exception.
 	 *
 	 * @var	string
 	 */
-	public String $file;
+	public string $file;
 
 	/**
 	 * The line of the file that generated this exception.
@@ -82,10 +82,10 @@ class BaseException extends \Exception {
 	 */
 	public function __construct(
 		int $code,
-		String $description,
+		string $description,
 		int $status = 500,
-		Array|\stdClass $data = null,
-		String $details = null
+		array|\stdClass $data = null,
+		string $details = null
 	) {
 		$this -> code = $code;
 		$this -> description = $description;

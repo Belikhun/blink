@@ -17,12 +17,12 @@ namespace Blink\Exception;
 use Blink\Exception\BaseException;
 
 class TemplateNotFound extends BaseException {
-	public function __construct(String $name) {
+	public function __construct(string $name) {
 		parent::__construct(
 			TEMPLATE_NOT_FOUND,
 			"Template \"{$name}\" does not exist!",
 			500,
-			Array( "name" => $name )
+			array( "name" => $name )
 		);
 	}
 }

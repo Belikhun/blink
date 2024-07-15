@@ -15,7 +15,7 @@ namespace Blink\Exception;
  * See LICENSE in the project root for license information.
  */
 class MaxLengthExceeded extends BaseException {
-	public function __construct(String $field, int $max) {
+	public function __construct(string $field, int $max) {
 		parent::__construct(
 			MAX_LENGTH_EXCEEDED,
 			"<code>{$field}</code> cannot longer than <code>{$max}</code> characters!",

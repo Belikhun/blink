@@ -42,11 +42,11 @@ class Cookie {
 	 */
 	const SAMESITE_NONE = "None";
 
-	public String $name;
-	public String $value;
-	public Array $attributes = Array();
+	public string $name;
+	public string $value;
+	public array $attributes = array();
 
-	public function __construct(String $name, String $value) {
+	public function __construct(string $name, string $value) {
 		$this -> name = $name;
 		$this -> value = $value;
 	}
@@ -68,7 +68,7 @@ class Cookie {
 	 * @param	string	$host	Host name. Set to null or empty
 	 * 		string to remove this attribute.
 	 */
-	public function domain(?String $host) {
+	public function domain(?string $host) {
 		if (empty($host))
 			unset($this -> attributes["Domain"]);
 		else
@@ -154,7 +154,7 @@ class Cookie {
 	 * @param	string	$path	Path. Set to null or empty
 	 * 		string to remove this attribute.
 	 */
-	public function path(?String $path) {
+	public function path(?string $path) {
 		if (empty($path))
 			unset($this -> attributes["Path"]);
 		else
@@ -174,7 +174,7 @@ class Cookie {
 	 * * {@see Blink\Cookie::SAMESITE_LAX}: The cookie is not sent on cross-site requests
 	 * * {@see Blink\Cookie::SAMESITE_NONE}: The browser sends the cookie with both cross-site and same-site requests
 	 */
-	public function sameSite(?String $value) {
+	public function sameSite(?string $value) {
 		if (!in_array($value, [ static::SAMESITE_STRICT, static::SAMESITE_LAX, static::SAMESITE_NONE, null ]))
 			throw new CodingError("Cookie -> sameSite(): \"{$value}\" is not a valid value!");
 
@@ -208,8 +208,8 @@ class Cookie {
 	 * `Set-Cookie` value in response header.
 	 * @return	string
 	 */
-	public function build(): String {
-		$attributes = Array( "{$this -> name}={$this -> value}" );
+	public function build(): string {
+		$attributes = array( "{$this -> name}={$this -> value}" );
 
 		foreach ($this -> attributes as $name => $value) {
 			if ($value === true || empty($value)) {

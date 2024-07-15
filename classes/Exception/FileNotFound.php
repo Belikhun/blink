@@ -17,12 +17,12 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class FileNotFound extends BaseException {
-	public function __construct(String $path) {
+	public function __construct(string $path) {
 		parent::__construct(
 			FILE_MISSING,
 			"File \"$path\" does not exist on this server.",
 			404,
-			Array( "path" => $path )
+			array( "path" => $path )
 		);
 	}
 }

@@ -44,7 +44,7 @@ abstract class Builder {
 	 *
 	 * @var	array<Condition|Builder>
 	 */
-	public Array $conditions = Array();
+	public array $conditions = array();
 
 	/**
 	 * Process args passed and make new condition or query builder from it.
@@ -55,7 +55,7 @@ abstract class Builder {
 	 * @param	bool	$raw		Pass key and value into query AS-IS.
 	 * @return	B
 	 */
-	protected function whereWith(Array $values, bool $flip = false, bool $or = false, bool $raw = false) {
+	protected function whereWith(array $values, bool $flip = false, bool $or = false, bool $raw = false) {
 		if ($or && empty($this -> conditions))
 			$or = false;
 
@@ -199,7 +199,7 @@ abstract class Builder {
 	 */
 	public function build() {
 		$query = "";
-		$params = Array();
+		$params = array();
 
 		foreach ($this -> conditions as $condition) {
 			list( $q, $p ) = $condition -> build();
@@ -218,6 +218,6 @@ abstract class Builder {
 			$query = "({$query})";
 		}
 
-		return Array( $query, $params );
+		return array( $query, $params );
 	}
 }

@@ -44,14 +44,14 @@ class Model implements JsonSerializable {
 	 *
 	 * @var string
 	 */
-	public static String $table;
+	public static string $table;
 
 	/**
 	 * Permission name related to this model.
 	 *
 	 * @var string
 	 */
-	public static String $permissionName;
+	public static string $permissionName;
 
 	/**
 	 * Define fillable fields in the parent class.
@@ -60,42 +60,42 @@ class Model implements JsonSerializable {
 	 *
 	 * @var array
 	 */
-	public static $fillables = Array();
+	public static $fillables = array();
 
 	/**
 	 * Primiary key name for this model.
 	 *
 	 * @var string
 	 */
-	public static String $primaryKey = "id";
+	public static string $primaryKey = "id";
 
 	/**
 	 * Created time key name for this model.
 	 *
 	 * @var string
 	 */
-	protected static String $createdKey = "created";
+	protected static string $createdKey = "created";
 
 	/**
 	 * Updated time key name for this model.
 	 *
 	 * @var string
 	 */
-	protected static String $updatedKey = "updated";
+	protected static string $updatedKey = "updated";
 
 	/**
 	 * Instances of fetched models, mapped by ID.
 	 *
 	 * @var array<string, M[]>
 	 */
-	private static Array $instances = Array();
+	private static array $instances = array();
 
 	/**
 	 * List of lazyloading properties, mapped by ID.
 	 *
 	 * @var array<string, array<string, array>>
 	 */
-	private static Array $lazyloads = Array();
+	private static array $lazyloads = array();
 
 	/**
 	 * List of lazyload property name mapping.
@@ -103,7 +103,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @var array<string, array<string, string>>
 	 */
-	private static Array $lazyloadMap = Array();
+	private static array $lazyloadMap = array();
 
 	/**
 	 * List of lazyload property to be loaded when getting it's value.
@@ -111,7 +111,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @var array<string, array<string, bool>>
 	 */
-	private static Array $lazyloadWillProcess = Array();
+	private static array $lazyloadWillProcess = array();
 
 	/**
 	 * Set this to true if this model contain fields from
@@ -135,16 +135,16 @@ class Model implements JsonSerializable {
 	 *
 	 * @var string
 	 */
-	protected Array $conditions = Array();
+	protected array $conditions = array();
 
-	protected static Array $dbMaps = Array();
+	protected static array $dbMaps = array();
 
 	/**
 	 * ID of this model instance.
 	 *
 	 * @var ?string
 	 */
-	private ?String $uniqueModelInstanceID = null;
+	private ?string $uniqueModelInstanceID = null;
 
 	/**
 	 * ID of this instance, in database.
@@ -159,7 +159,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @param	string	$name	Model's key name. Must be defined in fillable.
 	 */
-	public static function col(String $name) {
+	public static function col(string $name) {
 		static::normalizeMaps();
 		return static::$table . "." . static::mapDB($name);
 	}
@@ -169,7 +169,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @return Query<M>
 	 */
-	public static function raw(String $sql, Array $params = Array()) {
+	public static function raw(string $sql, array $params = array()) {
 		$query = new Query(static::class, static::$table);
 		return $query -> sql($sql, $params);
 	}
@@ -179,7 +179,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @return Query<M>
 	 */
-	public static function sql(String $sql, Array $params = Array()) {
+	public static function sql(string $sql, array $params = array()) {
 		return static::raw($sql, $params);
 	}
 
@@ -225,7 +225,7 @@ class Model implements JsonSerializable {
 	 * @param	array	$fill
 	 * @return	M
 	 */
-	public static function create(Array $fill = Array()) {
+	public static function create(array $fill = array()) {
 		if (static::class === self::class || static::class === DB::class)
 			throw new CodingError(self::class . "::create(): this function can only be used on an inherited Model.");
 
@@ -267,7 +267,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @return M
 	 */
-	public function fill(Array $values) {
+	public function fill(array $values) {
 		foreach ($values as $key => $value) {
 			if ($value === static::NO_FILL)
 				continue;
@@ -286,7 +286,7 @@ class Model implements JsonSerializable {
 	 * @param	mixed		$value
 	 * @return	M
 	 */
-	public function set(String $key, $value) {
+	public function set(string $key, $value) {
 		$method = "set" . ucfirst($key);
 		static::normalizeMaps();
 
@@ -380,7 +380,7 @@ class Model implements JsonSerializable {
 
 		$DB -> delete(
 			static::$table,
-			Array( static::$primaryKey => $this -> saveField(static::$primaryKey) )
+			array( static::$primaryKey => $this -> saveField(static::$primaryKey) )
 		);
 
 		$reporter ?-> report(
@@ -448,7 +448,7 @@ class Model implements JsonSerializable {
 	 * @return	array	First item indicates if we can delete this instance, second item indicates amount of records will be removed from the database before this.
 	 */
 	public function canDelete() {
-		return Array(true, 1);
+		return array(true, 1);
 	}
 
 	/**
@@ -485,7 +485,7 @@ class Model implements JsonSerializable {
 
 	protected static function saveInstance(int $id, Model $instance) {
 		if (!isset(self::$instances[static::class]))
-			self::$instances[static::class] = Array();
+			self::$instances[static::class] = array();
 
 		self::$instances[static::class][$id] = $instance;
 	}
@@ -518,7 +518,7 @@ class Model implements JsonSerializable {
 	 */
 	public static function normalizeMaps() {
 		if (!isset(static::$lazyloadMap[static::class])) {
-			static::$lazyloadMap[static::class] = Array();
+			static::$lazyloadMap[static::class] = array();
 			$reflection = new ReflectionClass(static::class);
 
 			/** @var ReflectionProperty[] */
@@ -543,7 +543,7 @@ class Model implements JsonSerializable {
 		}
 
 		if (!isset(static::$dbMaps[static::class])) {
-			$normalized = Array();
+			$normalized = array();
 
 			foreach (static::$fillables as $objKey => $dbKey) {
 				// If objKey is a number, this is a normal item in array without key value.
@@ -564,7 +564,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @return string
 	 */
-	public static function mapDB(String $objKey) {
+	public static function mapDB(string $objKey) {
 		if (empty(static::$fillables))
 			return $objKey;
 
@@ -580,7 +580,7 @@ class Model implements JsonSerializable {
 	 *
 	 * @return string
 	 */
-	public static function mapObj(String $dbKey) {
+	public static function mapObj(string $dbKey) {
 		if (empty(static::$fillables))
 			return $dbKey;
 
@@ -676,7 +676,7 @@ class Model implements JsonSerializable {
 	 * @param	mixed	$value	Value returned from record.
 	 * @return	mixed	New value will be applied to object.
 	 */
-	protected static function processField(String $name, $value) {
+	protected static function processField(string $name, $value) {
 		return $value;
 	}
 
@@ -686,7 +686,7 @@ class Model implements JsonSerializable {
 	 * @param string $name
 	 * @return mixed Value of this field that will be put into database.
 	 */
-	protected function saveField(String $name) {
+	protected function saveField(string $name) {
 		return $this -> {$name};
 	}
 
@@ -709,12 +709,12 @@ class Model implements JsonSerializable {
 			if ($hasLazyloadMapping) {
 				// Update mapped value to attribute.
 				if (!isset(self::$lazyloads[static::class]))
-					self::$lazyloads[static::class] = Array();
+					self::$lazyloads[static::class] = array();
 
 				$id = $instance -> getInstanceID();
 
 				if (!isset(self::$lazyloads[static::class][$id]))
-					self::$lazyloads[static::class][$id] = Array();
+					self::$lazyloads[static::class][$id] = array();
 
 				self::$lazyloads[static::class][$id][$objKey] = (is_numeric($value))
 					? (float) $value
@@ -745,7 +745,7 @@ class Model implements JsonSerializable {
 	 * @param	object[]	The record objects array `$DB -> get_records()` API returned.
 	 * @return	M[]
 	 */
-	public static function processRecords(Array $records) {
+	public static function processRecords(array $records) {
 		foreach ($records as &$record)
 			$record = static::processRecord($record);
 
@@ -758,7 +758,7 @@ class Model implements JsonSerializable {
 	 * @param	string	$name
 	 * @return	?string
 	 */
-	protected static function getLazyloadMapName(String $name) {
+	protected static function getLazyloadMapName(string $name) {
 		$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
 			&& !empty(static::$lazyloadMap[static::class][$name]);
 
@@ -777,7 +777,7 @@ class Model implements JsonSerializable {
 	 * @param	bool		$safe			Return null when value is not set, else throw error.
 	 * @return	mixed
 	 */
-	public function get(String $name, bool $sensitive = false, bool $safe = false) {
+	public function get(string $name, bool $sensitive = false, bool $safe = false) {
 		// Remove ID prefix.
 		if (str_ends_with($name, "ID") && !property_exists($this, $name)) {
 			$realName = preg_replace('/ID$/', "", $name);
@@ -843,11 +843,11 @@ class Model implements JsonSerializable {
 			: $this -> {$name};
 	}
 
-	public function __get(String $name) {
+	public function __get(string $name) {
 		return $this -> get($name, true);
 	}
 
-	public function __set(String $name, $value) {
+	public function __set(string $name, $value) {
 		$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
 			&& !empty(static::$lazyloadMap[static::class][$name]);
 
@@ -860,7 +860,7 @@ class Model implements JsonSerializable {
 		$this -> {$name} = $value;
 	}
 
-	public function __isset(String $name) {
+	public function __isset(string $name) {
 		$realName = $name;
 		$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
 			&& !empty(static::$lazyloadMap[static::class][$name]);
@@ -883,7 +883,7 @@ class Model implements JsonSerializable {
 	 * @return	array
 	 */
 	public function out(bool $sensitive = false, bool $safe = false, int $depth = -1) {
-		$out = Array();
+		$out = array();
 
 		static::normalizeMaps();
 		$ref = new ReflectionClass($this);
@@ -895,7 +895,7 @@ class Model implements JsonSerializable {
 				if ($lazyloadMap) {
 					$prop = $ref -> getProperty($lazyloadMap);
 
-					if (is_a((String) $prop -> getType(), self::class, true)) {
+					if (is_a((string) $prop -> getType(), self::class, true)) {
 						if ($depth <= 1) {
 							$out[$objKey] = null;
 							continue;
@@ -927,7 +927,7 @@ class Model implements JsonSerializable {
 	 */
     #[ReturnTypeWillChange]
 	public function jsonSerialize(int $depth = -1) {
-		$out = Array();
+		$out = array();
 
 		static::normalizeMaps();
 		$ref = new ReflectionClass($this);
@@ -939,7 +939,7 @@ class Model implements JsonSerializable {
 				if ($lazyloadMap) {
 					$prop = $ref -> getProperty($lazyloadMap);
 
-					if (is_a((String) $prop -> getType(), self::class, true)) {
+					if (is_a((string) $prop -> getType(), self::class, true)) {
 						if ($depth <= 1) {
 							$out[$objKey] = null;
 							continue;

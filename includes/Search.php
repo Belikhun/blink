@@ -15,9 +15,9 @@ namespace Blink;
  * See LICENSE in the project root for license information.
  */
 class Search {
-	public static function whereClause(Array $fields, Array $params) {
-		$where = Array();
-		$list = Array();
+	public static function whereClause(array $fields, array $params) {
+		$where = array();
+		$list = array();
 
 		foreach ($params as &$param)
 			$param = "%$param%";
@@ -28,15 +28,15 @@ class Search {
 			$where[] = "(" . implode(" AND ", $group) . ")";
 		}
 
-		return Array(implode(" OR ", $where), $list);
+		return array(implode(" OR ", $where), $list);
 	}
 
 	public static function pageWithQuery(
-		String $table,
-		String $query = null,
-		Array $fields = [],
-		Array $conditions = [],
-		String $sort = "",
+		string $table,
+		string $query = null,
+		array $fields = [],
+		array $conditions = [],
+		string $sort = "",
 		int $page = 0,
 		int $limit = 20
 	) {
@@ -69,6 +69,6 @@ class Search {
 			$records = $DB -> records($table, $conditions, $sort, from: $from, limit: $limit);
 		}
 		
-		return Array($records, new PageInfo($from, $limit, $total));
+		return array($records, new PageInfo($from, $limit, $total));
 	}
 }

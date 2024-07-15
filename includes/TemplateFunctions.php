@@ -18,7 +18,7 @@ use Blink\Exception\TemplateIllegalCall;
  */
 
 class Functions {
-	public static ?Array $context = null;
+	public static ?array $context = null;
 
 	protected static function checkContext() {
 		if (static::$context === null)
@@ -31,7 +31,7 @@ class Functions {
 	 * 
 	 * @param	mixed	$value
 	 */
-	public static function val(String $name, $default = null) {
+	public static function val(string $name, $default = null) {
 		static::checkContext();
 
 		if (!isset(static::$context[$name])) {
@@ -48,7 +48,7 @@ class Functions {
 	 * 
 	 * @param	mixed	$value
 	 */
-	public static function raw(String $name, $default = null) {
+	public static function raw(string $name, $default = null) {
 		static::checkContext();
 
 		if (!isset(static::$context[$name])) {

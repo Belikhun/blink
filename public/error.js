@@ -50,7 +50,7 @@ const toggle = {
 	/**
 	 * Activate toggle based on button node.
 	 * @param {HTMLElement}	node
-	 * @param {String}		name
+	 * @param {string}		name
 	 */
 	activate(node, name = null) {
 		let id = node.getAttribute("toggle-id");

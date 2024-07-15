@@ -17,9 +17,9 @@ use Blink\HtmlWriter;
  * See LICENSE in the project root for license information.
  */
 class ContextItem {
-	public String $id;
-	public String $name;
-	public ?String $icon = null;
+	public string $id;
+	public string $name;
+	public ?string $icon = null;
 
 	/**
 	 * Renderer used to render the data.
@@ -32,14 +32,14 @@ class ContextItem {
 	 */
 	public $data;
 
-	public function __construct(String $id, String $name, $data, String $icon = null) {
+	public function __construct(string $id, string $name, $data, string $icon = null) {
 		$this -> id = $id;
 		$this -> name = $name;
 		$this -> data = $data;
 		$this -> icon = $icon;
 	}
 
-	public function setRenderer(String|Array $callable) {
+	public function setRenderer(string|array $callable) {
 		$this -> renderer = $callable;
 		return $this;
 	}
@@ -54,7 +54,7 @@ class ContextItem {
 	}
 
 	public function renderNavigation() {
-		echo HtmlWriter::build("a", Array(
+		echo HtmlWriter::build("a", array(
 			"target" => "_self",
 			"href" => "#context-{$this -> id}",
 			"class" => "context-nav-item",
@@ -101,7 +101,7 @@ class ContextItem {
 	}
 
 	public function __serialize() {
-		return Array(
+		return array(
 			"id" => $this -> id,
 			"name" => $this -> name,
 			"icon" => $this -> icon,
@@ -110,7 +110,7 @@ class ContextItem {
 		);
 	}
 
-	public function __unserialize(Array $data) {
+	public function __unserialize(array $data) {
 		foreach ($data as $key => $value)
 			$this -> {$key} = $value;
 	}

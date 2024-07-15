@@ -17,7 +17,7 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class FileReadError extends BaseException {
-	public function __construct(String $file, int $tries = 1) {
+	public function __construct(string $file, int $tries = 1) {
 		parent::__construct(
 			FILE_READ_ERROR,
 			"Không thể đọc file \"{$file}\"" . ($tries > 1 ? " sau {$tries} lần thử" : ""),

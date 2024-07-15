@@ -32,14 +32,14 @@ class Router {
 	 *
 	 * @var	Route[]
 	 */
-	protected static $routes = Array();
+	protected static $routes = array();
 
 	/**
 	* All of the verbs supported by the router.
 
 	* @var	string[]
 	*/
-	public static $verbs = Array("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE");
+	public static $verbs = array("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE");
 
 	/**
 	 * Currently active route.
@@ -52,7 +52,7 @@ class Router {
 	 *
 	 * @var	?string
 	 */
-	public static ?String $processingFile = null;
+	public static ?string $processingFile = null;
 
 	/**
 	* Register a new GET route with the router.
@@ -115,7 +115,7 @@ class Router {
 	*/
 	public static function match($methods, $uri, $action, $priority = 0) {
 		if (is_string($methods))
-			$methods = Array($methods);
+			$methods = array($methods);
 
 		foreach ($methods as $method)
 			if (!in_array($method, static::$verbs))
@@ -138,7 +138,7 @@ class Router {
 	 *
 	 * @param	class-string	$controller		The controller class name.
 	 */
-	public static function useController(String $controller) {
+	public static function useController(string $controller) {
 		if (!class_exists($controller))
 			throw new ClassNotFound($controller);
 
@@ -152,8 +152,8 @@ class Router {
 			if ($method -> class !== $controller)
 				continue;
 
-			$uris = Array();
-			$methods = Array();
+			$uris = array();
+			$methods = array();
 			$priority = 0;
 
 			/** @var ReflectionAttribute[] */
@@ -208,8 +208,8 @@ class Router {
 	 * @param	string	$path
 	 * @param	string	$method
 	 */
-	public static function route(String $path, String $method) {
-		$args = Array();
+	public static function route(string $path, string $method) {
+		$args = array();
 		$found = false;
 		$routingTiming = new Timing("routing");
 
@@ -254,7 +254,7 @@ class Router {
 
 			if (is_string($data) || is_numeric($data) || is_bool($data)) {
 				// Response the data as string.
-				$response = (String) $data;
+				$response = (string) $data;
 			} else if (is_object($data) || is_array($data)) {
 				// Response the data as object.
 				$response = (!($data instanceof Response))
@@ -287,11 +287,11 @@ class Router {
 	 * @param      string		$uri
 	 * @return     string[]
 	 */
-	public static function uriTokens(String $uri) {
+	public static function uriTokens(string $uri) {
 		$uri = ltrim($uri, "/");
 
 		if (empty($uri))
-			return Array();
+			return array();
 
 		return explode("/", str_replace("\\", "/", $uri));
 	}
@@ -303,7 +303,7 @@ class Router {
 	 * @param		string		$path
 	 * @return		bool
 	 */
-	protected static function isRouteMatch(Route $route, String $path, Array &$args = Array()) {
+	protected static function isRouteMatch(Route $route, string $path, array &$args = array()) {
 		$pathTokens = static::uriTokens($path);
 		$uriTokens = static::uriTokens($route -> uri);
 

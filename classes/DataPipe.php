@@ -40,7 +40,7 @@ class DataPipe {
         $instance = $this;
 
         set_exception_handler(function (\Throwable $e) use ($instance) {
-            $instance -> error(1, $e -> getMessage(), Array(
+            $instance -> error(1, $e -> getMessage(), array(
                 "code" => $e -> getCode(),
                 "file" => $e -> getFile(),
                 "line" => $e -> getLine()
@@ -49,8 +49,8 @@ class DataPipe {
             $instance -> end();
         });
 
-	    set_error_handler(function (int $code, String $text, String $file, int $line) use ($instance) {
-            $instance -> error(1, $text, Array(
+	    set_error_handler(function (int $code, string $text, string $file, int $line) use ($instance) {
+            $instance -> error(1, $text, array(
                 "code" => $code,
                 "file" => $file,
                 "line" => $line
@@ -65,17 +65,17 @@ class DataPipe {
         return $this;
     }
 
-    public function end($data = Array()) {
+    public function end($data = array()) {
         $data = json_encode($data);
         echo ">>>END|||{$data}<<<\n";
         flush();
         die();
     }
 
-    public function send(int $level, float $progress, String $message, Array $data = []) {
+    public function send(int $level, float $progress, string $message, array $data = []) {
         $this -> index += 1;
 
-        $tokens = Array(
+        $tokens = array(
             $this -> index,
             $level,
             $progress,
@@ -90,19 +90,19 @@ class DataPipe {
         return $this;
     }
 
-    public function success(int $progress, String $message, Array $data = []) {
+    public function success(int $progress, string $message, array $data = []) {
         return $this -> send(static::OKAY, $progress, $message, $data);
     }
 
-    public function info(int $progress, String $message, Array $data = []) {
+    public function info(int $progress, string $message, array $data = []) {
         return $this -> send(static::INFO, $progress, $message, $data);
     }
 
-    public function warning(int $progress, String $message, Array $data = []) {
+    public function warning(int $progress, string $message, array $data = []) {
         return $this -> send(static::WARN, $progress, $message, $data);
     }
 
-    public function error(int $progress, String $message, Array $data = []) {
+    public function error(int $progress, string $message, array $data = []) {
         return $this -> send(static::ERROR, $progress, $message, $data);
     }
 }

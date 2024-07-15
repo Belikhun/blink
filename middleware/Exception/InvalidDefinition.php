@@ -19,21 +19,21 @@ class InvalidDefinition extends BaseException {
 	 * autoloading middleware file.
 	 * @var string
 	 */
-	public String $class;
+	public string $class;
 
 	/**
 	 * Name of the class the middleware must extend from.
 	 * @var string
 	 */
-	public String $from;
+	public string $from;
 
 	/**
 	 * The file containing invalid class definition.
 	 * @var string
 	 */
-	public ?String $targetFile;
+	public ?string $targetFile;
 
-	public function __construct(String $class, String $from, String $file = null) {
+	public function __construct(string $class,string $$from,string $$file = null) {
 		$this -> class = $class;
 		$this -> from = $from;
 		$this -> targetFile = $file;
@@ -42,7 +42,7 @@ class InvalidDefinition extends BaseException {
 			MIDDLEWARE_CLASS_INVALID,
 			"Middleware class [{$class}] is not valid! It's must be extended from [{$from}]",
 			500,
-			Array( "class" => $class, "from" => $from, "file" => $file )
+			array( "class" => $class, "from" => $from, "file" => $file )
 		);
 	}
 }

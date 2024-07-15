@@ -27,8 +27,8 @@ abstract class Blink {
 	 * @param	int		$size
 	 * @return	string	The svg avatar.
 	 */
-	public static function SvgAvatar(String $name, int $size = 200) {
-		$color = Array(
+	public static function SvgAvatar(string $name, int $size = 200) {
+		$color = array(
 			"A" => "#5A876F", "B" => "#B2B7BB", "C" => "#6FA9AB", "D" => "#F5AF29", "E" => "#0088B9", "F" => "#F18536",
 			"G" => "#D93A37", "H" => "#B3BC50", "I" => "#5B9BBD", "J" => "#F5878C", "K" => "#9B89B5", "L" => "#407887",
 			"M" => "#9B89B5", "N" => "#5A876F", "O" => "#D33F33", "P" => "#D33F33", "Q" => "#F1B126", "R" => "#0087BF",

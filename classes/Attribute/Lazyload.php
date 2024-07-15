@@ -33,5 +33,5 @@ class Lazyload {
      * 
      * @param   string  $name   Name of the original property name.
      */
-    public function __construct(String $name) {}
+    public function __construct(string $name) {}
 }

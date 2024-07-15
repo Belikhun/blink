@@ -16,10 +16,10 @@ namespace Blink\ErrorPage\Exception;
 use Blink\Exception\BaseException;
 
 class ReportNotFound extends BaseException {
-	public function __construct(String $id) {
+	public function __construct(string $id) {
 		parent::__construct(
 			ERROR_REPORT_NOT_FOUND,
 			"Báo cáo lỗi \"{$id}\" không tồn tại trên hệ thống!",
-			404, Array( "id" => $id ));
+			404, array( "id" => $id ));
 	}
 }

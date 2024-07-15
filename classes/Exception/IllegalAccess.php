@@ -17,7 +17,7 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class IllegalAccess extends BaseException {
-	public function __construct(String $message = null) {
+	public function __construct(string $message = null) {
 		parent::__construct(
 			ACCESS_DENIED,
 			$message ?: "You don't have permission to access this resource.",

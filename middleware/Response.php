@@ -24,7 +24,7 @@ class Response {
      *
      * @var array<int, class-string|string>
      */
-	protected static $middleware = Array(
+	protected static $middleware = array(
 		// Define your response middleware here.
 	);
 

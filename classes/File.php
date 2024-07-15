@@ -19,23 +19,23 @@ use Blink\Exception\FileInstanceNotFound;
  * See LICENSE in the project root for license information.
  */
 class File {
-	public static String $ROOT;
+	public static string $ROOT;
 
 	public ?int $id;
-	public String $hash;
-	public String $filename;
-	public String $extension;
-	public String $mimetype;
+	public string $hash;
+	public string $filename;
+	public string $extension;
+	public string $mimetype;
 	public int $size;
 	public ?\User $author;
 	public int $created;
 
 	public function __construct(
 		?int $id = null,
-		String $hash = null,
-		String $filename = null,
-		String $extension = null,
-		String $mimetype = null,
+		string $hash = null,
+		string $filename = null,
+		string $extension = null,
+		string $mimetype = null,
 		int $size = null,
 		?\User $author = null,
 		int $created = 0
@@ -57,7 +57,7 @@ class File {
 	public function save() {
 		global $DB;
 
-		$record = Array(
+		$record = array(
 			"hash" => $this -> hash,
 			"filename" => $this -> filename,
 			"extension" => $this -> extension,
@@ -107,7 +107,7 @@ class File {
 	 * @return	File
 	 * @throws	FileInstanceNotFound
 	 */
-	public static function getByHash(String $hash): File {
+	public static function getByHash(string $hash): File {
 		global $DB;
 
 		if (\CONFIG::$FILE_STORE === FILE_STORE_FS) {
@@ -121,11 +121,11 @@ class File {
 		}
 
 		try {
-			$record = $DB -> record("files", Array( "hash" => $hash ));
+			$record = $DB -> record("files", array( "hash" => $hash ));
 		} catch (TableNotFound $e) {
 			// Try to init the table and try again.
 			static::initDB();
-			$record = $DB -> record("files", Array( "hash" => $hash ));
+			$record = $DB -> record("files", array( "hash" => $hash ));
 		}
 
 		if (empty($record))
@@ -148,11 +148,11 @@ class File {
 			throw new BaseException(DB_NOT_INITIALIZED, "File -> getByID() is not available in FS mode.", 500);
 
 		try {
-			$record = $DB -> record("files", Array( "id" => $id ));
+			$record = $DB -> record("files", array( "id" => $id ));
 		} catch (TableNotFound $e) {
 			// Try to init the table and try again.
 			static::initDB();
-			$record = $DB -> record("files", Array( "id" => $id ));
+			$record = $DB -> record("files", array( "id" => $id ));
 		}
 
 		if (empty($record))
@@ -189,7 +189,7 @@ class File {
 	 * @return	File[]
 	 */
 	public static function processRecords($records) {
-		$files = Array();
+		$files = array();
 
 		foreach ($records as $record)
 			$files[] = self::processRecord($record);

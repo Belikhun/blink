@@ -16,13 +16,13 @@ namespace Blink;
  * See LICENSE in the project root for license information.
  */
 class HtmlWriter {
-	const SELF_CLOSING = Array("area", "base", "basefont", "br", "hr", "input", "img", "link", "meta");
+	const SELF_CLOSING = array("area", "base", "basefont", "br", "hr", "input", "img", "link", "meta");
 
-	protected static function parse(String $target) {
+	protected static function parse(string $target) {
 		$tag = null;
 		$id = null;
-		$classes = Array();
-		$attributes = Array();
+		$classes = array();
+		$attributes = array();
 
 		$re = '/^([a-zA-Z0-9]+)/m';
 
@@ -62,7 +62,7 @@ class HtmlWriter {
 			}
 		}
 
-		return Array( $tag, $id, $classes, $attributes );
+		return array( $tag, $id, $classes, $attributes );
 	}
 
 	/**
@@ -77,7 +77,7 @@ class HtmlWriter {
 	 * @version	1.0
 	 * @author	Belikhun <belivipro9x99@gmail.com>
 	 */
-	public static function build(String $tag, Array $attributes = Array(), String $content = "", bool $end = true) {
+	public static function build(string $tag, array $attributes = array(),string $$content = "", bool $end = true) {
 		if (str_contains($tag, "#") || str_contains($tag, ".") || str_contains($tag, "[")) {
 			$parsed = static::parse($tag);
 
@@ -99,7 +99,7 @@ class HtmlWriter {
 		}
 
 		$html = "<$tag";
-		$attrs = Array();
+		$attrs = array();
 
 		foreach ($attributes as $attribute => $value) {
 			if (is_array($value))
@@ -147,23 +147,23 @@ class HtmlWriter {
 	 * @version	1.0
 	 * @author	Belikhun <belivipro9x99@gmail.com>
 	 */
-	public static function tag(String $tag, String $content = "", Array $attributes = Array(), bool $end = true) {
+	public static function tag(string $tag,string $$content = "", array $attributes = array(), bool $end = true) {
 		return static::build($tag, $attributes, $content, $end);
 	}
 
-	public static function start(String $tag, Array $attributes = Array()) {
+	public static function start(string $tag, array $attributes = array()) {
 		return static::build($tag, $attributes, "", end: false);
 	}
 
-	public static function end(String $tag) {
+	public static function end(string $tag) {
 		return "</$tag>";
 	}
 
-	public static function div(Array $attributes = Array(), String $content = "") {
+	public static function div(array $attributes = array(), string $content = "") {
 		return self::build("div", $attributes, $content);
 	}
 
-	public static function startDIV(Array $attributes = Array(), String $content = "") {
+	public static function startDIV(array $attributes = array(), string $content = "") {
 		return self::build("div", $attributes, $content, false);
 	}
 
@@ -171,11 +171,11 @@ class HtmlWriter {
 		return "</div>";
 	}
 
-	public static function span(Array $attributes = Array(), String $content = "") {
+	public static function span(array $attributes = array(), string $content = "") {
 		return self::build("span", $attributes, $content);
 	}
 
-	public static function startSPAN(Array $attributes = Array(), String $content = "") {
+	public static function startSPAN(array $attributes = array(), string $content = "") {
 		return self::build("span", $attributes, $content, false);
 	}
 
@@ -183,15 +183,15 @@ class HtmlWriter {
 		return "</span>";
 	}
 
-	public static function code(Array $attributes = Array(), String $content = "") {
+	public static function code(array $attributes = array(), string $content = "") {
 		return self::build("code", $attributes, $content);
 	}
 
-	public static function p(String $content = "", Array $attributes = Array()) {
+	public static function p(string $content = "", array $attributes = array()) {
 		return self::build("p", $attributes, $content);
 	}
 
-	public static function a(String $href, String $title, Array $attributes = Array()) {
+	public static function a(string $href,string $$title, array $attributes = array()) {
 		if (!isset($attributes["title"]))
 			$attributes["title"] = strip_tags($title);
 
@@ -199,13 +199,13 @@ class HtmlWriter {
 		return self::build("a", $attributes, $title);
 	}
 
-	public static function img(String $src, Array $attributes = Array()) {
+	public static function img(string $src, array $attributes = array()) {
 		$attributes["src"] = $src;
 		return self::build("img", $attributes);
 	}
 
-	public static function css(String $src, Array $attributes = Array()) {
-		$attributes = array_merge(Array(
+	public static function css(string $src, array $attributes = array()) {
+		$attributes = array_merge(array(
 			"rel" => "stylesheet",
 			"href" => $src
 		), $attributes);

@@ -19,11 +19,11 @@ use Blink\Exception\IllegalAccess;
  * See LICENSE in the project root for license information.
  */
 class Image {
-	public static String $ROOT;
+	public static string $ROOT;
 
-	public String $hash;
+	public string $hash;
 
-	public function __construct(String $hash) {
+	public function __construct(string $hash) {
 		$this -> hash = $hash;
 	}
 
@@ -57,7 +57,7 @@ class Image {
 		return "/api/image/" . $this -> hash;
 	}
 
-	public function save(Array $file) {
+	public function save(array $file) {
 		switch ($file["error"]) {
 			case UPLOAD_ERR_OK:
 				break;
@@ -76,12 +76,12 @@ class Image {
 				INVALID_FILE,
 				"Không chấp nhận loại tệp!",
 				400,
-				Array( "allow" => CONFIG::$IMAGE_ALLOW )
+				array( "allow" => CONFIG::$IMAGE_ALLOW )
 			);
 		}
 
 		if ($file["size"] > CONFIG::$IMAGE_SIZE) {
-			throw new BaseException(42, "Tệp quá lớn!", 400, Array(
+			throw new BaseException(42, "Tệp quá lớn!", 400, array(
 				"size" => $file["size"],
 				"max" => CONFIG::$IMAGE_SIZE
 			));
@@ -100,7 +100,7 @@ class Image {
 		unlink($this -> path());
 	}
 
-	public static function create(Array $file) {
+	public static function create(array $file) {
 		$id = bin2hex(random_bytes(22));
 		$image = new self($id);
 		$image -> save($file);

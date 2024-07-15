@@ -69,7 +69,7 @@ class StopClock {
  * @throws	JSONDecodeError
  * @return	array|object
  */
-function safeJSONParsing(String $json, String $path = "", bool $assoc = false) {
+function safeJSONParsing(string $json,string $$path = "", bool $assoc = false) {
 	// Temporary disable `NOTICE` error reporting
 	// to try unserialize data without triggering `E_NOTICE`
 	set_error_handler(null, 0);
@@ -77,7 +77,7 @@ function safeJSONParsing(String $json, String $path = "", bool $assoc = false) {
 	restore_error_handler();
 
 	if ($json === null)
-		throw new JSONDecodeError($path, json_last_error_msg(), Array(
+		throw new JSONDecodeError($path, json_last_error_msg(), array(
 			"code" => json_last_error(),
 			"message" => json_last_error_msg()
 		));
@@ -119,7 +119,7 @@ function relativeTime(int $timestamp, int $to = null) {
 	if ($timestamp === $to) {
 		$string = "mới đây";
 	} else {
-		$units = Array( "năm" => 31536000, "ngày" => 86400, "giờ" => 3600, "phút" => 60, "giây" => 1 );
+		$units = array( "năm" => 31536000, "ngày" => 86400, "giờ" => 3600, "phút" => 60, "giây" => 1 );
 		$delta = abs($timestamp - $to);
 		$future = $timestamp > $to;
 	
@@ -323,7 +323,7 @@ function validate($value, $type, $throw = true) {
  * @param		string|callable|null	$callable	A callable function that will ran though each item.
  * @return		?T
  */
-function first(Array $items, $callable = null) {
+function first(array $items, $callable = null) {
 	if (!empty($callable) && !is_callable($callable))
 		throw new CodingError("first(): callable is not callable!");
 
@@ -352,18 +352,18 @@ function first(Array $items, $callable = null) {
  * 
  * @return	mixed
  */
-function env(String $key, $default = null, String $type = TYPE_TEXT) {
+function env(string $key, $default = null,string $$type = TYPE_TEXT) {
 	if (!isset(Environment::$values[$key]))
 		return $default;
 	
 	return cleanParam(Environment::$values[$key], $type);
 }
 
-function template(String $name, Array $context = Array()) {
+function template(string $name, array $context = array()) {
 	echo Template::render($name, $context);
 }
 
-function view(String $name, Array $context = Array()) {
+function view(string $name, array $context = array()) {
 	return new Response(Template::render($name, $context));
 }
 
@@ -396,7 +396,7 @@ function getParam(string $name, $type = TYPE_TEXT, $default = null) {
  * @param	mixed		$default
  * @throws	MissingParam
  */
-function requiredParam(String $name, $type = TYPE_TEXT) {
+function requiredParam(string $name, $type = TYPE_TEXT) {
 	$param = getParam($name, $type);
 
 	if ($param === null)
@@ -413,7 +413,7 @@ function requiredParam(String $name, $type = TYPE_TEXT) {
  * @param	string		$type
  * @param	mixed		$default
  */
-function getHeader(String $name, $type = TYPE_TEXT, $default = null) {
+function getHeader(string $name, $type = TYPE_TEXT, $default = null) {
 	$param = null;
 
 	foreach (getallheaders() as $key => $value) {
@@ -437,7 +437,7 @@ function getHeader(String $name, $type = TYPE_TEXT, $default = null) {
  * @param	mixed	$default	Default value
  * @return	string|null
  */
-function mime(String $file, String $charset = "utf-8", $default = "text/plain") {
+function mime(string $file,string $$charset = "utf-8", $default = "text/plain") {
 	$mime = null;
 	$extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
@@ -468,7 +468,7 @@ function expire(int $time) {
  * 
  * @return	string
  */
-function getRelativePath(String $fullPath, String $separator = "/", String $base = BASE_PATH) {
+function getRelativePath(string $fullPath,string $$separator = "/",string $$base = BASE_PATH) {
 	if ($separator === "/") {
 		$search = ($base === BASE_PATH)
 			? $base
@@ -529,7 +529,7 @@ function stringify($subject) {
 		$output = "[]";
 
 		if (!empty($subject)) {
-			$output = Array();
+			$output = array();
 	
 			foreach ($subject as $key => $value)
 				$output[] = "$key = " . htmlspecialchars($value);
@@ -540,11 +540,11 @@ function stringify($subject) {
 	} else if (is_bool($subject)) {
 		$output = $subject ? "true" : "false";
 	} else if (is_numeric($subject)) {
-		$output = (String) $subject;
+		$output = (string) $subject;
 	} else if ($subject === null) {
 		$output = "[NULL]";
 	} else {
-		$output = (String) $output;
+		$output = (string) $output;
 	}
 
 	return $output;
@@ -570,7 +570,7 @@ function convertSize(int $bytes) {
  * @return	string		Readable time
  */
 function convertTime(float $time) {
-	$units = Array(
+	$units = array(
 		"µs" => 0.000001,
 		"ms" => 0.001,
 		"s" => 1,
@@ -595,22 +595,22 @@ function convertTime(float $time) {
 }
 
 class FileWithPriority {
-	public String $path;
+	public string $path;
 	public int $priority;
 
-	public function __construct(String $path, int $priority) {
+	public function __construct(string $path, int $priority) {
 		$this -> path = $path;
 		$this -> priority = $priority;
 	}
 
 	public function __serialize() {
-        return Array(
+        return array(
 			$this -> path,
 			$this -> priority
 		);
     }
 
-    public function __unserialize(Array $data) {
+    public function __unserialize(array $data) {
         list(
 			$this -> path,
 			$this -> priority
@@ -631,7 +631,7 @@ class FileWithPriority {
  */
 function globFilesPriority($pattern, int $flags = 0) {
 	$files = glob(BASE_PATH . $pattern, $flags);
-	$list = Array();
+	$list = array();
 
 	// Parse files to priority list
 	foreach ($files as $file) {
@@ -702,7 +702,7 @@ function redirect($url) {
  * @param	string	$extension
  * @return	\Generator<\SplFileInfo>
  */
-function getFiles(String $path, String $extension = "*") {
+function getFiles(string $path,string $$extension = "*") {
 	$di = new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS);
 	$ri = new RecursiveIteratorIterator($di);
 	$extension = strtolower($extension);
@@ -722,7 +722,7 @@ function getFiles(String $path, String $extension = "*") {
  * @param	int		$line	Line number that will be highlighted.
  * @param	int		$count	Number of lines will be rendered.
  */
-function renderSourceCode(String $file, int $line, int $count = 10) {
+function renderSourceCode(string $file, int $line, int $count = 10) {
 	if (!file_exists($file)) {
 		echo "<code>File does not exits: {$file}</code>";
 		return;
@@ -754,7 +754,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 	$content = implode("\n", $lines);
 
 	// Keywords regex
-	$keywords = Array(	"try", "catch", "return", "public", "protected", "private", "static", "include_once",
+	$keywords = array(	"try", "catch", "return", "public", "protected", "private", "static", "include_once",
 						"include", "require_once", "require", "global", "if", "else", "use", "throw",
 						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break", "instanceof",
 						"default", "while", "switch", "case", "match", "class", "extends", "implement", "parent",
@@ -796,19 +796,19 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
 
 	for ($i = 0; $i < count($lines); $i++) {
 		$code = trim($lines[$i], "\n\r");
-		$classes = Array( "line" );
+		$classes = array( "line" );
 
 		// Index start from 0, but file's line start from 1
 		if ($i == $line - $from - 1)
 			$classes[] = "current";
 
-		$numHtml .= HtmlWriter::div(Array( "class" => $classes ), $from + $i + 1);
-		$lineHtml .= HtmlWriter::div(Array( "class" => $classes ), "<span>{$code}</span>");
+		$numHtml .= HtmlWriter::div(array( "class" => $classes ), $from + $i + 1);
+		$lineHtml .= HtmlWriter::div(array( "class" => $classes ), "<span>{$code}</span>");
 	}
 
-	echo HtmlWriter::startDIV(Array( "class" => "sourceCode" ));
-	echo HtmlWriter::span(Array( "class" => "nums" ), $numHtml);
-	echo HtmlWriter::build("code", Array( "class" => "lines" ), $lineHtml);
+	echo HtmlWriter::startDIV(array( "class" => "sourceCode" ));
+	echo HtmlWriter::span(array( "class" => "nums" ), $numHtml);
+	echo HtmlWriter::build("code", array( "class" => "lines" ), $lineHtml);
 	echo HtmlWriter::endDIV();
 }
 
@@ -819,7 +819,7 @@ function renderSourceCode(String $file, int $line, int $count = 10) {
  * @param	string		$default	Default value
  * @return	string|null				File content or default value if failed.
  */
-function fileGet(String $path, $default = null, bool $throw = false): String|null {
+function fileGet(string $path, $default = null, bool $throw = false): string|null {
 	$metric = null;
 
 	if (!file_exists($path)) {
@@ -854,7 +854,7 @@ function fileGet(String $path, $default = null, bool $throw = false): String|nul
  * @param	string		$content	File content
  * @return	int|null				Bytes written or null if write failed.
  */
-function filePut(String $path, $content): int|null {
+function filePut(string $path, $content): int|null {
 	$metric = null;
 
 	if (class_exists('\Blink\Metric\File'))
@@ -921,7 +921,7 @@ define("RAND_CHARSET_HEX", "0123456789abcdef");
  * @param	string		$charset	Charset
  * @return	string		Generated String
  */
-function randString(int $len = 16, String $charset = RAND_CHARSET_TEXT) {
+function randString(int $len = 16, string $charset = RAND_CHARSET_TEXT) {
 	$randomString = "";
 	$charsetLength = strlen($charset);
 
@@ -940,7 +940,7 @@ function randString(int $len = 16, String $charset = RAND_CHARSET_TEXT) {
  * @param	int		$maxLen	The maximum length of the string before it's trimmed.
  * @return	string	The trimmed string with ellipsis added after it.
  */
-function trimString(String $string, int $maxLen) {
+function trimString(string $string, int $maxLen) {
 	if (strlen($string) <= $maxLen)
 		return $string;
 	
@@ -966,7 +966,7 @@ function processBacktrace($data, bool $merges = true) {
 	global $ERROR_STACK;
 
 	$exception = null;
-	$frames = Array();
+	$frames = array();
 
 	if ($data instanceof \Throwable) {
 		$exception = $data;
@@ -1053,7 +1053,7 @@ function processBacktrace($data, bool $merges = true) {
 		 * @param	BacktraceFrame[]	$from
 		 * @param	BacktraceFrame[]	$target
 		 */
-		$merge = function (Array $from, Array $target, bool $reverse = false) {
+		$merge = function (array $from, array $target, bool $reverse = false) {
 			$insert = 0;
 
 			if ($reverse)
@@ -1150,16 +1150,16 @@ function processBacktrace($data, bool $merges = true) {
  */
 function stop(
 	int $code = 0,
-	String $description = "",
+	string $description = "",
 	int $status = 200,
-	array|object $data = Array(),
+	array|object $data = array(),
 	$hashData = false
 ) {
 	$response = new APIResponse($code, $description, $status, $data, $hashData);
 
 	// Create a new error page instance!
 	$instance = \Blink\ErrorPage\Instance::create($response -> output());
-	$response -> set("report", (String) $instance -> url());
+	$response -> set("report", (string) $instance -> url());
 
 	$pageType = "NORMAL";
 	$errored = ($status >= 300 || $code !== 0);
@@ -1212,7 +1212,7 @@ function stop(
 }
 
 function printException(Throwable $e) {
-	$lines = Array();
+	$lines = array();
 
 	$lines[] = get_class($e);
 	$lines[] = "";

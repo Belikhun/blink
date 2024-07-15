@@ -36,10 +36,10 @@ class Token {
 
 	public function __construct(
 		int $id,
-		String $token,
+		string $token,
 		int $created,
 		int $expire,
-		String $username
+		string $username
 	) {
 		$this -> id = $id;
 		$this -> token = $token;
@@ -61,9 +61,9 @@ class Token {
 		$DB -> update("tokens", $this);
 	}
 
-	public static function getToken(String $token) {
+	public static function getToken(string $token) {
 		global $DB;
-		$record = $DB -> record("tokens", Array( "token" => $token ));
+		$record = $DB -> record("tokens", array( "token" => $token ));
 
 		if (empty($record))
 			throw new InvalidToken();
@@ -82,9 +82,9 @@ class Token {
 	 * @param	string	$username
 	 * @return	Token
 	 */
-	public static function get(String $username) {
+	public static function get(string $username) {
 		global $DB;
-		$record = $DB -> record("tokens", Array( "username" => $username ));
+		$record = $DB -> record("tokens", array( "username" => $username ));
 
 		if (empty($record))
 			return static::createToken($username);
@@ -103,14 +103,14 @@ class Token {
 	 * @param	string	$username
 	 * @return	Token
 	 */
-	public static function createToken(String $username) {
+	public static function createToken(string $username) {
 		global $DB;
 		
 		$token = bin2hex(random_bytes(64));
 		$created = time();
 		$expire = $created + CONFIG::$TOKEN_LIFETIME;
 
-		$id = $DB -> insert("tokens", Array(
+		$id = $DB -> insert("tokens", array(
 			"token" => $token,
 			"created" => $created,
 			"expire" => $expire,

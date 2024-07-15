@@ -19,29 +19,29 @@ use JsonSerializable;
  */
 class JsonResponse extends Response {
 
-	protected Array $json = Array();
+	protected array $json = array();
 
-	public function __construct(Array|Object $json = Array()) {
+	public function __construct(array|Object $json = array()) {
 		$this -> json($json);
 		$this -> header("Content-Type", "application/json; charset=utf-8");
 	}
 
-	public function json(Array|Object $json) {
+	public function json(array|Object $json) {
 		if ($json instanceof JsonSerializable) {
 			$this -> json = $json -> jsonSerialize();
 			return $this;
 		}
 
-		$this -> json = (Array) $json;
+		$this -> json = (array) $json;
 		return $this;
 	}
 
-	public function set(String $key, $value) {
+	public function set(string $key, $value) {
 		$this -> json[$key] = $value;
 		return $this;
 	}
 
-	protected function process(): String {
+	protected function process(): string {
 		return json_encode($this -> json, JSON_PRETTY_PRINT);
 	}
 }

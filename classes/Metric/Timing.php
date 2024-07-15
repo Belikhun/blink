@@ -17,10 +17,10 @@ use Blink\Metric;
  * See LICENSE in the project root for license information.
  */
 class Timing extends Instance {
-	public String $name;
+	public string $name;
 	public float $start;
 
-	public function __construct(String $name, Callable $handler = null) {
+	public function __construct(string $name, Callable $handler = null) {
 		$this -> name = $name;
 		$this -> start = microtime(true);
 		Metric::$timings[] = $this;
@@ -42,14 +42,14 @@ class Timing extends Instance {
 	}
 
 	public function __serialize() {
-		return Array(
+		return array(
 			"name" => $this -> name,
 			"start" => $this -> start,
 			"time" => $this -> time
 		);
 	}
 
-	public function __unserialize(Array $data) {
+	public function __unserialize(array $data) {
 		foreach ($data as $key => $value)
 			$this -> {$key} = $value;
 	}

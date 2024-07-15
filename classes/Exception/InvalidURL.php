@@ -15,7 +15,7 @@ namespace Blink\Exception;
  * See LICENSE in the project root for license information.
  */
 class InvalidURL extends BaseException {
-	public function __construct(String $url) {
+	public function __construct(string $url) {
 		parent::__construct(INVALID_URL, "The URL <code>$url</code> is invalid!", 400);
 	}
 }

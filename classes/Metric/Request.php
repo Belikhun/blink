@@ -15,11 +15,11 @@ namespace Blink\Metric;
  * See LICENSE in the project root for license information.
  */
 class Request extends Instance {
-	public String $url;
-	public String $method;
+	public string $url;
+	public string $method;
 	public int $status;
 
-	public function __construct(String $url, String $method) {
+	public function __construct(string $url,string $$method) {
 		$this -> url = $url;
 		$this -> method = $method;
 		$this -> time = -1;

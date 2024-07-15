@@ -17,7 +17,7 @@ use Blink\Cache;
  * See LICENSE in the project root for license information.
  */
 class Data {
-	public String $id;
+	public string $id;
 
 	public int $age = Cache::NO_EXPIRE;
 
@@ -26,7 +26,7 @@ class Data {
 	public mixed $content = null;
 
 	public function __serialize() {
-		return Array(
+		return array(
 			"id" => $this -> id,
 			"age" => $this -> age,
 			"time" => $this -> time,
@@ -34,7 +34,7 @@ class Data {
 		);
 	}
 
-	public function __unserialize(Array $data) {
+	public function __unserialize(array $data) {
 		foreach ($data as $key => $value)
 			$this -> {$key} = $value;
 	}

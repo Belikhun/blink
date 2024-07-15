@@ -22,13 +22,13 @@ class URL {
      * Scheme, ex.: http, https
      * @var string
      */
-    protected String $scheme = "";
+    protected string $scheme = "";
 
     /**
      * Hostname.
      * @var string
      */
-    protected String $host = "";
+    protected string $host = "";
 
     /**
      * Port number, empty means default 80 or 443 in case of http.
@@ -40,7 +40,7 @@ class URL {
      * Username for http auth.
      * @var string
      */
-    protected String $user = "";
+    protected string $user = "";
 
     /**
      * Password for http auth.
@@ -58,7 +58,7 @@ class URL {
      * Url parameters as associative array.
      * @var string[]
      */
-    public $params = Array();
+    public $params = array();
 
 	/**
 	 * Construct a new url with params.
@@ -108,8 +108,8 @@ class URL {
      * @return	static
      * @throws	CodingError
      */
-    public function params(Array $params = null) {
-        $params = (Array) $params;
+    public function params(array $params = null) {
+        $params = (array) $params;
 
         foreach ($params as $key => $value)
             $this -> param($key, $value);
@@ -125,7 +125,7 @@ class URL {
      * @return	static
      * @throws	CodingError
      */
-    public function param(String $key, $value) {
+    public function param(string $key, $value) {
         if (is_int($key))
             throw new CodingError("Url parameters can not have numeric keys!");
 
@@ -137,7 +137,7 @@ class URL {
                 throw new CodingError("Url parameters values can not be objects, unless __toString() is defined!");
         }
 
-        $this -> params[$key] = (String) $value;
+        $this -> params[$key] = (string) $value;
 
         return $this;
     }
@@ -171,7 +171,7 @@ class URL {
      * @return string query string that can be added to a url.
      */
     public function getQuery($escaped = true) {
-        $array = Array();
+        $array = array();
         $params = $this -> params;
 
         foreach ($params as $key => $val) {
@@ -241,7 +241,7 @@ class URL {
      * @param	string	$scheme
      * @return  static
      */
-    public function setScheme(String $scheme) {
+    public function setScheme(string $scheme) {
         // See http://www.ietf.org/rfc/rfc3986.txt part 3.1.
         if (preg_match("/^[a-zA-Z][a-zA-Z0-9+.-]*$/", $scheme)) {
             $this -> scheme = $scheme;

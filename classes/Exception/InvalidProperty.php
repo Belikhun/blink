@@ -15,12 +15,12 @@
 namespace Blink\Exception;
 
 class InvalidProperty extends BaseException {
-	public function __construct(String $name, String $class) {
+	public function __construct(string $name, string $class) {
 		parent::__construct(
 			INVALID_PROPERTY,
 			"Undefined property <code>{$name}</code> in Model <code>{$class}</code>",
 			500,
-			Array(
+			array(
 				"name" => $name,
 				"class" => $class
 			)

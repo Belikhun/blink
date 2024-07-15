@@ -16,9 +16,9 @@ namespace Blink;
  * See LICENSE in the project root for license information.
  */
 class Environment {
-	public static Array $values = Array();
+	public static array $values = array();
 
-	public static function load(String $environment = "default") {
+	public static function load(string $environment = "default") {
 		global $_ENV;
 
 		static::$values = $_ENV;
@@ -54,14 +54,14 @@ class Environment {
 		}
 	}
 
-	public static function get(String $key, $default = null) {
+	public static function get(string $key, $default = null) {
 		if (!isset(static::$values[$key]))
 			return $default;
 
 		return static::$values[$key];
 	}
 
-	protected static function clean(String $key, String $value) {
+	protected static function clean(string $key, string $value) {
 		$key = trim($key);
 		$lval = strtolower($value);
 		

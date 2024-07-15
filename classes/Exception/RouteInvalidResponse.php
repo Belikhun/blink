@@ -22,11 +22,11 @@ class RouteInvalidResponse extends BaseException {
 	 *
 	 * @var string
 	 */
-	public String $uri;
+	public string $uri;
 
-	public String $got;
+	public string $got;
 
-	public function __construct(String $uri, String $got) {
+	public function __construct(string $uri, string $got) {
 		$this -> uri = $uri;
 		$this -> got = $got;
 
@@ -34,7 +34,7 @@ class RouteInvalidResponse extends BaseException {
 			ROUTE_INVALID_RESPONSE,
 			"Callback for route \"{$uri}\" must return either String, Number or Blink\Response, got [{$got}]",
 			500,
-			Array( "uri" => $uri, "got" => $got )
+			array( "uri" => $uri, "got" => $got )
 		);
 	}
 }

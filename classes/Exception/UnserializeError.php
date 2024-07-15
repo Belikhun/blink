@@ -15,10 +15,10 @@ namespace Blink\Exception;
  * See LICENSE in the project root for license information.
  */
 class UnserializeError extends BaseException {
-	public function __construct(String $file, String $message, $data) {
+	public function __construct(string $file, string $message, $data) {
 		$file = getRelativePath($file);
 		$message = str_replace("unserialize(): ", "", $message);
 
-		parent::__construct(47, "unserialize(\"{$file}\"): {$message}", 500, Array( "file" => $file, "data" => $data ));
+		parent::__construct(47, "unserialize(\"{$file}\"): {$message}", 500, array( "file" => $file, "data" => $data ));
 	}
 }

@@ -17,14 +17,14 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class HeaderSent extends BaseException {
-	public function __construct(String $file, int $line) {
+	public function __construct(string $file, int $line) {
 		$file = getRelativePath($file);
 
 		parent::__construct(
 			HEADER_SENT,
 			"Header already sent at <code>{$file}:{$line}</code>",
 			500,
-			Array( "file" => $file, "line" => $line )
+			array( "file" => $file, "line" => $line )
 		);
 	}
 }

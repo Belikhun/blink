@@ -22,16 +22,16 @@ class RouteCallbackInvalidParam extends BaseException {
 	 *
 	 * @var string
 	 */
-	public String $uri;
+	public string $uri;
 
 	/**
 	 * Param name defined in route callback
 	 *
 	 * @var string
 	 */
-	public String $param;
+	public string $param;
 
-	public function __construct(String $uri, String $param) {
+	public function __construct(string $uri, string $param) {
 		$this -> uri = $uri;
 		$this -> param = $param;
 
@@ -39,7 +39,7 @@ class RouteCallbackInvalidParam extends BaseException {
 			ROUTE_CALLBACK_INVALID_PARAM,
 			"Callback for route \"{$uri}\" is requesting unknown URI parameter: \"{$param}\"",
 			500,
-			Array( "uri" => $uri, "param" => $param )
+			array( "uri" => $uri, "param" => $param )
 		);
 	}
 }

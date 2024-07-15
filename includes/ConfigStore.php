@@ -20,21 +20,21 @@ use Blink\FileIO;
 use CONFIG;
 
 class StoreGroup {
-	public String $title;
+	public string $title;
 
 	/** @var StoreItem[] */
 	public $items;
 
-	public function __construct(String $title) {
+	public function __construct(string $title) {
 		$this -> title = $title;
-		$this -> items = Array();
+		$this -> items = array();
 		Store::$groups[] = $this;
 	}
 
 	public function define(
-		String $name,
-		String $title,
-		String $description = null
+		string $name,
+		string $title,
+		string $description = null
 	) {
 		if (!property_exists("CONFIG", $name))
 			throw new CodingError("\Config\StoreGroup::define($name): config does not exist!");
@@ -49,10 +49,10 @@ class StoreGroup {
 }
 
 class StoreItem {
-	public String $name;
-	public String $title;
-	public String $type;
-	public ?String $description = null;
+	public string $name;
+	public string $title;
+	public string $type;
+	public ?string $description = null;
 
 	public function __construct(
 		$name,
@@ -69,7 +69,7 @@ class StoreItem {
 
 class Store {
 	/** @var StoreGroup[] */
-	public static $groups = Array();
+	public static $groups = array();
 
 	/** @var FileIO */
 	public static $CONFIG_FILE;
@@ -87,7 +87,7 @@ class Store {
 	 * @return string[]
 	 */
 	protected static function names() {
-		$names = Array();
+		$names = array();
 
 		foreach (self::$groups as $group) {
 			foreach ($group -> items as $item) {
@@ -112,7 +112,7 @@ class Store {
 		return $object;
 	}
 
-	public static function set(String $name, $value) {
+	public static function set(string $name, $value) {
 		if (!property_exists("CONFIG", $name))
 			throw new CodingError("\Config\Store::set($name): config does not exist!");
 

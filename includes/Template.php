@@ -20,9 +20,9 @@ use Blink\Template\Functions;
  */
 
 class Template {
-	public static String $ROOT = "";
+	public static string $ROOT = "";
 
-	protected static function path(String $name): String {
+	protected static function path(string $name): string {
 		$path = static::$ROOT . "/{$name}.php";
 		$real = realpath($path);
 
@@ -39,7 +39,7 @@ class Template {
 		return $path;
 	}
 
-	public static function render(String $name, Array $context = []): String {
+	public static function render(string $name, array $context = []): string {
 		// In case we render another template inside another template,
 		// we back up current context and apply new context to process.
 		$prevContext = Functions::$context;
@@ -61,7 +61,7 @@ class Template {
 		return static::process($content, $context);
 	}
 
-	protected static function process(String $content, Array $context): String {
+	protected static function process(string $content, array $context): string {
 		return $content;
 	}
 }

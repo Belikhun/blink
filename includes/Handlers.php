@@ -31,7 +31,7 @@ class Handlers {
 	 * 							and content will be displayed under the title.
 	 * 							content can use HTML.
 	 */
-	public static function errorPageHint(String $class, $data = null): Array {
+	public static function errorPageHint(string $class, $data = null): array {
 		$title = null;
 		$content = "";
 
@@ -82,7 +82,7 @@ class Handlers {
 			}
 		}
 
-		return Array( $title, $content );
+		return array( $title, $content );
 	}
 
 	/**
@@ -92,7 +92,7 @@ class Handlers {
 	 * @param	\Blink\ErrorPage\Instance		$instance
 	 * @return	\Blink\ErrorPage\ContextGroup[]
 	 */
-	public static function errorContexts(\Blink\ErrorPage\Instance $instance): Array {
-		return Array();
+	public static function errorContexts(\Blink\ErrorPage\Instance $instance): array {
+		return array();
 	}
 }

@@ -26,7 +26,7 @@ class Autoload extends Middleware {
 	 * @return	bool	Return true if the class have been loaded
 	 * 					successfully, false otherwise.
 	 */
-	public static function load(String $class): bool {
+	public static function load(string $class): bool {
 		
 		return false;
 	}

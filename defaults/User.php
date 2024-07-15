@@ -16,10 +16,10 @@
 abstract class User {
 	public ?int $id;
 
-	public ?String $username;
+	public ?string $username;
 
-	abstract public function __construct(int $id, String $username);
+	abstract public function __construct(int $id, string $username);
 
 	abstract public static function getByID(int $id): static;
-	abstract public static function getByUsername(String $username): static;
+	abstract public static function getByUsername(string $username): static;
 }

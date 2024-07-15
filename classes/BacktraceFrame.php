@@ -20,7 +20,7 @@ class BacktraceFrame {
 	 * 
 	 * @var ?string
 	 */
-	public ?String $file = null;
+	public ?string $file = null;
 
 	/**
 	 * Line in the file of the trace.
@@ -29,25 +29,25 @@ class BacktraceFrame {
 	 */
 	public int $line = -1;
 
-	public ?String $class = null;
+	public ?string $class = null;
 
-	public ?String $type = null;
+	public ?string $type = null;
 
-	public String $function;
+	public string $function;
 
-	public Array $args = Array();
+	public array $args = array();
 
 	public bool $fault = false;
 
 
-	private ?String $id = null;
+	private ?string $id = null;
 
-	private ?String $fullpath = null;
+	private ?string $fullpath = null;
 
-	private ?String $hash = null;
+	private ?string $hash = null;
 
 
-	public function __construct(String $function = "[unknown]", bool $fault = false) {
+	public function __construct(string $function = "[unknown]", bool $fault = false) {
 		$this -> function = $function;
 		$this -> fault = $fault;
 	}
@@ -82,14 +82,14 @@ class BacktraceFrame {
 	 * Generate a random id for this frame and return it.
 	 * @return	string
 	 */
-	public function getID(): String {
+	public function getID(): string {
 		if (empty($this -> id))
 			$this -> id = randString(8, RAND_CHARSET_HEX);
 
 		return $this -> id;
 	}
 
-	public function hash(): String {
+	public function hash(): string {
 		if (!empty($this -> hash))
 			return $this -> hash;
 
@@ -115,7 +115,7 @@ class BacktraceFrame {
 	}
 
 	public function __serialize() {
-		return Array(
+		return array(
 			"file" => $this -> file,
 			"line" => $this -> line,
 			"class" => $this -> class,
@@ -126,7 +126,7 @@ class BacktraceFrame {
 		);
 	}
 
-	public function __unserialize(Array $data) {
+	public function __unserialize(array $data) {
 		foreach ($data as $key => $value)
 			$this -> {$key} = $value;
 	}

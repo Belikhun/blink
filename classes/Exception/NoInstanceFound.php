@@ -15,14 +15,14 @@ namespace Blink\Exception;
  * See LICENSE in the project root for license information.
  */
 class NoInstanceFound extends BaseException {
-	public function __construct(String $name) {
+	public function __construct(string $name) {
 		$display = $name::modelName();
 
 		parent::__construct(
 			12,
 			"Model <code>{$display}</code> (<code>{$name}</code>) does not have any instance in the database or you don't have permission to access any of them!",
 			404,
-			Array(
+			array(
 				"class" => $name,
 				"name" => $name::modelName()
 			)

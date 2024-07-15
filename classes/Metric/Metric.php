@@ -16,14 +16,14 @@ namespace Blink;
  */
 class Metric {
 	/** @var Metric\Request[] */
-	public static $requests = Array();
+	public static $requests = array();
 
 	/** @var Metric\Query[] */
-	public static $queries = Array();
+	public static $queries = array();
 
 	/** @var Metric\File[] */
-	public static $files = Array();
+	public static $files = array();
 
 	/** @var Metric\Timing[] */
-	public static $timings = Array();
+	public static $timings = array();
 }

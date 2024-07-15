@@ -22,16 +22,16 @@ class ClassNotDefined extends BaseException {
 	 * autoloading target file.
 	 * @var string
 	 */
-	public String $class;
+	public string $class;
 
 	/**
 	 * Target file that loaded during autoload process that
 	 * does not define specified class.
 	 * @var string
 	 */
-	public String $targetFile;
+	public string $targetFile;
 
-	public function __construct(String $class, String $file) {
+	public function __construct(string $class, string $file) {
 		$this -> class = $class;
 		$this -> targetFile = getRelativePath($file);
 
@@ -39,7 +39,7 @@ class ClassNotDefined extends BaseException {
 			AUTOLOAD_CLASS_MISSING,
 			"Class [{$class}] is not defined in file \"{$this -> targetFile}\"!",
 			500,
-			Array( "class" => $class, "file" => $this -> targetFile )
+			array( "class" => $class, "file" => $this -> targetFile )
 		);
 	}
 }

@@ -15,7 +15,7 @@ namespace Blink\Response;
  * See LICENSE in the project root for license information.
  */
 class PartedFileResponse extends FileResponse {
-	public function process(): String {
+	public function process(): string {
 		$fs = @fopen($this -> path, "rb");
 
 		$size   = filesize($this -> path);
@@ -72,7 +72,7 @@ class PartedFileResponse extends FileResponse {
 		return "OK";
 	}
 
-	public function serve(): String {
+	public function serve(): string {
 		$signal = parent::serve();
 
 		if ($signal !== "OK")

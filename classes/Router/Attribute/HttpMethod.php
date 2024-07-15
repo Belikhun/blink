@@ -23,5 +23,5 @@ class HttpMethod {
 	/**
 	 * Mark the accepted http request method(s) for this controller method.
 	 */
-	public function __construct(String ...$method) {}
+	public function __construct(string ...$method) {}
 }

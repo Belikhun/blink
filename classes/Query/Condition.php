@@ -20,7 +20,7 @@ use Blink\Query;
  * See LICENSE in the project root for license information.
  */
 final class Condition {
-	const VALID_OPS = Array( "=", ">", "<", ">=", "<=", "<>", "LIKE", "IN" );
+	const VALID_OPS = array( "=", ">", "<", ">=", "<=", "<>", "LIKE", "IN" );
 
 	/**
 	 * Indicate that the output of this query is flipped.
@@ -49,7 +49,7 @@ final class Condition {
 	 *
 	 * @var string
 	 */
-	public String $key;
+	public string $key;
 
 	/**
 	 * Condition value.
@@ -63,9 +63,9 @@ final class Condition {
 	 *
 	 * @var string
 	 */
-	public String $operator = "=";
+	public string $operator = "=";
 
-	public function __construct(String $key, String $operator, $value) {
+	public function __construct(string $key, string $operator, $value) {
 		if (!in_array(strtoupper($operator), static::VALID_OPS))
 			throw new CodingError(static::class . "(): [{$operator}] is not a valid SQL operator!");
 
@@ -83,7 +83,7 @@ final class Condition {
 	 * @param	string			$field
 	 * @return	string|array
 	 */
-	public static function validateColumnValue(String $field) {
+	public static function validateColumnValue(string $field) {
 		global $DB;
 
 		if (!str_contains($field, ".") || str_contains($field, "("))
@@ -94,7 +94,7 @@ final class Condition {
 		//! Need to address this in the future to prevent SQL INJECTION!
 
 		list($table, $column) = explode(".", $field);
-		return Array( $table, $column );
+		return array( $table, $column );
 	}
 
 	/**
@@ -104,7 +104,7 @@ final class Condition {
 	 */
 	public function build() {
 		$query = "";
-		$params = Array();
+		$params = array();
 		$inOp = false;
 
 		if (!$this -> raw) {
@@ -120,7 +120,7 @@ final class Condition {
 				// Empty array, this condition will always return
 				// false.
 				if (empty($this -> value)) {
-					return Array(
+					return array(
 						$this -> flip ? "TRUE" : "FALSE",
 						[]
 					);
@@ -159,7 +159,7 @@ final class Condition {
 				}
 			}
 		} else {
-			$query = implode(" ", Array(
+			$query = implode(" ", array(
 				$this -> key,
 				$this -> operator,
 				$this -> value
@@ -169,6 +169,6 @@ final class Condition {
 		if ($this -> flip && !$inOp)
 			$query = "NOT ({$query})";
 
-		return Array( $query, $params );
+		return array( $query, $params );
 	}
 }

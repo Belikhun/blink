@@ -23,8 +23,8 @@ class MySQLi extends DB {
 	/** @var mysqli */
 	public $mysqli;
 
-	public function getType(String $type): String {
-		return Array(
+	public function getType(string $type): string {
+		return array(
 			"string" => "s",
 			"double" => "d",
 			"integer" => "i",
@@ -34,7 +34,7 @@ class MySQLi extends DB {
 		)[$type] ?: "s";
 	}
 
-	public function connect(Array $options) {
+	public function connect(array $options) {
 		if ($this -> connected)
 			return;
 
@@ -57,16 +57,16 @@ class MySQLi extends DB {
 	 * @param	array		$params
 	 * @param	int			$from
 	 * @param	int			$limit
-	 * @return	object|array|int	Array of rows object in select mode, inserted record
+	 * @return	object|array|int	array of rows object in select mode, inserted record
 	 * 								id in insert mode, and number of affected row
 	 * 								in update mode.
 	 */
 	public function execute(
-		String $sql,
-		Array $params = null,
+		string $sql,
+		array $params = null,
 		int $from = 0,
 		int $limit = 0
-	): Object|Array|int {
+	): Object|array|int {
 		$sql = static::cleanSQL($sql);
 
 		// Detect current mode
@@ -137,7 +137,7 @@ class MySQLi extends DB {
 
 		$res = $stmt -> get_result();
 		if (!is_bool($res)) {
-			$rows = Array();
+			$rows = array();
 
 			while ($row = $res -> fetch_array(MYSQLI_ASSOC)) {
 				$row = (Object) $row;

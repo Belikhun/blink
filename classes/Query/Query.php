@@ -33,21 +33,21 @@ class Query extends Builder {
      * @internal
      * @psalm-var class-string<G>
      */
-	protected String $class;
+	protected string $class;
 
 	/**
 	 * Table name of this query.
 	 *
 	 * @var string|Query
 	 */
-	protected String|Query $table;
+	protected string|Query $table;
 
 	/**
 	 * All registered table name aliases of this query.
 	 *
 	 * @var string[]
 	 */
-	protected Array $aliases = Array();
+	protected array $aliases = array();
 
 	/**
 	 * Table name alias of this query.
@@ -68,35 +68,35 @@ class Query extends Builder {
 	 *
 	 * @var array
 	 */
-	protected Array $fillables;
+	protected array $fillables;
 
 	/**
 	 * List of select fields.
 	 *
 	 * @var string[]|string[][]
 	 */
-	protected Array $selects = Array();
+	protected array $selects = array();
 
 	/**
 	 * List of groups condition.
 	 *
 	 * @var string[]
 	 */
-	protected Array $groupBy = Array();
+	protected array $groupBy = array();
 
 	/**
 	 * Order to sort the results in.
 	 *
 	 * @var string[]
 	 */
-	protected Array $sortBy = Array();
+	protected array $sortBy = array();
 
 	/**
 	 * Set values for update statement.
 	 *
 	 * @var string[]
 	 */
-	protected Array $sets = Array();
+	protected array $sets = array();
 
 	/**
 	 * Raw SQL call for this query.
@@ -104,7 +104,7 @@ class Query extends Builder {
 	 *
 	 * @var ?string
 	 */
-	protected ?String $sql = null;
+	protected ?string $sql = null;
 
 	/**
 	 * When set to true, the select query will also have the `DISTINCT` statement.
@@ -117,21 +117,21 @@ class Query extends Builder {
 	 *
 	 * @var array
 	 */
-	protected ?Array $sqlParams = Array();
+	protected ?array $sqlParams = array();
 
 	/**
 	 * List of joins condition.
 	 *
 	 * @var string[]
 	 */
-	protected Array $joins = Array();
+	protected array $joins = array();
 
 	/**
 	 * List of join param values.
 	 *
 	 * @var string[]
 	 */
-	protected Array $joinValues = Array();
+	protected array $joinValues = array();
 
 	/**
 	 * Create a new query.
@@ -139,7 +139,7 @@ class Query extends Builder {
 	 * @param	class-string<G>		$class		Class to create new instance to.
 	 * @param	string|Query		$table		Table name or subquery to fetch data from.
 	 */
-	public function __construct(String $class, String|Query $table) {
+	public function __construct(string $class, string|Query $table) {
 		$this -> class = $class;
 		$this -> table = $table;
 
@@ -156,7 +156,7 @@ class Query extends Builder {
 	 * @param	string			$alias	Table alias.
 	 * @return	static<G>
 	 */
-	public function table(String|Query $table, String $alias = null) {
+	public function table(string|Query $table, string $alias = null) {
 		$this -> table = $table;
 		$this -> alias($alias);
 		return $this;
@@ -168,12 +168,12 @@ class Query extends Builder {
 	 * @param	string	$alias	Table alias.
 	 * @return	static<G>
 	 */
-	public function alias(String $alias = null) {
+	public function alias(string $alias = null) {
 		$this -> aliases["@this"] = $alias;
 		return $this;
 	}
 
-	public function getTableName(): String {
+	public function getTableName(): string {
 		return ($this -> table instanceof Query)
 			? $this -> table -> table
 			: $this -> table;
@@ -184,7 +184,7 @@ class Query extends Builder {
 	 *
 	 * @return	class-string<Model>
 	 */
-	public function getClass(): String {
+	public function getClass(): string {
 		return $this -> class;
 	}
 
@@ -200,7 +200,7 @@ class Query extends Builder {
 	 * @param	array	$params		SQL params.
 	 * @return	static<G>
 	 */
-	public function sql(String $sql, Array $params = Array()): Query {
+	public function sql(string $sql, array $params = array()): Query {
 		$this -> sql = $sql;
 		$this -> sqlParams = $params;
 
@@ -216,9 +216,9 @@ class Query extends Builder {
 	 * @return	static<G>
 	 */
 	protected function processJoin(
-		String $table,
-		Array $args,
-		String $type = Query::JOIN_INNER
+		string $table,
+		array $args,
+		string $type = Query::JOIN_INNER
 	): Query {
 		/** @var QueryBuilder */
 		$builder = new QueryBuilder();
@@ -247,7 +247,7 @@ class Query extends Builder {
 	 * @param	string	$table			Table name to join with, shorthand can be used in table name (ex. users u)
 	 * @return	static<G>
 	 */
-	public function join(String $table, ...$args) {
+	public function join(string $table, ...$args) {
 		return $this -> processJoin($table, $args, static::JOIN_INNER);
 	}
 
@@ -257,7 +257,7 @@ class Query extends Builder {
 	 * @param	string	$table			Table name to join with, shorthand can be used in table name (ex. users u)
 	 * @return	static<G>
 	 */
-	public function leftJoin(String $table, ...$args): Query {
+	public function leftJoin(string $table, ...$args): Query {
 		return $this -> processJoin($table, $args, static::JOIN_LEFT);
 	}
 
@@ -267,7 +267,7 @@ class Query extends Builder {
 	 * @param	string	$table			Table name to join with, shorthand can be used in table name (ex. users u)
 	 * @return	static<G>
 	 */
-	public function rightJoin(String $table, ...$args): Query {
+	public function rightJoin(string $table, ...$args): Query {
 		return $this -> processJoin($table, $args, static::JOIN_RIGHT);
 	}
 
@@ -277,7 +277,7 @@ class Query extends Builder {
 	 * @param	string|array	...$selects		Select fields to add.
 	 * @return	static<G>
 	 */
-	public function select(String|Array ...$selects): Query {
+	public function select(string|array ...$selects): Query {
 		foreach ($selects as &$select) {
 			$col = (is_array($select))
 				? $select[0]
@@ -310,7 +310,7 @@ class Query extends Builder {
 	 * @param	string[]	$columns		Columns where normal search query will apply.
 	 * @return	static<G>
 	 */
-	public function search(String $query, Array $columns) {
+	public function search(string $query, array $columns) {
 		$query = trim($query);
 
 		if (empty($query))
@@ -362,7 +362,7 @@ class Query extends Builder {
 
 			if (empty($group) && !empty($columns)) {
 				$group = new QueryBuilder();
-				$colKeys = Array();
+				$colKeys = array();
 
 				// Build where clause using CONCAT_WS.
 				foreach ($columns as $column) {
@@ -407,7 +407,7 @@ class Query extends Builder {
 	 * @param	string		$by		Column name to group by.
 	 * @return	static<G>
 	 */
-	public function group(String ...$by) {
+	public function group(string ...$by) {
 		$this -> groupBy = array_merge($this -> groupBy, $by);
 		return $this;
 	}
@@ -420,7 +420,7 @@ class Query extends Builder {
 	 * @param	string		$direction	Direction to sort by.
 	 * @return	static<G>
 	 */
-	public function sort(String $by, String $direction = "ASC") {
+	public function sort(string $by, string $direction = "ASC") {
 		return $this -> order($by, $direction);
 	}
 
@@ -431,7 +431,7 @@ class Query extends Builder {
 	 * @param	string		$direction	Direction to sort by.
 	 * @return	static<G>
 	 */
-	public function order(String $by, String $direction = "ASC") {
+	public function order(string $by, string $direction = "ASC") {
 		$this -> sortBy[$by] = $direction;
 		return $this;
 	}
@@ -444,7 +444,7 @@ class Query extends Builder {
 	 * @param	string		$column		The new value
 	 * @return	static<G>
 	 */
-	public function set(String $column, $value) {
+	public function set(string $column, $value) {
 		$this -> sets[$column] = $value;
 		return $this;
 	}
@@ -463,9 +463,9 @@ class Query extends Builder {
 		return $this;
 	}
 
-	public function makeSQLCall(?Array $selects = null, bool $limit = true) {
+	public function makeSQLCall(?array $selects = null, bool $limit = true) {
 		if (!empty($this -> sql))
-			return Array( $this -> sql, $this -> sqlParams );
+			return array( $this -> sql, $this -> sqlParams );
 
 		// Start generating selects string.
 		if (!empty($selects)) {
@@ -474,7 +474,7 @@ class Query extends Builder {
 		} else if (!empty($this -> selects)) {
 			// Use selects defined with `-> select()`
 			// Process select AS first.
-			$selects = Array();
+			$selects = array();
 
 			foreach ($this -> selects as $select) {
 				if (is_array($select)) {
@@ -536,7 +536,7 @@ class Query extends Builder {
 			{$joins}
 			{$where}";
 
-		$groupBy = Array();
+		$groupBy = array();
 
 		foreach ($this -> groupBy as $by) {
 			$gVal = Condition::validateColumnValue($by);
@@ -553,7 +553,7 @@ class Query extends Builder {
 			$sql .= "\nGROUP BY " . implode(", ", $groupBy);
 
 		if (!empty($this -> sortBy)) {
-			$bys = Array();
+			$bys = array();
 
 			foreach ($this -> sortBy as $by => $direction) {
 				$sVal = Condition::validateColumnValue($by);
@@ -601,7 +601,7 @@ class Query extends Builder {
 			}
 		}
 
-		return Array( $sql, $params );
+		return array( $sql, $params );
 	}
 
 	/**
@@ -693,12 +693,12 @@ class Query extends Builder {
 	public function all(int $from = 0, int $count = 0, bool $idIndexed = false) {
 		global $DB;
 
-		$instances = Array();
+		$instances = array();
 
 		list($sql, $params) = $this -> makeSQLCall(limit: false);
 
 		if (empty($sql))
-			return Array();
+			return array();
 
 		$records = $DB -> execute($sql, $params, $from, $count);
 
@@ -730,7 +730,7 @@ class Query extends Builder {
 	 * @param	bool	$over		Add `OVER()` to select count query.
 	 * @return	int
 	 */
-	public function count(String $column = "x", bool $distinct = false, bool $over = false) {
+	public function count(string $column = "x", bool $distinct = false, bool $over = false) {
 		global $DB;
 
 		if ($column !== "x" && str_contains($column, ".")) {
@@ -753,7 +753,7 @@ class Query extends Builder {
 		if (empty($sql))
 			return 0;
 
-		$record = (Array) $DB -> execute($sql, $params, 0, 1);
+		$record = (array) $DB -> execute($sql, $params, 0, 1);
 		$record = reset($record);
 		$record = get_object_vars($record);
 		return (int) (reset($record));
@@ -771,7 +771,7 @@ class Query extends Builder {
 		if ($this -> table instanceof Query)
 			throw new CodingError("Cannot perform UPDATE operation on subquery!");
 
-		$params = Array();
+		$params = array();
 		$sets = array_map(function ($k, $v) use (&$params) {
 			$params[] = $v;
 			return "{$k} = ?";

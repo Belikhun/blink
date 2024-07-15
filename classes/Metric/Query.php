@@ -15,11 +15,11 @@ namespace Blink\Metric;
  * See LICENSE in the project root for license information.
  */
 class Query extends Instance {
-	public String $mode;
-	public String $table;
+	public string $mode;
+	public string $table;
 	public int $rows;
 
-	public function __construct(String $mode, String $table) {
+	public function __construct(string $mode,string $$table) {
 		$this -> mode = $mode;
 		$this -> table = $table;
 		$this -> time = -1;

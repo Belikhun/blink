@@ -21,16 +21,16 @@ class ClassNotFound extends BaseException {
 	 * 
 	 * @var string
 	 */
-	public String $class;
+	public string $class;
 
-	public function __construct(String $class) {
+	public function __construct(string $class) {
 		$this -> class = $class;
 
 		parent::__construct(
 			CLASS_NOT_FOUND,
 			"Class <code>{$class}</code> not found!",
 			500,
-			Array( "class" => $class )
+			array( "class" => $class )
 		);
 	}
 }

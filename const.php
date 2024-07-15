@@ -17,7 +17,7 @@ define("FILE_STORE_FS", "fs");
 define("FILE_STORE_DB", "db");
 
 // Known mimes
-define("MIME_TYPES", Array(
+define("MIME_TYPES", array(
 	"txt" => "text/plain",
 	"htm" => "text/html",
 	"html" => "text/html",

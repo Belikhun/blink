@@ -56,7 +56,7 @@ class Session {
 	 * 
 	 * @var ?string
 	 */
-	public static ?String $method = null;
+	public static ?string $method = null;
 
 	/**
 	 * Authenticated token.
@@ -66,7 +66,7 @@ class Session {
 	 */
 	public static ?Token $token = null;
 
-	public static function start(String $sessionID = null) {
+	public static function start(string $sessionID = null) {
 		session_name("Session");
 
 		if (!empty($sessionID))
@@ -75,7 +75,7 @@ class Session {
 		if (session_status() !== PHP_SESSION_ACTIVE) {
 			ini_set("session.gc_maxlifetime", static::$lifetime);
 			session_cache_expire(static::$lifetime / 60);
-			session_set_cookie_params(Array(
+			session_set_cookie_params(array(
 				"lifetime" => static::$lifetime
 			));
 
@@ -100,7 +100,7 @@ class Session {
 	 * 
 	 * @param	string	$token
 	 */
-	public static function token(String $token) {
+	public static function token(string $token) {
 		$token = Token::getToken($token);
 
 		static::$username = $token -> username;

@@ -34,6 +34,6 @@ class RouteArgumentMismatch extends BaseException {
 	public function __construct(Route $route, $message) {
 		$this -> route = $route;
 		$this -> message = $message;
-		parent::__construct(DATA_TYPE_MISMATCH, $message, 400, (Array) $route);
+		parent::__construct(DATA_TYPE_MISMATCH, $message, 400, (array) $route);
 	}
 }

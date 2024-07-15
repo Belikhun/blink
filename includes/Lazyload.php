@@ -15,20 +15,20 @@ namespace Blink;
  * See LICENSE in the project root for license information.
  */
 class Lazyload {
-	public static $images = Array();
+	public static $images = array();
 
 	public static function add(
-		String $url,
-		Array $classes = Array(),
-		Array $attributes = Array(),
-		String $tag = "div",
-		String $spinner = "simpleSpinner"
+		string $url,
+		array $classes = array(),
+		array $attributes = array(),
+		string $tag = "div",
+		string $spinner = "simpleSpinner"
 	) {
 		array_unshift($classes, "lazyload");
 		$id = "lazyload_" . substr(md5($url), 0, 6) . bin2hex(random_bytes(4));
 
 		echo "<$tag id=\"$id\" class=\"" . implode(" ", $classes) . "\"></$tag>";
-		self::$images[] = Array(
+		self::$images[] = array(
 			"id" => $id,
 			"url" => $url,
 			"classes" => $classes,

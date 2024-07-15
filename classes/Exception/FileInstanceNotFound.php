@@ -17,7 +17,7 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class FileInstanceNotFound extends BaseException {
-	public function __construct(String $hash) {
+	public function __construct(string $hash) {
 		parent::__construct(
 			FILE_INSTANCE_NOT_FOUND,
 			"File does not exist with hash <code>{$hash}</code> in the database!",

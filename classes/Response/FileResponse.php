@@ -21,21 +21,21 @@ use Blink\Response;
 class FileResponse extends Response {
 	const BUFFER = 1024 * 8;
 
-	protected String $path;
-	protected String $filename;
+	protected string $path;
+	protected string $filename;
 	protected bool $download = false;
-	protected String $mimetype = "application/octet-stream";
+	protected string $mimetype = "application/octet-stream";
 
 	private $fs;
 	private $start;
 	private $end;
 
-	public function __construct(File|String $file, bool $download = false) {
+	public function __construct(File|string $file, bool $download = false) {
 		$this -> file($file);
 		$this -> download = $download;
 	}
 
-	public function file(File|String $file) {
+	public function file(File|string $file) {
 		if (is_string($file)) {
 			if (!file_exists($file))
 				throw new FileNotFound($file);
@@ -55,7 +55,7 @@ class FileResponse extends Response {
 		return $this;
 	}
 
-	public function process(): String {
+	public function process(): string {
 		$length = filesize($this -> path);
 		$this -> header("Content-Type", $this -> mimetype);
 		$this -> header("Content-Length", $length);

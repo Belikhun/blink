@@ -17,8 +17,8 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class JSONDecodeError extends BaseException {
-	public function __construct(String $file, String $message, $data) {
+	public function __construct(string $file, string $message, $data) {
 		$file = getRelativePath($file);
-		parent::__construct(INVALID_JSON, "json_decode({$file}): {$message}", 500, Array( "file" => $file, "data" => $data ));
+		parent::__construct(INVALID_JSON, "json_decode({$file}): {$message}", 500, array( "file" => $file, "data" => $data ));
 	}
 }

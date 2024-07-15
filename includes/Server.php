@@ -71,14 +71,14 @@ class Server {
 	public static string $CLIENT_IP;
 
 	public static function setup() {
-		static::$HOST = first(Array(
+		static::$HOST = first(array(
 			$_SERVER["HTTP_HOST"] ?? null,
 			$_SERVER["SERVER_NAME"] ?? null,
 			getHeader("Host", TYPE_TEXT, ""),
 			"127.0.0.1"
 		));
 
-		static::$SCHEME = first(Array(
+		static::$SCHEME = first(array(
 			$_SERVER["REQUEST_SCHEME"] ?? null,
 			"http"
 		));
@@ -88,7 +88,7 @@ class Server {
 		static::$SOFTWARE = $_SERVER["SERVER_SOFTWARE"] ?? ("PHP " . phpversion());
 		static::$REQUEST_START = $_SERVER["REQUEST_TIME_FLOAT"];
 
-		static::$CLIENT_IP = first(Array(
+		static::$CLIENT_IP = first(array(
 			$_SERVER["REMOTE_ADDR"] ?? null,
 			$_SERVER["HTTP_CLIENT_IP"] ?? null,
 			getenv("REMOTE_ADDR"),

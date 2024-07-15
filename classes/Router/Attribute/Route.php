@@ -23,5 +23,5 @@ class Route {
 	 *
 	 * @param	string	$uri	The rouing URI
 	 */
-	public function __construct(String $uri) {}
+	public function __construct(string $uri) {}
 }

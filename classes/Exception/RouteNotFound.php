@@ -31,14 +31,14 @@ class RouteNotFound extends BaseException {
 	 */
 	public $method;
 
-	public function __construct(String $path, String $method) {
+	public function __construct(string $path, string $method) {
 		$this -> path = $path;
 		$this -> method = $method;
 		parent::__construct(
 			ROUTE_NOT_FOUND,
 			"Cannot find route for {$method} \"$path\"",
 			404,
-			Array( "path" => $path, "method" => $method )
+			array( "path" => $path, "method" => $method )
 		);
 	}
 }

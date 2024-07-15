@@ -40,12 +40,12 @@ class ProgressReporter {
      * 
      * @var static[]
      */
-    public Array $childs = Array();
+    public array $childs = array();
 
     /**
      * Target name for this progress.
      */
-    public ?String $name = null;
+    public ?string $name = null;
 
     /**
      * Number of childs is expected to have.
@@ -119,7 +119,7 @@ class ProgressReporter {
      * @param   ?string     $status         Message status.
      * @return  static
      */
-    public function update(ProgressReporter $source, int $status, String $message) {
+    public function update(ProgressReporter $source, int $status, string $message) {
         $this -> updated += 1;
 
         if (empty($this -> childs)) {
@@ -192,7 +192,7 @@ class ProgressReporter {
      * @param   string  $message
      * @return  static
      */
-    public function report(float $progress, int $status, ?String $message) {
+    public function report(float $progress, int $status, ?string $message) {
         $progress = min(1, max(0, $progress));
         $this -> progress = $progress;
         $this -> update($this, $status, $message);
@@ -207,9 +207,9 @@ class ProgressReporter {
 
     public function task(
         Closure $callable,
-        String $prepare,
-        String $complete,
-        String $failed,
+        string $prepare,
+        string $complete,
+        string $failed,
         float $progess
     ) {
         $this -> report($this -> progress, static::INFO, $prepare);
@@ -223,25 +223,25 @@ class ProgressReporter {
         }
     }
 
-    public function info(float $progress, ?String $message = null) {
+    public function info(float $progress, ?string $message = null) {
         return $this -> report($progress, static::INFO, $message);
     }
 
-    public function okay(float $progress, ?String $message = null) {
+    public function okay(float $progress, ?string $message = null) {
         return $this -> report($progress, static::OKAY, $message);
     }
 
-    public function error(float $progress, ?String $message = null) {
+    public function error(float $progress, ?string $message = null) {
         return $this -> report($progress, static::ERROR, $message);
     }
 
-    public function complete(?String $message = null) {
+    public function complete(?string $message = null) {
         return $this -> report(1, static::OKAY, $message);
     }
 
     public function usePipe(DataPipe $pipe) {
-        $this -> onUpdate(function (ProgressReporter $source, float $progress, int $status, String $message) use ($pipe) {
-            $pipe -> send($status, $progress, $message, Array(
+        $this -> onUpdate(function (ProgressReporter $source, float $progress, int $status, string $message) use ($pipe) {
+            $pipe -> send($status, $progress, $message, array(
                 "level" => $source -> level
             ));
         });

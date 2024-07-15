@@ -31,7 +31,7 @@ abstract class DB {
 	 * Return variable type from `gettype()` to
 	 * current sql driver.
 	 */
-	abstract public function getType(String $type): String|int;
+	abstract public function getType(string $type): string|int;
 
 	/**
 	 * Create a new connection to database.
@@ -42,7 +42,7 @@ abstract class DB {
 	 * 								function. This will vary based on
 	 * 								each sql drivers.
 	 */
-	abstract public function connect(Array $options);
+	abstract public function connect(array $options);
 
 	/**
 	 * Execute a SQL query.
@@ -51,16 +51,16 @@ abstract class DB {
 	 * @param	array		$params
 	 * @param	int			$from
 	 * @param	int			$limit
-	 * @return	object|array|int	Array of rows object in select mode, inserted record
+	 * @return	object|array|int	array of rows object in select mode, inserted record
 	 * 								id in insert mode, and number of affected row
 	 * 								in update mode.
 	 */
 	abstract public function execute(
-		String $sql,
-		Array $params = null,
+		string $sql,
+		array $params = null,
 		int $from = 0,
 		int $limit = 0
-	): Object|Array|int;
+	): Object|array|int;
 
 	/**
      * Returns the SQL WHERE conditions.
@@ -68,16 +68,16 @@ abstract class DB {
      * @param	array	$conditions		The conditions to build the where clause.
      * @return	array	An array list containing sql 'where' part and 'params'.
      */
-	public static function whereClause(Array $conditions) {
+	public static function whereClause(array $conditions) {
 		$conditions = is_null($conditions)
-			? Array()
+			? array()
 			: $conditions;
 
 		if (empty($conditions))
-			return Array("", []);
+			return array("", []);
 
-		$where = Array();
-		$params = Array();
+		$where = array();
+		$params = array();
 
 		foreach ($conditions as $key => $value) {
 			$key = trim($key);
@@ -93,7 +93,7 @@ abstract class DB {
 				if (empty($value))
 					throw new CodingError("\$DB -> whereClause(): value of array \"$key\" is empty!");
 
-				$cond = Array();
+				$cond = array();
 
 				foreach ($value as $v) {
 					if (is_numeric($v))
@@ -127,10 +127,10 @@ abstract class DB {
 			$params[] = $value;
 		}
 
-		return Array(implode(" AND ", $where), $params);
+		return array(implode(" AND ", $where), $params);
 	}
 
-	public static function cleanSQL(String $query) {
+	public static function cleanSQL(string $query) {
 		// Remove SQL comments from the string
 		$clean = preg_replace("/\/\*.*?\*\//s", "", $query);
 		$clean = trim($clean);
@@ -152,10 +152,10 @@ abstract class DB {
 	 * @return	object[]
 	 */
 	public function records(
-		String $table,
-		Array $conditions = Array(),
-		String $sort = "",
-		String $fields = "*",
+		string $table,
+		array $conditions = array(),
+		string $sort = "",
+		string $fields = "*",
 		int $from = 0,
 		int $limit = 0
 	) {
@@ -194,10 +194,10 @@ abstract class DB {
 	 * @return	object|null
 	 */
 	public function record(
-		String $table,
-		Array $conditions = Array(),
-		String $fields = "*",
-		String $sort = ""
+		string $table,
+		array $conditions = array(),
+		string $fields = "*",
+		string $sort = ""
 	) {
 		$records = $this -> records($table, $conditions, $sort, $fields, 0, 1);
 
@@ -218,10 +218,10 @@ abstract class DB {
      * @param	object|array	$object		A data object with values for one or more fields in the record
      * @return	int				new id
      */
-	public function insert(String $table, Array|Object $object) {
-		$object = (Array) $object;
-		$fields = Array();
-		$values = Array();
+	public function insert(string $table, array|Object $object) {
+		$object = (array) $object;
+		$fields = array();
+		$values = array();
 
 		if (isset($object["id"]))
 			unset($object["id"]);
@@ -258,8 +258,8 @@ abstract class DB {
      * @param	string			$primary	Primary key name
      * @return	bool
 	 */
-	public function update(String $table, Array|Object $object, String $primary = "id") {
-		$object = (Array) $object;
+	public function update(string $table, array|Object $object, string $primary = "id") {
+		$object = (array) $object;
 
 		if (empty($object[$primary]))
 			throw new CodingError("\$DB -> update(): id field must be specified");
@@ -270,8 +270,8 @@ abstract class DB {
 		if (empty($object))
 			throw new CodingError("\$DB -> update(): no fields found");
 
-		$sets = Array();
-		$values = Array();
+		$sets = array();
+		$values = array();
 
 		foreach ($object as $field => $value) {
 			// if (is_null($value))
@@ -308,7 +308,7 @@ abstract class DB {
 	 * 
 	 * @return	bool
 	 */
-	public function exist(String $table, Array $conditions = Array()) {
+	public function exist(string $table, array $conditions = array()) {
 		// Select 'X' to find if a row exist!
 		// https://stackoverflow.com/questions/7624376/what-is-select-x
 		$record = $this -> record($table, $conditions, "'x'");
@@ -326,7 +326,7 @@ abstract class DB {
 	 * 
 	 * @return	int
 	 */
-	public function count(String $table, Array $conditions = Array()) {
+	public function count(string $table, array $conditions = array()) {
 		$count = $this -> record($table, $conditions, "COUNT('x')");
 		$count = (int) $count -> {"COUNT('x')"};
 
@@ -348,7 +348,7 @@ abstract class DB {
 	 * 
 	 * @return	int			Affected rows
 	 */
-	public function delete(String $table, Array $conditions = Array()) {
+	public function delete(string $table, array $conditions = array()) {
 		if (empty($conditions)) {
 			// Record Metric
 			$metric = new \Blink\Metric\Query("TRUNCATE", $table);
@@ -406,7 +406,7 @@ function initializeDB() {
 
 		switch (CONFIG::$DB_DRIVER) {
 			case "SQLite3": {
-				$DB -> connect(Array(
+				$DB -> connect(array(
 					"path" => CONFIG::$DB_PATH
 				));
 				
@@ -416,7 +416,7 @@ function initializeDB() {
 			default: {
 				// We default the config arguments to standard info
 				// like mysqli.
-				$DB -> connect(Array(
+				$DB -> connect(array(
 					"host" => CONFIG::$DB_HOST,
 					"username" => CONFIG::$DB_USER,
 					"password" => CONFIG::$DB_PASS,

@@ -12,7 +12,7 @@ use Throwable;
  */
 global $CACHES;
 
-$CACHES = Array();
+$CACHES = array();
 
 /**
  * Cache.php
@@ -29,15 +29,15 @@ $CACHES = Array();
 class Cache {
 	const NO_EXPIRE = -1;
 
-	public static String $ROOT;
+	public static string $ROOT;
 	
-	public String $id;
+	public string $id;
 
 	protected Cache\Data $data;
 
-	public String $file;
+	public string $file;
 
-	public String $path;
+	public string $path;
 
 	protected FileIO $stream;
 
@@ -145,15 +145,15 @@ class Cache {
 		return $this;
 	}
 
-	protected static function path(String $id) {
+	protected static function path(string $id) {
 		return static::$ROOT ."/{$id}.cache";
 	}
 
-	public function exist(String $id) {
+	public function exist(string $id) {
 		return file_exists(static::path($id));
 	}
 
-	public static function remove(String $id) {
+	public static function remove(string $id) {
 		$path = static::path($id);
 		
 		if (file_exists($path))

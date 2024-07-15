@@ -27,13 +27,13 @@ class Route {
 	 * All the verbs for this route.
 	 * @var string[]
 	 */
-	public Array $verbs;
+	public array $verbs;
 
 	/**
 	 * Route URI
 	 * @var	string
 	 */
-	public String $uri;
+	public string $uri;
 
 	/**
 	 * Callback action for this route if matched
@@ -45,7 +45,7 @@ class Route {
 	 * Route additional arguments taken from request URI.
 	 * @var array
 	 */
-	public array $args = Array();
+	public array $args = array();
 
 	/**
 	 * Route priority.
@@ -58,7 +58,7 @@ class Route {
 	 *
 	 * @param ?string
 	 */
-	public ?String $file = null;
+	public ?string $file = null;
 
 	/**
 	 * Construct a new Route object
@@ -68,7 +68,7 @@ class Route {
      * @param  callable|array	$action
      * @param  int				$priority
 	 */
-	public function __construct(Array $verbs, String $uri, Callable|Array $action, int $priority = 0) {
+	public function __construct(array $verbs, string $uri, Callable|array $action, int $priority = 0) {
 		$this -> verbs = $verbs;
 		$this -> uri = $uri;
 		$this -> action = $action;
@@ -119,7 +119,7 @@ class Route {
 			}
 
 			$params = $info -> getParameters();
-			$callArgs = Array();
+			$callArgs = array();
 
 			foreach ($params as $param) {
 				$type = $param -> getType();
@@ -156,7 +156,7 @@ class Route {
 			} catch (\TypeError $e) {
 				$message = $e -> getMessage();
 				$traces = $e -> getTrace();
-				$matches = Array();
+				$matches = array();
 
 				// Determine that error was thrown by calling Route handler
 				// Because this catch can be triggered somewhere inside handler

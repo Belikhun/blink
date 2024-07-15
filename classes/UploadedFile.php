@@ -22,25 +22,25 @@ class UploadedFile {
 	 * The uploaded file name
 	 * @var string
 	 */
-	public ?String $name = null;
+	public ?string $name = null;
 
 	/**
 	 * The uploaded file name, without extension.
 	 * @var string
 	 */
-	public ?String $filename = null;
+	public ?string $filename = null;
 
 	/**
 	 * The uploaded file extension
 	 * @var string
 	 */
-	public ?String $extension = null;
+	public ?string $extension = null;
 
 	/**
 	 * The file mimetype.
 	 * @var string
 	 */
-	public ?String $type = null;
+	public ?string $type = null;
 
 	/**
 	 * The uploaded file size.
@@ -48,11 +48,11 @@ class UploadedFile {
 	 */
 	public ?int $size = null;
 
-	private ?String $temp = null;
+	private ?string $temp = null;
 
 	private int $error = 0;
 
-	public function __construct(Array $file) {
+	public function __construct(array $file) {
 		$this -> name = $file["name"];
 		$this -> type = $file["type"];
 		$this -> size = $file["size"];

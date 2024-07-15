@@ -27,28 +27,28 @@ class Instance {
 	const ERROR_SERVER = "server";
 	const ERROR_OTHER = "other";
 
-	public String $id;
+	public string $id;
 
 	public int $status = 200;
-	public String $path = "/";
-	public String $method = "GET";
-	public ?String $protocol = null;
-	public ?String $ip = null;
+	public string $path = "/";
+	public string $method = "GET";
+	public ?string $protocol = null;
+	public ?string $ip = null;
 
 	/** @var ContextGroup[] */
-	public Array $contexts = [];
+	public array $contexts = [];
 
 	/** @var array|null */
 	public $data = null;
 
-	public ?String $php = null;
-	public ?String $server = null;
-	public ?String $blink = null;
+	public ?string $php = null;
+	public ?string $server = null;
+	public ?string $blink = null;
 
 	protected $tipTitle = null;
 	protected $tipContent = null;
 
-	public function __construct(String $id) {
+	public function __construct(string $id) {
 		$this -> id = $id;
 	}
 
@@ -58,7 +58,7 @@ class Instance {
 
 	public function info() {
 		if ($this -> hasException() && !empty($this -> data["description"])) {
-			return Array(
+			return array(
 				$this -> data["exception"]["class"],
 				$this -> data["description"],
 				$this -> data["details"] ?: null
@@ -188,7 +188,7 @@ class Instance {
 		if ($this -> hasException())
 			return $this -> data["exception"]["stacktrace"];
 
-		return Array();
+		return array();
 	}
 
 	public function sticker() {
@@ -222,7 +222,7 @@ class Instance {
 	}
 
 	public function __serialize() {
-		return Array(
+		return array(
 			"id" => $this -> id,
 			"status" => $this -> status,
 			"path" => $this -> path,
@@ -237,16 +237,16 @@ class Instance {
 		);
 	}
 
-	public function __unserialize(Array $data) {
+	public function __unserialize(array $data) {
 		foreach ($data as $key => $value)
 			$this -> {$key} = $value;
 	}
 
-	public static function path(String $id) {
+	public static function path(string $id) {
 		return \CONFIG::$ERRORS_ROOT . "/{$id}.report";
 	}
 
-	public static function create(Array $data = null): Instance {
+	public static function create(array $data = null): Instance {
 		global $PATH, $AUTOLOADED, $RUNTIME;
 
 		$instance = new static(bin2hex(random_bytes(10)));
@@ -267,7 +267,7 @@ class Instance {
 
 		$request = new ContextGroup("Request");
 
-		$infoContext = new ContextItem("info", "Info", Array(
+		$infoContext = new ContextItem("info", "Info", array(
 			"Path" => $instance -> path,
 			"Method" => $instance -> method,
 			"Status Code" => $instance -> status,
@@ -290,7 +290,7 @@ class Instance {
 		foreach ($_FILES as $key => $file)
 			$form[$key] = sprintf("[file \"%s\" %s %s]", $file["name"], $file["type"], convertSize($file["size"]));
 
-		$bodyContext = new ContextItem("body", "Body", Array(
+		$bodyContext = new ContextItem("body", "Body", array(
 			"form" => $form,
 			"content" => fileGet("php://input"),
 			"type" => explode(";", getHeader("Content-Type", TYPE_TEXT, "text/plain"))[0]
@@ -302,14 +302,14 @@ class Instance {
 
 		$app = new ContextGroup("App");
 
-		$routing = Array(
+		$routing = array(
 			"Active" => "[no active route]",
 			"Callback" => "[unknown]",
 			"Arguments" => "[]"
 		);
 
 		if (!empty(Router::$active)) {
-			$routing["Active"] = (String) Router::$active;
+			$routing["Active"] = (string) Router::$active;
 			$routing["Callback"] = stringify(Router::$active -> action);
 			$routing["Arguments"] = stringify(Router::$active -> args);
 		}
@@ -323,7 +323,7 @@ class Instance {
 		$routesContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($routesContext);
 
-		$sessionContext = new ContextItem("session", "Session", Array(
+		$sessionContext = new ContextItem("session", "Session", array(
 			"Lifetime" => Session::$lifetime,
 			"Session ID" => session_id() ?: "[NULL]",
 			"Username" => Session::$username,
@@ -332,7 +332,7 @@ class Instance {
 		$sessionContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($sessionContext);
 
-		$autoload = Array();
+		$autoload = array();
 		foreach ($AUTOLOADED as $item) {
 			$name = !empty($item["namespace"])
 				? $item["namespace"] . "\\"
@@ -356,7 +356,7 @@ class Instance {
 			try {
 				// We might fail at this step if data contains unserializable stuff.
 				// (eg. functions)
-				$edata = (Array) $data["data"];
+				$edata = (array) $data["data"];
 
 				$dataContext = new ContextItem("edata", "Exception Data", $edata, "asterisk");
 				$dataContext -> setRenderer([ ContextRenderer::class, "list" ]);
@@ -370,7 +370,7 @@ class Instance {
 		$appEnvsContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($appEnvsContext);
 
-		$appConstsContext = new ContextItem("consts", "Constants", Array(
+		$appConstsContext = new ContextItem("consts", "Constants", array(
 			"BASE_PATH" => BASE_PATH,
 			"APP_ROOT" => APP_ROOT,
 			"VENDOR_ROOT" => VENDOR_ROOT,
@@ -405,7 +405,7 @@ class Instance {
 		$filesContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$metrics -> add($filesContext);
 
-		$timingContext = new ContextItem("timings", "Timings", Array(
+		$timingContext = new ContextItem("timings", "Timings", array(
 			"start" => (!empty(\Blink\Metric::$timings))
 				? \Blink\Metric::$timings[0] -> start
 				: $RUNTIME -> start,
@@ -438,7 +438,7 @@ class Instance {
 		return $instance;
 	}
 
-	public static function get(String $id): Instance {
+	public static function get(string $id): Instance {
 		$path = static::path($id);
 
 		if (!file_exists($path))
@@ -448,7 +448,7 @@ class Instance {
 		return unserialize($content);
 	}
 
-	public static function handle(String $id) {
+	public static function handle(string $id) {
 		$instance = static::get($id);
 		renderErrorPage($instance);
 	}

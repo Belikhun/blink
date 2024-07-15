@@ -70,7 +70,7 @@ class Paging {
 		$this -> to = min($this -> total, ($this -> show * $page) - 1);
 		$this -> count = ($this -> to - $this -> from) + 1;
 
-		return Array($this -> from, $this -> count);
+		return array($this -> from, $this -> count);
 	}
 
 	/**
@@ -80,7 +80,7 @@ class Paging {
 	 * @param	array	$data
 	 * @return	array
 	 */
-	public function process(Array $data) {
+	public function process(array $data) {
 		if (empty($this -> from))
 			$this -> page(1);
 
@@ -88,7 +88,7 @@ class Paging {
 	}
 
 	public function __serialize() {
-		return Array(
+		return array(
 			"total" => $this -> total,
 			"show" => $this -> show,
 			"page" => $this -> page,

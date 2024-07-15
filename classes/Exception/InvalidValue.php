@@ -15,7 +15,7 @@ namespace Blink\Exception;
  * See LICENSE in the project root for license information.
  */
 class InvalidValue extends BaseException {
-	public function __construct(String $value, String $type) {
+	public function __construct(string $value, string $type) {
 		parent::__construct(
 			INVALID_VALUE,
 			"The value <code>{$value}</code> is not a valid <code>{$type}</code>!",

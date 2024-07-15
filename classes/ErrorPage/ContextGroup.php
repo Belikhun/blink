@@ -17,15 +17,15 @@ use Blink\HtmlWriter;
  * See LICENSE in the project root for license information.
  */
 class ContextGroup {
-	public String $name;
+	public string $name;
 
 	/**
 	 * Colletion of context item in this group.
 	 * @var ContextItem[]
 	 */
-	public Array $items = [];
+	public array $items = [];
 
-	public function __construct(String $name) {
+	public function __construct(string $name) {
 		$this -> name = $name;
 	}
 
@@ -58,13 +58,13 @@ class ContextGroup {
 	}
 
 	public function __serialize() {
-		return Array(
+		return array(
 			"name" => $this -> name,
 			"items" => $this -> items
 		);
 	}
 
-	public function __unserialize(Array $data) {
+	public function __unserialize(array $data) {
 		foreach ($data as $key => $value)
 			$this -> {$key} = $value;
 	}

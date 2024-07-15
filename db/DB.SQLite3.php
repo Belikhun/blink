@@ -58,8 +58,8 @@ class SQLite3 extends DB {
 	 */
 	public $tableVersion = 0;
 
-	public function getType(String $type): int {
-		return Array(
+	public function getType(string $type): int {
+		return array(
 			"double" => SQLITE3_FLOAT,
 			"string" => SQLITE3_TEXT,
 			"integer" => SQLITE3_INTEGER,
@@ -108,7 +108,7 @@ class SQLite3 extends DB {
 		$this -> version = $version;
 	}
 
-	public function connect(Array $options) {
+	public function connect(array $options) {
 		$this -> path = $options["path"];
 		$this -> setup();
 	}
@@ -178,16 +178,16 @@ class SQLite3 extends DB {
 	 * @param	array		$params
 	 * @param	int			$from
 	 * @param	int			$limit
-	 * @return	object|array|int	Array of rows object in select mode, inserted record
+	 * @return	object|array|int	array of rows object in select mode, inserted record
 	 * 								id in insert mode, and number of affected row
 	 * 								in update mode.
 	 */
 	public function execute(
-		String $sql,
-		Array $params = null,
+		string $sql,
+		array $params = null,
 		int $from = 0,
 		int $limit = 0
-	): Object|Array|int {
+	): Object|array|int {
 		$sql = static::cleanSQL($sql);
 
 		// Detect current mode
@@ -251,7 +251,7 @@ class SQLite3 extends DB {
 		}
 
 		if ($mode === SQL_SELECT) {
-			$rows = Array();
+			$rows = array();
 
 			while ($row = $res -> fetchArray(SQLITE3_ASSOC)) {
 				$row = (Object) $row;

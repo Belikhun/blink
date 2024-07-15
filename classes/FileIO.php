@@ -24,12 +24,12 @@ class FileIO {
 	private $maxTry = 20;
 	public $stream;
 	public $path;
-	public String $type = TYPE_TEXT;
+	public string $type = TYPE_TEXT;
 
 	public function __construct(
-		String $path,
+		string $path,
 		mixed $default = FileIO::NO_DEFAULT,
-		String $type = TYPE_TEXT
+		string $type = TYPE_TEXT
 	) {
 		$this -> path = $path;
 		$this -> type = $type;
@@ -44,7 +44,7 @@ class FileIO {
 		}
 	}
 
-	public function fos(String $path, String $mode) {
+	public function fos(string $path, string $mode) {
 		$dirname = dirname($path);
 
 		// Create parent folder if not exist yet.
@@ -95,7 +95,7 @@ class FileIO {
 						"FileIO -> read(): Read Timeout: Không có quyền đọc file "
 							. basename($this -> path) ." sau $tries lần thử",
 						500,
-						Array( "path" => $this -> path )
+						array( "path" => $this -> path )
 					);
 				}
 				
@@ -140,7 +140,7 @@ class FileIO {
 					$e = error_get_last();
 
 					if (empty($e)) {
-						$e = Array(
+						$e = array(
 							"message" => "Failed to unserialize data. No further information is provided.",
 							"content" => $data
 						);
@@ -167,7 +167,7 @@ class FileIO {
 	 * @return
 	 *
 	 */
-	public function write($data, String $type = null, String $mode = "w") {
+	public function write($data, string $type = null, string $mode = "w") {
 		if (empty($type))
 			$type = $this -> type;
 

@@ -17,7 +17,7 @@ use Blink\Exception\BaseException;
  * See LICENSE in the project root for license information.
  */
 class MissingParam extends BaseException {
-	public function __construct(String $param) {
-		parent::__construct(MISSING_PARAM, "Missing required param: $param", 400, Array( "param" => $param ));
+	public function __construct(string $param) {
+		parent::__construct(MISSING_PARAM, "Missing required param: $param", 400, array( "param" => $param ));
 	}
 }

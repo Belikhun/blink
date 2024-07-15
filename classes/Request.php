@@ -18,35 +18,35 @@ use Blink\Router\Route;
  * See LICENSE in the project root for license information.
  */
 class Request {
-	public Array $args = Array();
+	public array $args = array();
 
-	public Array $params = Array();
+	public array $params = array();
 
-	public Array $data = Array();
-	public Array $headers = Array();
-	public Array $cookies = Array();
+	public array $data = array();
+	public array $headers = array();
+	public array $cookies = array();
 
 	/**
 	 * List of uploaded files.
 	 * @var UploadedFile[]
 	 */
-	public Array $files = Array();
+	public array $files = array();
 
-	public String $method;
+	public string $method;
 
-	public String $path;
+	public string $path;
 
 	public ?Route $route = null;
 
 	public function __construct(
-		String $method,
-		String $path,
-		Array $args,
-		Array $params,
-		Array $data,
-		Array $headers,
-		Array $cookies,
-		Array $files
+		string $method,
+		string $path,
+		array $args,
+		array $params,
+		array $data,
+		array $headers,
+		array $cookies,
+		array $files
 	) {
 		$this -> method = $method;
 		$this -> path = $path;
@@ -65,35 +65,35 @@ class Request {
 	 * @param	string	$name
 	 * @return	?UploadedFile
 	 */
-	public function file(String $name) {
+	public function file(string $name) {
 		if (isset($this -> files[$name]))
 			return $this -> files[$name];
 		
 		return null;
 	}
 
-	public function arg(String $name, $type = TYPE_TEXT, $default = null) {
+	public function arg(string $name, $type = TYPE_TEXT, $default = null) {
 		if (isset($this -> args[$name]))
 			return cleanParam($this -> args[$name], $type);
 		
 		return $default;
 	}
 
-	public function header(String $name, $type = TYPE_TEXT, $default = null) {
+	public function header(string $name, $type = TYPE_TEXT, $default = null) {
 		if (isset($this -> headers[$name]))
 			return cleanParam($this -> headers[$name], $type);
 		
 		return $default;
 	}
 
-	public function cookie(String $name, $default = null) {
+	public function cookie(string $name, $default = null) {
 		if (isset($this -> cookies[$name]))
 			return $this -> cookies[$name];
 		
 		return $default;
 	}
 
-	public function param(String $name, $type = TYPE_TEXT, $default = null) {
+	public function param(string $name, $type = TYPE_TEXT, $default = null) {
 		if (isset($this -> data[$name]))
 			$param = $this -> data[$name];
 		else if (isset($this -> params[$name]))
@@ -104,7 +104,7 @@ class Request {
 		return cleanParam($param, $type);
 	}
 
-	public function requiredParam(String $name, $type = TYPE_TEXT) {
+	public function requiredParam(string $name, $type = TYPE_TEXT) {
 		$param = $this -> param($name, $type);
 
 		if ($param === null)
@@ -113,13 +113,13 @@ class Request {
 		return $param;
 	}
 
-	public function get(String $name, $type = TYPE_TEXT, $default = null) {
+	public function get(string $name, $type = TYPE_TEXT, $default = null) {
 		return $this -> arg($name, $type)
 			|| $this -> param($name, $type)
 			|| $default;
 	}
 
-	public function accept(String $mimetype) {
+	public function accept(string $mimetype) {
 		$accept = $this -> header("Accept", TYPE_RAW);
 
 		if (empty($accept))
