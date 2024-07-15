@@ -77,7 +77,7 @@ class HtmlWriter {
 	 * @version	1.0
 	 * @author	Belikhun <belivipro9x99@gmail.com>
 	 */
-	public static function build(string $tag, array $attributes = array(),string $$content = "", bool $end = true) {
+	public static function build(string $tag, array $attributes = array(), string $content = "", bool $end = true) {
 		if (str_contains($tag, "#") || str_contains($tag, ".") || str_contains($tag, "[")) {
 			$parsed = static::parse($tag);
 
@@ -147,7 +147,7 @@ class HtmlWriter {
 	 * @version	1.0
 	 * @author	Belikhun <belivipro9x99@gmail.com>
 	 */
-	public static function tag(string $tag,string $$content = "", array $attributes = array(), bool $end = true) {
+	public static function tag(string $tag, string $content = "", array $attributes = array(), bool $end = true) {
 		return static::build($tag, $attributes, $content, $end);
 	}
 
@@ -191,7 +191,7 @@ class HtmlWriter {
 		return self::build("p", $attributes, $content);
 	}
 
-	public static function a(string $href,string $$title, array $attributes = array()) {
+	public static function a(string $href, string $title, array $attributes = array()) {
 		if (!isset($attributes["title"]))
 			$attributes["title"] = strip_tags($title);
 

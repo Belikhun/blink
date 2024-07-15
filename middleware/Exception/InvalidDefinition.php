@@ -33,7 +33,7 @@ class InvalidDefinition extends BaseException {
 	 */
 	public ?string $targetFile;
 
-	public function __construct(string $class,string $$from,string $$file = null) {
+	public function __construct(string $class, string $from, string $file = null) {
 		$this -> class = $class;
 		$this -> from = $from;
 		$this -> targetFile = $file;

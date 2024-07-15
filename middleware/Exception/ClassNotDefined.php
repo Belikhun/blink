@@ -28,7 +28,7 @@ class ClassNotDefined extends BaseException {
 	 */
 	public string $targetFile;
 
-	public function __construct(string $class,string $$file) {
+	public function __construct(string $class, string $file) {
 		$this -> class = $class;
 		$this -> targetFile = $file;
 

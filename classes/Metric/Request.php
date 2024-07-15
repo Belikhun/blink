@@ -19,7 +19,7 @@ class Request extends Instance {
 	public string $method;
 	public int $status;
 
-	public function __construct(string $url,string $$method) {
+	public function __construct(string $url, string $method) {
 		$this -> url = $url;
 		$this -> method = $method;
 		$this -> time = -1;
@@ -33,7 +33,7 @@ class Request extends Instance {
 		$this -> time = microtime(true);
 	}
 
-	public function __toString() {
+	public function __toString(): string {
 		return sprintf("%5s %6s  %3d %s",
 			$this -> timeFormat(),
 			$this -> method,

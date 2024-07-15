@@ -19,7 +19,7 @@ class Query extends Instance {
 	public string $table;
 	public int $rows;
 
-	public function __construct(string $mode,string $$table) {
+	public function __construct(string $mode, string $table) {
 		$this -> mode = $mode;
 		$this -> table = $table;
 		$this -> time = -1;
@@ -33,7 +33,7 @@ class Query extends Instance {
 		$this -> time = microtime(true);
 	}
 
-	public function __toString() {
+	public function __toString(): string {
 		return sprintf("%5s %8s %16s %2d",
 			$this -> timeFormat(),
 			$this -> mode,

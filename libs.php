@@ -69,7 +69,7 @@ class StopClock {
  * @throws	JSONDecodeError
  * @return	array|object
  */
-function safeJSONParsing(string $json,string $$path = "", bool $assoc = false) {
+function safeJSONParsing(string $json, string $path = "", bool $assoc = false) {
 	// Temporary disable `NOTICE` error reporting
 	// to try unserialize data without triggering `E_NOTICE`
 	set_error_handler(null, 0);
@@ -352,7 +352,7 @@ function first(array $items, $callable = null) {
  * 
  * @return	mixed
  */
-function env(string $key, $default = null,string $$type = TYPE_TEXT) {
+function env(string $key, $default = null, string $type = TYPE_TEXT) {
 	if (!isset(Environment::$values[$key]))
 		return $default;
 	
@@ -437,7 +437,7 @@ function getHeader(string $name, $type = TYPE_TEXT, $default = null) {
  * @param	mixed	$default	Default value
  * @return	string|null
  */
-function mime(string $file,string $$charset = "utf-8", $default = "text/plain") {
+function mime(string $file, string $charset = "utf-8", $default = "text/plain") {
 	$mime = null;
 	$extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
@@ -468,7 +468,7 @@ function expire(int $time) {
  * 
  * @return	string
  */
-function getRelativePath(string $fullPath,string $$separator = "/",string $$base = BASE_PATH) {
+function getRelativePath(string $fullPath, string $separator = "/", string $base = BASE_PATH) {
 	if ($separator === "/") {
 		$search = ($base === BASE_PATH)
 			? $base
@@ -702,7 +702,7 @@ function redirect($url) {
  * @param	string	$extension
  * @return	\Generator<\SplFileInfo>
  */
-function getFiles(string $path,string $$extension = "*") {
+function getFiles(string $path, string $extension = "*") {
 	$di = new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS);
 	$ri = new RecursiveIteratorIterator($di);
 	$extension = strtolower($extension);

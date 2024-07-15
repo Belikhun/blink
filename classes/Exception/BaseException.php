@@ -111,7 +111,7 @@ class BaseException extends \Exception {
 		return $this -> trace;
 	}
 
-	public function __toString() {
+	public function __toString(): string {
 		return "HTTP {$this -> status} ({$this -> code}) ". get_class($this) .": {$this -> description}";
 	}
 }

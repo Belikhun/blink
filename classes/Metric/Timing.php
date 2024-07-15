@@ -35,7 +35,7 @@ class Timing extends Instance {
 		$this -> time = microtime(true);
 	}
 
-	public function __toString() {
+	public function __toString(): string {
 		return sprintf("%5s  %s",
 			$this -> timeFormat(),
 			$this -> name);

@@ -34,7 +34,7 @@ class InvalidMiddlewareReturn extends BaseException {
 	 */
 	public string $got;
 
-	public function __construct(string $middleware,string $$expect,string $$got) {
+	public function __construct(string $middleware, string $expect, string $got) {
 		$this -> middleware = $middleware;
 		$this -> expect = $expect;
 		$this -> got = $got;

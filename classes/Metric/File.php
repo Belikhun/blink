@@ -20,7 +20,7 @@ class File extends Instance {
 	public string $file;
 	public int $size;
 
-	public function __construct(string $mode,string $$type,string $$file) {
+	public function __construct(string $mode, string $type, string $file) {
 		// Cache file is treated differently.
 		if (str_ends_with($file, ".cache")) {
 			$name = pathinfo($file, PATHINFO_FILENAME);
@@ -41,7 +41,7 @@ class File extends Instance {
 		$this -> time = microtime(true);
 	}
 
-	public function __toString() {
+	public function __toString(): string {
 		return sprintf("%5s %3s %10s %12s %s",
 			$this -> timeFormat(),
 			$this -> mode,
