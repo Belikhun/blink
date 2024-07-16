@@ -30,7 +30,7 @@ class Environment {
 		if (file_exists($path)) {
 			$content = fileGet($path);
 
-			$re = '/^([a-zA-Z0-9_-]+)\=(.*)$/m';
+			$re = '/^([a-zA-Z0-9_-]+)\s*\=\s*(.*)$/m';
 			$matches = null;
 
 			if (preg_match_all($re, $content, $matches, PREG_SET_ORDER, 0)) {
