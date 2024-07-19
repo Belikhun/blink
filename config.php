@@ -63,7 +63,9 @@ class CoreConfig {
 		CORE_ROOT . "/includes",
 		CORE_ROOT . "/classes",
 		CORE_ROOT . "/db/Exception",
-		CORE_ROOT . "/middleware"
+		CORE_ROOT . "/middleware",
+		BASE_PATH . "/includes",
+		BASE_PATH . "/classes"
 	);
 
 	public static string	$FILE_STORE = FILE_STORE_FS;

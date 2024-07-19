@@ -53,8 +53,8 @@ class Request {
 		$this -> args = $args;
 		$this -> params = $params;
 		$this -> data = $data;
-		$this -> headers = $headers;
 		$this -> cookies = $cookies;
+		$this -> headers = array_change_key_case($headers, CASE_LOWER);
 
 		foreach ($files as $key => $file)
 			$this -> files[$key] = new UploadedFile($file);
@@ -80,6 +80,8 @@ class Request {
 	}
 
 	public function header(string $name, $type = TYPE_TEXT, $default = null) {
+		$name = strtolower($name);
+
 		if (isset($this -> headers[$name]))
 			return cleanParam($this -> headers[$name], $type);
 		
