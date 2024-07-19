@@ -19,8 +19,8 @@ class Environment {
 	public static array $values = array();
 
 	public static function load(string $environment = "default") {
-		global $_ENV;
 
+		// Load env values from process first.
 		static::$values = $_ENV;
 		
 		$path = ($environment === "default")
@@ -63,14 +63,14 @@ class Environment {
 
 	protected static function clean(string $key, string $value) {
 		$key = trim($key);
-		$lval = strtolower($value);
+		$clval = strtolower(trim($value));
 		
-		if ($lval === "null")
+		if ($clval === "null")
 			$value = null;
 		else if (is_numeric($value))
 			$value = floatval($value);
-		else if (in_array($lval, ["true", "false", "on", "off", "yes", "no"]))
-			$value = cleanParam($lval, TYPE_BOOL);
+		else if (in_array($clval, ["true", "false", "on", "off", "yes", "no"]))
+			$value = cleanParam($clval, TYPE_BOOL);
 		else {
 			if ($value[0] === "'" || $value[0] === "\"") {
 				$value = trim($value, "'\"\"\n\x00\x0d\x0a");

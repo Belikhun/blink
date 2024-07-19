@@ -71,7 +71,17 @@ class Server {
 	public static string $CLIENT_IP;
 
 	public static function setup() {
+		$envScheme = null;
+		$envHost = env("HOST");
+
+		if (!empty($envHost)) {
+			$envHostUrl = new URL($envHost);
+			$envScheme = $envHostUrl -> getScheme();
+			$envHost = $envHostUrl -> getHost();
+		}
+
 		static::$HOST = first(array(
+			$envHost,
 			$_SERVER["HTTP_HOST"] ?? null,
 			$_SERVER["SERVER_NAME"] ?? null,
 			getHeader("Host", TYPE_TEXT, ""),
@@ -79,6 +89,7 @@ class Server {
 		));
 
 		static::$SCHEME = first(array(
+			$envScheme,
 			$_SERVER["REQUEST_SCHEME"] ?? null,
 			"http"
 		));

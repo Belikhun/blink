@@ -20,42 +20,49 @@ use Blink\Exception\CodingError;
 class URL {
     /**
      * Scheme, ex.: http, https
+     * 
      * @var string
      */
     protected string $scheme = "";
 
     /**
-     * Hostname.
+     * Hostname part of the URL.
+     * 
      * @var string
      */
     protected string $host = "";
 
     /**
      * Port number, empty means default 80 or 443 in case of http.
+     * 
      * @var int
      */
     protected int $port = 0;
 
     /**
      * Username for http auth.
+     * 
      * @var string
      */
     protected string $user = "";
 
     /**
      * Password for http auth.
+     * 
      * @var string
      */
     protected $pass = "";
 
     /**
      * Script path.
+     * 
      * @var string
      */
     protected $path = "";
 
     /**
      * Url parameters as associative array.
+     * 
      * @var string[]
      */
     public $params = array();
@@ -233,6 +240,42 @@ class URL {
         $uri .= $this -> path ? $this -> path : "";
 
         return $uri;
+    }
+
+    /**
+     * Return host name part of the url.
+     * 
+     * @return string
+     */
+    public function getHost(): string {
+        return $this -> host;
+    }
+
+    /**
+     * Return URL scheme, ex.: http, https, ftp
+     * 
+     * @return string
+     */
+    public function getScheme(): string {
+        return $this -> scheme;
+    }
+
+    /**
+     * Return host's target port.
+     * 
+     * @return string
+     */
+    public function getPort(): int {
+        return $this -> port;
+    }
+
+    /**
+     * Return URL request path.
+     * 
+     * @return string
+     */
+    public function getPath(): string {
+        return $this -> path;
     }
 
     /**
