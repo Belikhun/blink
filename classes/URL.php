@@ -4,6 +4,7 @@ namespace Blink;
 
 use Blink\Exception\InvalidURL;
 use Blink\Exception\CodingError;
+use JsonSerializable;
 
 /**
  * URL.php
@@ -17,7 +18,7 @@ use Blink\Exception\CodingError;
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-class URL {
+class URL implements JsonSerializable {
     /**
      * Scheme, ex.: http, https
      * 
@@ -293,5 +294,9 @@ class URL {
         }
 
         return $this;
+    }
+
+    public function jsonSerialize(): mixed {
+        return $this -> out(false);
     }
 }

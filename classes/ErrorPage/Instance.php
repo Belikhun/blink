@@ -252,8 +252,8 @@ class Instance {
 		$instance = new static(bin2hex(random_bytes(10)));
 		$instance -> data = $data;
 		$instance -> path = $PATH;
-		$instance -> method = Server::$METHOD;
-		$instance -> protocol = Server::$PROTOCOL;
+		$instance -> method = Server::$METHOD ?? "ERRR";
+		$instance -> protocol = Server::$PROTOCOL ?? "ERRR";
 		$instance -> ip = getClientIP();
 		$instance -> status = !empty($data)
 			? $data["status"]

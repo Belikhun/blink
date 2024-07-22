@@ -71,29 +71,8 @@ class Server {
 	public static string $CLIENT_IP;
 
 	public static function setup() {
-		$envScheme = null;
-		$envHost = env("HOST");
 
-		if (!empty($envHost)) {
-			$envHostUrl = new URL($envHost);
-			$envScheme = $envHostUrl -> getScheme();
-			$envHost = $envHostUrl -> getHost();
-		}
-
-		static::$HOST = first(array(
-			$envHost,
-			$_SERVER["HTTP_HOST"] ?? null,
-			$_SERVER["SERVER_NAME"] ?? null,
-			getHeader("Host", TYPE_TEXT, ""),
-			"127.0.0.1"
-		));
-
-		static::$SCHEME = first(array(
-			$envScheme,
-			$_SERVER["REQUEST_SCHEME"] ?? null,
-			"http"
-		));
-
+		// TODO: This might only currently work with apache2 server for now. Will need to implement this for php built in server and nginx.
 		static::$PROTOCOL = $_SERVER["SERVER_PROTOCOL"];
 		static::$METHOD = $_SERVER["REQUEST_METHOD"];
 		static::$SOFTWARE = $_SERVER["SERVER_SOFTWARE"] ?? ("PHP " . phpversion());
@@ -119,6 +98,29 @@ class Server {
 			if (!empty($_SERVER["HTTP_X_FORWARDED_FOR"]))
 				static::$CLIENT_IP = $_SERVER["HTTP_X_FORWARDED_FOR"];
 		}
+
+		$envScheme = null;
+		$envHost = env("HOST");
+
+		if (!empty($envHost)) {
+			$envHostUrl = new URL($envHost);
+			$envScheme = $envHostUrl -> getScheme();
+			$envHost = $envHostUrl -> getHost();
+		}
+
+		static::$HOST = first(array(
+			$envHost,
+			$_SERVER["HTTP_HOST"] ?? null,
+			$_SERVER["SERVER_NAME"] ?? null,
+			getHeader("Host", TYPE_TEXT, ""),
+			"127.0.0.1"
+		));
+
+		static::$SCHEME = first(array(
+			$envScheme,
+			$_SERVER["REQUEST_SCHEME"] ?? null,
+			"http"
+		));
 
 		/**
 		 * Host name, based on user's request.
