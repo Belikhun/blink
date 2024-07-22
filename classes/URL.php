@@ -112,7 +112,7 @@ class URL implements JsonSerializable {
     /**
      * Add an array of params to the params for this url.
      *
-     * @param	array	        $params		Defaults to null. If null then returns all params.
+     * @param	array           $params     Defaults to null. If null then returns all params.
      * @return	static
      * @throws	CodingError
      */
@@ -128,8 +128,8 @@ class URL implements JsonSerializable {
     /**
      * Set a param value by param name.
      *
-     * @param	string	        $key		Param key name
-     * @param	string	        $value		Param value
+     * @param	string          $key		Param key name
+     * @param	string          $value		Param value
      * @return	static
      * @throws	CodingError
      */
@@ -175,8 +175,8 @@ class URL implements JsonSerializable {
      *
      * This method should not be used outside of this method.
      *
-     * @param bool $escaped Use &amp; as params separator instead of plain &
-     * @return string query string that can be added to a url.
+     * @param   bool    $escaped   Use &amp; as params separator instead of plain &
+     * @return  string  Query string that can be added to a url.
      */
     public function getQuery($escaped = true) {
         $array = array();
@@ -204,14 +204,13 @@ class URL implements JsonSerializable {
     }
 
     /**
-     * Output url.
+     * Output URL string.
      *
      * If you use the returned URL in HTML code, you want the escaped ampersands. If you use
-     * the returned URL in HTTP headers, you want $escaped=false.
+     * the returned URL in HTTP headers, you want `$escaped = false`.
      *
-     * @param bool $escaped Use &amp; as params separator instead of plain &
-     * @param array $overrideparams params to add to the output url, these override existing ones with the same name.
-     * @return string Resulting URL
+     * @param   bool    $escaped    Use &amp; as params separator instead of plain &
+     * @return  string  Resulting URL string
      */
     public function out($escaped = true) {
         $uri = $this -> uri();
