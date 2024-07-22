@@ -57,6 +57,9 @@ class Cache {
 		} else {
 			$CACHES[$id] = $this;
 		}
+
+		if (!$this -> initialized())
+			$this -> initialize();
 	}
 
 	public function stream(): FileIO {
@@ -151,6 +154,15 @@ class Cache {
 
 	public function exist(string $id) {
 		return file_exists(static::path($id));
+	}
+
+	public static function instance(string $id) {
+		global $CACHES;
+
+		if (!empty($CACHES[$id]))
+			return $CACHES[$id];
+
+		return new static($id);
 	}
 
 	public static function remove(string $id) {
