@@ -187,7 +187,7 @@ class SQLite3 extends DB {
 		array $params = null,
 		int $from = 0,
 		int $limit = 0
-	): Object|array|int {
+	): object|array|int {
 		$sql = static::cleanSQL($sql);
 
 		// Detect current mode
@@ -254,7 +254,7 @@ class SQLite3 extends DB {
 			$rows = array();
 
 			while ($row = $res -> fetchArray(SQLITE3_ASSOC)) {
-				$row = (Object) $row;
+				$row = (object) $row;
 	
 				if (isset($row -> id))
 					$row -> id = (int) $row -> id;

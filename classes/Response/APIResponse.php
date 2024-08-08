@@ -38,7 +38,7 @@ class APIResponse extends JsonResponse {
 	 * 
 	 * @var	array|object|null
 	 */
-	protected array|Object|null $data = array();
+	protected array|object|null $data = array();
 
 	/**
 	 * Data computed hash. Used to indicate that changes happend to response data.
@@ -58,7 +58,7 @@ class APIResponse extends JsonResponse {
 		int $code = 0,
 		string $description = "Success!",
 		int $status = 200,
-		array|Object $data = array(),
+		array|object $data = array(),
 		bool|array|string $hash = false
 	) {
 		$this -> code($code)
@@ -80,7 +80,7 @@ class APIResponse extends JsonResponse {
 		return $this;
 	}
 
-	public function data(array|Object $data) {
+	public function data(array|object $data) {
 		$this -> data = $data;
 		return $this;
 	}

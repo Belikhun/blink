@@ -66,7 +66,7 @@ class MySQLi extends DB {
 		array $params = null,
 		int $from = 0,
 		int $limit = 0
-	): Object|array|int {
+	): object|array|int {
 		$sql = static::cleanSQL($sql);
 
 		// Detect current mode
@@ -140,7 +140,7 @@ class MySQLi extends DB {
 			$rows = array();
 
 			while ($row = $res -> fetch_array(MYSQLI_ASSOC)) {
-				$row = (Object) $row;
+				$row = (object) $row;
 	
 				if (isset($row -> id))
 					$row -> id = (int) $row -> id;

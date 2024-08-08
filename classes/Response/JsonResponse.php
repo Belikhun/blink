@@ -21,12 +21,12 @@ class JsonResponse extends Response {
 
 	protected array $json = array();
 
-	public function __construct(array|Object $json = array()) {
+	public function __construct(array|object $json = array()) {
 		$this -> json($json);
 		$this -> header("Content-Type", "application/json; charset=utf-8");
 	}
 
-	public function json(array|Object $json) {
+	public function json(array|object $json) {
 		if ($json instanceof JsonSerializable) {
 			$this -> json = $json -> jsonSerialize();
 			return $this;

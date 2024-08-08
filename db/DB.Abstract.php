@@ -60,7 +60,7 @@ abstract class DB {
 		array $params = null,
 		int $from = 0,
 		int $limit = 0
-	): Object|array|int;
+	): object|array|int;
 
 	/**
      * Returns the SQL WHERE conditions.
@@ -218,7 +218,7 @@ abstract class DB {
      * @param	object|array	$object		A data object with values for one or more fields in the record
      * @return	int				new id
      */
-	public function insert(string $table, array|Object $object) {
+	public function insert(string $table, array|object $object) {
 		$object = (array) $object;
 		$fields = array();
 		$values = array();
@@ -258,7 +258,7 @@ abstract class DB {
      * @param	string			$primary	Primary key name
      * @return	bool
 	 */
-	public function update(string $table, array|Object $object, string $primary = "id") {
+	public function update(string $table, array|object $object, string $primary = "id") {
 		$object = (array) $object;
 
 		if (empty($object[$primary]))

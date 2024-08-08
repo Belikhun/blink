@@ -324,6 +324,43 @@ class Model implements JsonSerializable {
 	}
 
 	/**
+	 * Convert model into full, insertable record object.
+	 * 
+	 * @param	bool		$includePrimary		Include primary key value in record object.
+	 * @return	stdClass
+	 */
+	public function toRecord(bool $includePrimary = true) {
+		static::normalizeMaps();
+		$record = new stdClass;
+
+		foreach (static::$fillables as $objKey => $dbKey) {
+			if (!$includePrimary && $objKey === static::$primaryKey)
+				continue;
+
+			$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
+				&& !empty(static::$lazyloadMap[static::class][$objKey]);
+
+			if ($hasLazyloadMapping) {
+				$virtKey = static::$lazyloadMap[static::class][$objKey];
+
+				// Property is not initialized, fallback to saved lazyload mapping value.
+				if (!property_exists($this, $virtKey)) {
+					if (!isset(self::$lazyloads[static::class]) || empty(self::$lazyloads[static::class][$this -> getInstanceID()]))
+						throw new RuntimeError(-1, "Trying to access uninitialized property \"{$objKey}\" of [" . static::class . "]");
+
+					$value = self::$lazyloads[static::class][$this -> getInstanceID()][$objKey];
+					$record -> {$dbKey} = $value;
+					continue;
+				}
+			}
+
+			$record -> {$dbKey} = $this -> saveField($objKey);
+		}
+
+		return $record;
+	}
+
+	/**
 	 * Save changes made to this object to database.
 	 * If the record was newly created, it will be inserted into
 	 * database instead.
@@ -645,43 +682,6 @@ class Model implements JsonSerializable {
 		}
 
 		return $instance;
-	}
-
-	/**
-	 * Convert model into full, insertable record object.
-	 * 
-	 * @param	bool		$includePrimary		Include primary key value in record object.
-	 * @return	stdClass
-	 */
-	public function toRecord(bool $includePrimary = true) {
-		static::normalizeMaps();
-		$record = new stdClass;
-
-		foreach (static::$fillables as $objKey => $dbKey) {
-			if (!$includePrimary && $objKey === static::$primaryKey)
-				continue;
-
-			$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
-				&& !empty(static::$lazyloadMap[static::class][$objKey]);
-
-			if ($hasLazyloadMapping) {
-				$virtKey = static::$lazyloadMap[static::class][$objKey];
-
-				// Property is not initialized, fallback to saved lazyload mapping value.
-				if (!property_exists($this, $virtKey)) {
-					if (!isset(self::$lazyloads[static::class]) || empty(self::$lazyloads[static::class][$this -> getInstanceID()]))
-						throw new RuntimeError(-1, "Trying to access uninitialized property \"{$objKey}\" of [" . static::class . "]");
-
-					$value = self::$lazyloads[static::class][$this -> getInstanceID()][$objKey];
-					$record -> {$dbKey} = $value;
-					continue;
-				}
-			}
-
-			$record -> {$dbKey} = $this -> saveField($objKey);
-		}
-
-		return $record;
 	}
 
 	/**
