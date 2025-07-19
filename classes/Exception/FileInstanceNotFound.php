@@ -5,13 +5,12 @@ namespace Blink\Exception;
 use Blink\Exception\BaseException;
 
 /**
- * FileInstanceNotFound.php
+ * Exception used when file instance does not exist in the database
+ * with specified hash.
  * 
- * Exception used when file instance does not exist in the database with specified hash.
- * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.

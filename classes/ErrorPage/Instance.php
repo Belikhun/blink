@@ -5,19 +5,25 @@ namespace Blink\ErrorPage;
 use Blink\BacktraceFrame;
 use Blink\Environment;
 use Blink\ErrorPage\Exception\ReportNotFound;
-use Blink\Router;
+use Blink\Http\Router;
 use Blink\Server;
 use Blink\Session;
 use Blink\URL;
+use function Blink\backtrace;
+use function Blink\convertSize;
+use function Blink\fileGet;
+use function Blink\filePut;
+use function Blink\getClientIP;
+use function Blink\getHeader;
+use function Blink\renderErrorPage;
+use function Blink\stringify;
 
 /**
- * Instance.php
- * 
  * An error page instance.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.

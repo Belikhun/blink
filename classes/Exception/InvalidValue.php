@@ -3,23 +3,26 @@
 namespace Blink\Exception;
 
 /**
- * InvalidValue.php
- * 
- * Invalid Value.
- * 
+ * Exception thrown when processing an invalid value.
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class InvalidValue extends BaseException {
-	public function __construct(string $value, string $type) {
+	public function __construct(string $name, string $value, ?string $details = null) {
 		parent::__construct(
 			INVALID_VALUE,
-			"The value <code>{$value}</code> is not a valid <code>{$type}</code>!",
-			400
+			"Invalid value <code>{$value}</code> for property/param/argument <code>{$name}</code>",
+			403,
+			array(
+				"name" => $name,
+				"value" => $value
+			),
+			$details
 		);
 	}
 }

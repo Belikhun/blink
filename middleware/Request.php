@@ -1,21 +1,21 @@
 <?php
+
+namespace Blink\Middleware;
+
+use Blink\Exception\ClassNotFound;
+use Blink\Middleware\Exception\InvalidMiddlewareReturn;
+use function Blink\stringify;
+
 /**
- * Request.php
- * 
  * Request middleware
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Middleware;
-use Blink\Exception\ClassNotFound;
-use Blink\Middleware\Exception\InvalidMiddlewareReturn;
-
 class Request {
 	/**
      * List of middleware that will run on every request.
@@ -34,11 +34,10 @@ class Request {
 	 * Route and args property of Request is not populated for this
 	 * call, since this is handled before routing. 
 	 * 
-	 * @param	\Blink\Request	$request	The intercepted request.
-	 * @return	\Blink\Request	Return back the request.
+	 * @param	\Blink\Http\Request	$request	The intercepted request.
+	 * @return	\Blink\Http\Request	Return back the request.
 	 */
-	public static function handle(\Blink\Request $request): \Blink\Request {
-		
+	public static function handle(\Blink\Http\Request $request): \Blink\Http\Request {
 		foreach (static::$middleware as $middleware) {
 			if (!class_exists($middleware))
 				throw new ClassNotFound($middleware);
@@ -52,8 +51,8 @@ class Request {
 				$request = $handled;
 			}
 
-			if (!($request instanceof \Blink\Request))
-				throw new InvalidMiddlewareReturn($middleware, \Blink\Request::class, stringify($request));
+			if (!($request instanceof \Blink\Http\Request))
+				throw new InvalidMiddlewareReturn($middleware, \Blink\Http\Request::class, stringify($request));
 		}
 
 		return $request;

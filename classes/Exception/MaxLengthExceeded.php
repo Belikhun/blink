@@ -3,8 +3,6 @@
 namespace Blink\Exception;
 
 /**
- * MaxLengthExceeded.php
- * 
  * Value length of a field has exceeded the maximum amount allowed.
  * 
  * @author		Belikhun

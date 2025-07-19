@@ -1,12 +1,10 @@
 <?php
 /**
- * Blink.php
- * 
  * Blink additional ultilities.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
@@ -21,8 +19,13 @@ abstract class Blink {
 		return \CONFIG::$BLINK_VERSION;
 	}
 
+	public static function debuggingEnabled() {
+		return class_exists("CONFIG") && \CONFIG::$DEBUG;
+	}
+
 	/**
 	 * Render avatar in SVG.
+	 * 
 	 * @param	string	$name
 	 * @param	int		$size
 	 * @return	string	The svg avatar.

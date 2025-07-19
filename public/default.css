@@ -1,12 +1,13 @@
+/* stylelint-disable */
 /**
  * default.css
- * 
+ *
  * Default styles for blink.
- * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
- * 
+ *
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -47,7 +48,7 @@
 	overflow: auto;
 
 	font-family: "Consolas";
-	font-size: 15px;
+	font-size: 16px;
 	font-weight: bold;
 	line-height: 1.5em;
 	color: var(--text-secondary);
@@ -69,7 +70,7 @@
 	align-items: center;
 	justify-content: flex-end;
 	flex-shrink: 0;
-	
+
 	min-width: 2.5rem;
 	height: var(--line-height);
 	padding: 0 8px;
@@ -95,7 +96,7 @@
 	display: flex;
 	align-items: center;
 	flex-shrink: 0;
-	
+
 	height: var(--line-height);
 	padding: 0 8px;
 	box-sizing: border-box;
@@ -133,11 +134,6 @@
 
 .sourceCode > .lines > .line .sc-variable {
 	color: #4f46e5;
-}
-
-.sourceCode > .lines > .line .sc-const,
-.sourceCode > .lines > .line .sc-number {
-	color: #f93816;
 }
 
 .sourceCode > .lines > .line .sc-meta {
@@ -276,7 +272,7 @@ pre[copyable] {
 	padding: 0.5rem 1rem;
 	box-sizing: border-box;
 	background-color: var(--color);
-	
+
 	color: white;
 	font-size: 0.85rem;
 	line-height: 1;

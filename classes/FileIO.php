@@ -5,15 +5,14 @@ namespace Blink;
 use Blink\Exception\BaseException;
 use Blink\Exception\FileWriteError;
 use Blink\Exception\UnserializeError;
+use Blink\Metric\FileMetric;
 
 /**
- * FileIO.php
+ * Simple file input/output interface.
  * 
- * Simple file input/output.
- * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
@@ -103,8 +102,8 @@ class FileIO {
 			}
 		}
 
-		if (class_exists("\Blink\Metric\File"))
-			$metric = new \Blink\Metric\File("r", $type, $this -> path);
+		if (class_exists(FileMetric::class))
+			$metric = new FileMetric("r", $type, $this -> path);
 
 		$this -> fos($this -> path, "r");
 		$size = filesize($this -> path);
@@ -184,8 +183,8 @@ class FileIO {
 			}
 		}
 
-		if (class_exists("\Blink\Metric\File"))
-			$metric = new \Blink\Metric\File($mode, $type, $this -> path);
+		if (class_exists(FileMetric::class))
+			$metric = new FileMetric($mode, $type, $this -> path);
 		
 		$this -> fos($this -> path, $mode);
 

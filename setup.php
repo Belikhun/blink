@@ -1,10 +1,12 @@
 <?php
 
 use Blink\Environment;
-use Blink\Metric\Timing;
-use Blink\Router;
+use Blink\Metric\TimingMetric;
+use Blink\Http\Router;
 use Blink\Server;
 use Blink\Session;
+use Blink\StopClock;
+use function Blink\getHeader;
 
 $BLINK_START = microtime(true);
 
@@ -16,9 +18,9 @@ ini_set("short_open_tag", true);
  * Web core setup file for initializing components,
  * session and handle current request's routing.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
@@ -69,8 +71,8 @@ define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME))
  * Global Database Instance. Initialized based on type of
  * SQL driver specified in config.
  * 
- * @var		\Blink\DB	$DB
- * @global	\Blink\DB	$DB
+ * @var		\Blink\DB\Database		$DB
+ * @global	\Blink\DB\Database		$DB
  */
 
 //* ===========================================================
@@ -123,7 +125,7 @@ if ($PATH === "/index" || $PATH === "/index.php")
 //*  This also setup class autoload.
 //* ===========================================================
 
-require_once CORE_ROOT . "/const.php";
+require_once CORE_ROOT . "/consts.php";
 require_once CORE_ROOT . "/config.php";
 
 if (!file_exists(BASE_PATH . "/.htaccess")) {
@@ -186,6 +188,7 @@ if (!file_exists(BASE_PATH . "/.gitignore"))
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";
+require_once CORE_ROOT . "/autoload.php";
 
 // We have registered our handlers, dispose of all garbage output from now.
 // This is to prevent headers from being sent early.
@@ -206,15 +209,15 @@ if (!isset($RUNTIME)) {
 if (!class_exists(User::class))
 	require_once CORE_ROOT . "/defaults/User.php";
 
-$runtimeInitTiming = new Timing("runtime init");
+$runtimeInitTiming = new TimingMetric("runtime init");
 $runtimeInitTiming -> start = $_SERVER["REQUEST_TIME_FLOAT"];
 $runtimeInitTiming -> time = $BLINK_START;
 
-$setupTiming = new Timing("setup");
+$setupTiming = new TimingMetric("setup");
 $setupTiming -> start = $BLINK_START;
 $setupTiming -> time();
 
-$configTiming = new Timing("config");
+$configTiming = new TimingMetric("config");
 
 // Initialize config store.
 if (file_exists(BASE_PATH . "/config.store.php")) {
@@ -225,9 +228,6 @@ if (file_exists(BASE_PATH . "/config.store.php")) {
 
 $configTiming -> time();
 
-// Pre-setup DB
-require_once CORE_ROOT . "/db/DB.Abstract.php";
-
 
 
 //* ===========================================================
@@ -237,7 +237,7 @@ require_once CORE_ROOT . "/db/DB.Abstract.php";
 //*  process defined in application.
 //* ===========================================================
 
-new Timing("env", function () {
+new TimingMetric("env", function () {
 	// Initialize environment variables
 	Environment::load(\CONFIG::$ENV);
 });
@@ -246,13 +246,13 @@ new Timing("env", function () {
 Server::setup();
 
 if (file_exists(BASE_PATH . "/setup.php")) {
-	new Timing("page setup", function () {
+	new TimingMetric("page setup", function () {
 		// Include page setup file.
 		require_once BASE_PATH . "/setup.php";
 	});
 }
 
-new Timing("session", function() {
+new TimingMetric("session", function() {
 	// Initialize session
 	if (class_exists(Session::class)) {
 		$auth = getHeader("Authorization");
@@ -298,7 +298,7 @@ Router::$processingFile = null;
 
 // Include routes definition before start routing.
 $routesPath = CONFIG::$ROUTES_ROOT;
-$routesTiming = new Timing("route init");
+$routesTiming = new TimingMetric("route init");
 
 foreach (glob("$routesPath/*.php") as $filename) {
 	// Isolate scope

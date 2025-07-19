@@ -3,27 +3,25 @@
 namespace Blink;
 
 /**
- * Metric.php
- * 
- * Metric base class
- * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
- * 
+ * Metric base class that store all metrics recorded during this request.
+ *
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class Metric {
-	/** @var Metric\Request[] */
+	/** @var Metric\RequestMetric[] */
 	public static $requests = array();
 
-	/** @var Metric\Query[] */
+	/** @var Metric\QueryMetric[] */
 	public static $queries = array();
 
-	/** @var Metric\File[] */
+	/** @var Metric\FileMetric[] */
 	public static $files = array();
 
-	/** @var Metric\Timing[] */
+	/** @var Metric\TimingMetric[] */
 	public static $timings = array();
 }

@@ -3,9 +3,7 @@
 namespace Blink\Exception;
 
 /**
- * InvalidURL.php
- * 
- * Invalid URL.
+ * Invalid URL
  * 
  * @author		Belikhun
  * @since		1.0.0

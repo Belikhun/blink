@@ -3,18 +3,15 @@
 namespace Blink\Exception;
 
 /**
- * BaseException.php
- * 
  * Base exception class for blink.
- * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
- * 
+ *
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
 class BaseException extends \Exception {
 	/**
 	 * Error Code
@@ -94,12 +91,12 @@ class BaseException extends \Exception {
 		$this -> details = $details;
 		parent::__construct($description, $code);
 
-		$this -> file = getRelativePath(parent::getFile());
+		$this -> file = \Blink\getRelativePath(parent::getFile());
 		$this -> line = parent::getLine();
 	}
 
 	public function applyFrom(\Throwable $e) {
-		$this -> file = getRelativePath($e -> getFile());
+		$this -> file = \Blink\getRelativePath($e -> getFile());
 		$this -> line = $e -> getLine();
 		$this -> trace = $e -> getTrace();
 	}

@@ -2,9 +2,9 @@
 
 namespace Blink\Exception;
 
+use function Blink\getRelativePath;
+
 /**
- * UnserializeError.php
- * 
  * Corrupted serialized data.
  * 
  * @author		Belikhun

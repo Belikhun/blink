@@ -3,8 +3,6 @@
 namespace Blink\Attribute;
 
 /**
- * Lazyload.php
- * 
  * Class to mark that this property's value can be lazy-loaded.
  * When used, the proterty's value will only be loaded when it's being accessed.
  * 

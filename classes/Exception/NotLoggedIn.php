@@ -2,16 +2,12 @@
 
 namespace Blink\Exception;
 
-use Blink\Exception\BaseException;
-
 /**
- * NotLoggedIn.php
+ * Exception thrown when no user is authorized in current session.
  *
- * Exception indicate that current session does not come with an authorized user.
- *
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.

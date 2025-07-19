@@ -4,16 +4,20 @@
  *
  * Generic error page styles.
  *
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
 html {
-	font-size: 16px;
+	font-size: 15px;
+}
+
+pre {
+	white-space: pre-wrap;
 }
 
 body {
@@ -200,6 +204,7 @@ header > .bottom > .inner {
 
 #details > div {
 	position: relative;
+	overflow: hidden;
 }
 
 #details > div > video {
@@ -212,6 +217,7 @@ header > .bottom > .inner {
 
 #details > div > .block {
 	padding: 2rem 2.5rem;
+	overflow: hidden;
 }
 
 #details > .info > .exception > .top > .badges > .badge {
@@ -298,6 +304,11 @@ header > .bottom > .inner {
     margin: -0.2rem 0.1rem;
     padding: 0.2rem 0.5rem;
     border-radius: 0.5rem;
+}
+
+#details > .info > .exception > .description .details pre {
+	overflow: auto;
+	white-space: pre-wrap;
 }
 
 #details > .tips {

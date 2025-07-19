@@ -3,16 +3,19 @@
 namespace Blink\ErrorPage;
 
 use Blink\HtmlWriter as H;
-use Blink\Metric\Timing;
+use Blink\Metric\TimingMetric;
+use function Blink\cleanParam;
+use function Blink\convertTime;
+use function Blink\isSequential;
+use function Blink\randString;
+use function Blink\safeJSONParsing;
 
 /**
- * ContextRenderer.php
- * 
  * Contain ultilities to render error page components.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
@@ -71,7 +74,7 @@ class ContextRenderer {
 		$bars = array();
 		$lines = array();
 
-		/** @var Timing[] */
+		/** @var TimingMetric[] */
 		$timings = $data["timings"];
 
 		foreach ($timings as $timing) {

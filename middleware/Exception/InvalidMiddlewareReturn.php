@@ -1,20 +1,19 @@
 <?php
+
+namespace Blink\Middleware\Exception;
+
+use Blink\Exception\BaseException;
+
 /**
- * InvalidMiddlewareReturn.php
+ * Exception thrown when middleware class has invalid return value.
  * 
- * File Description
- * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Middleware\Exception;
-use Blink\Exception\BaseException;
-
 class InvalidMiddlewareReturn extends BaseException {
 	/**
 	 * The middleware clas name.

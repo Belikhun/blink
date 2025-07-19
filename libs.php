@@ -1,17 +1,17 @@
 <?php
 
 /**
- * libs.php
- * 
  * Core libraries. Formerly `belibrary.php`.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
+
+namespace Blink;
 
 use Blink\BacktraceFrame;
 use Blink\Cache;
@@ -26,13 +26,18 @@ use Blink\Exception\MissingParam;
 use Blink\Exception\RuntimeError;
 use Blink\FileIO;
 use Blink\HtmlWriter;
-use Blink\Response;
-use Blink\Response\APIResponse;
+use Blink\Metric\FileMetric;
+use Blink\Http\Response;
+use Blink\Http\Response\APIResponse;
 use Blink\Server;
 use Blink\Template;
 use Blink\URL;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use Throwable;
 
-require_once "const.php";
+require_once "consts.php";
 
 if (!function_exists("getallheaders")) {
 	function getallheaders() {
@@ -829,8 +834,8 @@ function fileGet(string $path, $default = null, bool $throw = false): string|nul
 		return $default;
 	}
 
-	if (class_exists('\Blink\Metric\File'))
-		$metric = new \Blink\Metric\File("r", "text", $path);
+	if (class_exists(FileMetric::class))
+		$metric = new FileMetric("r", "text", $path);
 	
 	$content = file_get_contents($path);
 
@@ -857,8 +862,8 @@ function fileGet(string $path, $default = null, bool $throw = false): string|nul
 function filePut(string $path, $content): int|null {
 	$metric = null;
 
-	if (class_exists('\Blink\Metric\File'))
-		$metric = new \Blink\Metric\File("w", "text", $path);
+	if (class_exists(FileMetric::class))
+		$metric = new FileMetric("w", "text", $path);
 	
 	$bytes = file_put_contents($path, $content);
 	$metric ?-> time(($bytes === false) ? -1 : $bytes);
@@ -968,7 +973,7 @@ function processBacktrace($data, bool $merges = true) {
 	$exception = null;
 	$frames = array();
 
-	if ($data instanceof \Throwable) {
+	if ($data instanceof Throwable) {
 		$exception = $data;
 		$data = ($exception instanceof BaseException)
 			? $exception -> trace()
@@ -997,7 +1002,7 @@ function processBacktrace($data, bool $merges = true) {
 				if (strlen($arg) > 5 && (str_contains($arg, ".php") || realpath($arg)))
 					$arg = getRelativePath($arg);
 			} else if (is_object($arg)) {
-				if ($arg instanceof \Throwable) {
+				if ($arg instanceof Throwable) {
 					$value = $arg -> getMessage();
 					if (str_contains($value, ".php"))
 						$value = getRelativePath($value);

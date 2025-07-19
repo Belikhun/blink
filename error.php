@@ -5,9 +5,9 @@
  * Genetic error page. Used when page haven't registered its own
  * error page.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
@@ -18,17 +18,19 @@ use Blink\ErrorPage\Instance;
 use Blink\ErrorPage\Renderer;
 use Blink\HtmlWriter;
 use Blink\URL;
+use function Blink\getRelativePath;
+use function Blink\renderSourceCode;
 
 /** @var \Blink\ErrorPage\Instance */
 $instance = $_SESSION["LAST_ERROR"];
 
 list($statusText, $description, $details) = $instance -> info();
 list($tipTitle, $tipContent) = $instance -> tips();
+$basePublic = new URL(getRelativePath(CORE_ROOT . "/public"));
+$tipDeco = new URL(getRelativePath(CORE_ROOT . "/public/imgs/tip-deco.svg"));
 $status = $instance -> status;
 $sticker = new URL(getRelativePath(CORE_ROOT . "/public/stickers/" . $instance -> sticker()));
 $exception = $instance -> exception();
-$basePublic = new URL(getRelativePath(CORE_ROOT . "/public"));
-$tipDeco = new URL(getRelativePath(CORE_ROOT . "/public/imgs/tip-deco.svg"));
 $statusColor = match ($instance -> type()) {
 	Instance::ERROR_CLIENT => "yellow",
 	Instance::ERROR_SERVER => "red",
@@ -68,15 +70,15 @@ header("Access-Control-Allow-Private-Network: true");
 								<?php echo Renderer::icon("stack"); ?>
 								Stack
 							</a>
-	
+
 							<a class="link" href="#context" target="_self" nav-link>
 								<?php echo Renderer::icon("context"); ?>
 								Context
 							</a>
 						</span>
-	
+
 						<span class="right">
-							<a class="link" data-report-link="<?php echo $instance -> url(); ?>">
+							<a class="link" data-report-link="<?php echo $instance -> url() -> out(false); ?>">
 								<?php echo Renderer::icon("link"); ?>
 								<span>Copy report link</span>
 							</a>
@@ -87,7 +89,7 @@ header("Access-Control-Allow-Private-Network: true");
 				<div class="bottom">
 					<div class="inner">
 						<span class="truncate">
-							<?php echo strip_tags($description, [ "code", "b", "i", "u" ]); ?>
+							<?php echo htmlspecialchars(strip_tags($description)); ?>
 						</span>
 					</div>
 				</div>
@@ -99,34 +101,34 @@ header("Access-Control-Allow-Private-Network: true");
 						<?php if (CONFIG::$W_MODE) { ?>
 							<video id="sticker" src="<?php echo $sticker -> out(false); ?>" autoplay loop></video>
 						<?php } ?>
-	
+
 						<span class="flex-g1 block exception">
 							<div class="flex flex-row align-center justify-between flex-wrap top">
 								<span class="badges flex flex-row align-center flex-wrap">
 									<span class="badge status" data-color="<?php echo $statusColor; ?>">
 										<?php echo $status; ?>
 									</span>
-	
+
 									<?php if (!empty($class)) { ?>
 										<span class="badge class">
 											<?php echo str_replace("\\", "<span>\</span>", $class); ?>
 										</span>
 									<?php } ?>
 								</span>
-	
+
 								<span class="versions flex flex-row align-center">
 									<span>
 										<span class="wider">PHP</span>
 										<?php echo $instance -> php; ?>
 									</span>
-	
+
 									<?php if (!empty($instance -> server)) { ?>
 										<span>
 											<?php echo Renderer::icon("server"); ?>
 											<?php echo $instance -> server; ?>
 										</span>
 									<?php } ?>
-	
+
 									<span>
 										<?php echo Renderer::icon("blink"); ?>
 										<?php echo $instance -> blink; ?>
@@ -134,7 +136,7 @@ header("Access-Control-Allow-Private-Network: true");
 								</span>
 							</div>
 	
-							<div class="description"><?php echo strip_tags($description, [ "code", "b", "i", "u" ]); ?></div>
+							<div class="description"><?php echo strip_tags($description, [ "code", "pre", "b", "i", "u" ]); ?></div>
 
 							<?php if (!empty($details)) { ?>
 								<div class="details"><?php echo $details; ?></div>
@@ -164,7 +166,7 @@ header("Access-Control-Allow-Private-Network: true");
 							<div class="header">
 								<b>Frames</b>
 							</div>
-							
+
 							<div class="frames">
 								<?php
 								$foundfault = false;
@@ -246,7 +248,7 @@ header("Access-Control-Allow-Private-Network: true");
 									echo HtmlWriter::endDIV();
 								}
 								?>
-							
+
 								<div class="space"></div>
 							</div>
 						</span>
@@ -274,7 +276,7 @@ header("Access-Control-Allow-Private-Network: true");
 								echo HtmlWriter::startDIV(array(
 									"class" => "header text-sm font-semibold"
 								));
-								
+
 								echo HtmlWriter::a(
 									"vscode://file/" . urlencode($trace -> getFullPath() . ":{$trace -> line}"),
 									$trace -> file . "<code>:{$trace -> line}</code>",

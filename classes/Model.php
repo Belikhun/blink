@@ -2,7 +2,7 @@
 
 namespace Blink;
 
-use Blink\Exception\InvalidProperty;
+use stdClass;
 use JsonSerializable;
 use ReflectionClass;
 use ReflectionMethod;
@@ -13,20 +13,21 @@ use ReturnTypeWillChange;
 use Blink\Attribute\Lazyload;
 use Blink\Attribute\SensitiveField;
 use Blink\Exception\CodingError;
+use Blink\Exception\InvalidProperty;
 use Blink\Exception\ModelInstanceNotFound;
 use Blink\Exception\RuntimeError;
+use Blink\Query\Expression\Column;
 use Blink\Query;
-use stdClass;
+use Blink\Query\Expression\Table;
 
 /**
- * Model.php
- * 
  * Represent a database model.
  * 
- * @template	M
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
+ * 
+ * @template	M
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
@@ -156,27 +157,52 @@ class Model implements JsonSerializable {
 
 	/**
 	 * ID of this instance, in database.
-	 * This ID will still available to use after record is deleted in database.
+	 * This ID will still be available to use after record is deleted in database.
 	 *
 	 * @var ?string
 	 */
 	protected ?int $oldID = null;
 
 	/**
+	 * Store current database snapshot of this model. Used for checking if a property's
+	 * value has been changed and require an update to database.
+	 *
+	 * @var array
+	 */
+	protected array $snapshot = array();
+
+	/**
+	 * Flag indicate that this model instance is in the process of being deleted.
+	 *
+	 * @var bool
+	 */
+	protected bool $instanceDeleting = false;
+
+	protected ReflectionObject $reflectionObject;
+
+	/**
+	 * Return table object for this model.
+	 *
+	 * @return	Table
+	 */
+	public static function t(): Table {
+		return Table::instance(static::$table);
+	}
+
+	/**
 	 * Return full column name of this model, based on model's key name.
 	 *
-	 * @param	string	$name		Model's key name. Must be defined in fillable.
-	 * @param	bool	$prefix		Add database prefix to column name.
+	 * @param	string		$name		Model's key name. Must be defined in fillable.
+	 * @return	Column
 	 */
-	public static function col(string $name, bool $prefix = false) {
-		global $CFG;
-
+	public static function col(string $name): Column {
 		if ($name === "#")
 			return static::col(static::$primaryKey);
 
-		return ($prefix)
-			? $CFG -> prefix . static::$table . "." . static::mapDB($name)
-			: static::$table . "." . static::mapDB($name);
+		if ($name === "*")
+			return Column::instance(static::$table, "*");
+
+		return Column::instance(static::$table, static::mapDB($name));
 	}
 
 	/**
@@ -185,7 +211,7 @@ class Model implements JsonSerializable {
 	 * @return Query<M>
 	 */
 	public static function raw(string $sql, array $params = array()) {
-		$query = new Query(static::class, static::$table);
+		$query = new Query(static::class, "");
 		return $query -> sql($sql, $params);
 	}
 
@@ -214,7 +240,7 @@ class Model implements JsonSerializable {
 	 */
 	public static function query() {
 		if (empty(static::$table))
-			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use <code>Blink\\DB::table()</code>");
+			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use Blink\\DB::table()");
 
 		return new Query(static::class, static::$table);
 	}
@@ -228,20 +254,20 @@ class Model implements JsonSerializable {
 		global $DB;
 
 		if (empty(static::$table))
-			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use <code>Blink\\DB::table()</code>");
+			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use Blink\\DB::table()");
 
-		$records = $DB -> records(static::$table);
+		$records = array_values($DB -> records(static::$table));
 		return static::processRecords($records);
 	}
 
 	/**
 	 * Create a new instance of this object.
 	 *
-	 * @param	array	$fill
+	 * @param	array|object	$fill
 	 * @return	M
 	 */
-	public static function create(array $fill = array()) {
-		if (static::class === self::class || static::class === DB::class)
+	public static function create(array|object $fill = array()) {
+		if (static::class === self::class || static::class === 'Blink\DB')
 			throw new CodingError(self::class . "::create(): this function can only be used on an inherited Model.");
 
 		$instance = new static();
@@ -278,11 +304,25 @@ class Model implements JsonSerializable {
 	}
 
 	/**
+	 * Check if a property key exists in this model instance.
+	 *
+	 * @param	string	$key
+	 * @return	bool
+	 */
+	public function isPropertyExists(string $key) {
+		if (static::getLazyloadMapName($key))
+			return true;
+
+		return property_exists($this, $key);
+	}
+
+	/**
 	 * Fill values from array to this object.
 	 *
-	 * @return M
+	 * @param	array|object	$values		Values to fill into this model instance.
+	 * @return	M
 	 */
-	public function fill(array $values) {
+	public function fill(array|object $values) {
 		foreach ($values as $key => $value) {
 			if ($value === static::NO_FILL)
 				continue;
@@ -323,41 +363,79 @@ class Model implements JsonSerializable {
 		return $this;
 	}
 
+	public function getReflection(): ReflectionObject {
+		if (empty($this -> reflectionObject))
+			$this -> reflectionObject = new ReflectionObject($this);
+
+		return $this -> reflectionObject;
+	}
+
+	public function isInserted() {
+		return !empty($this -> {static::$primaryKey});
+	}
+
 	/**
 	 * Convert model into full, insertable record object.
-	 * 
-	 * @param	bool		$includePrimary		Include primary key value in record object.
+	 *
+	 * @param	bool		$primary		Include primary key value in record object.
+	 * @param	bool		$unchanged		Include all property with unchanged values.
 	 * @return	stdClass
 	 */
-	public function toRecord(bool $includePrimary = true) {
+	public function toRecord(bool $primary = true, bool $unchanged = true) {
 		static::normalizeMaps();
 		$record = new stdClass;
 
 		foreach (static::$fillables as $objKey => $dbKey) {
-			if (!$includePrimary && $objKey === static::$primaryKey)
+			if (!$primary && $objKey === static::$primaryKey)
 				continue;
 
-			$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
-				&& !empty(static::$lazyloadMap[static::class][$objKey]);
+			// Check for property value changed, and skip including it into returning
+			// object if it's not changed. We also skip this check for primary key.
+			if (!$unchanged && $objKey !== static::$primaryKey && !$this -> isDirty($objKey))
+				continue;
 
-			if ($hasLazyloadMapping) {
-				$virtKey = static::$lazyloadMap[static::class][$objKey];
-
-				// Property is not initialized, fallback to saved lazyload mapping value.
-				if (!property_exists($this, $virtKey)) {
-					if (!isset(self::$lazyloads[static::class]) || empty(self::$lazyloads[static::class][$this -> getInstanceID()]))
-						throw new RuntimeError(-1, "Trying to access uninitialized property \"{$objKey}\" of [" . static::class . "]");
-
-					$value = self::$lazyloads[static::class][$this -> getInstanceID()][$objKey];
-					$record -> {$dbKey} = $value;
-					continue;
-				}
-			}
-
-			$record -> {$dbKey} = $this -> saveField($objKey);
+			$record -> {$dbKey} = $this -> getSaveValue($objKey);
 		}
 
 		return $record;
+	}
+
+	/**
+	 * Get and return value that will be saved into the database for the given property key.
+	 *
+	 * @param	string	$key
+	 * @return	mixed
+	 */
+	public function getSaveValue($key) {
+		$virtKey = static::getLazyloadMapName($key);
+
+		if ($virtKey) {
+			$id = $this -> getInstanceID();
+			$processLazyloadValue = !empty(self::$lazyloadWillProcess[static::class])
+				&& !empty(self::$lazyloadWillProcess[static::class][$id])
+				&& isset(self::$lazyloadWillProcess[static::class][$id][$key])
+				&& self::$lazyloadWillProcess[static::class][$id][$key] === true;
+
+			// Property is pending for lazyload hit, we can safely return stored value
+			// from lazyload mapping info.
+			if ($processLazyloadValue)
+				return self::$lazyloads[static::class][$this -> getInstanceID()][$key];
+
+			$propertyInitialized = $this
+				-> getReflection()
+				-> getProperty($virtKey)
+				-> isInitialized($this);
+
+			// Property is not initialized, fallback to saved lazyload mapping value.
+			if (!$propertyInitialized) {
+				if (!isset(self::$lazyloads[static::class]) || empty(self::$lazyloads[static::class][$this -> getInstanceID()]))
+					throw new RuntimeError(-1, "Trying to access uninitialized property \"{$key}\" of [" . static::class . "]");
+
+				return self::$lazyloads[static::class][$this -> getInstanceID()][$key];
+			}
+		}
+
+		return $this -> saveField($key);
 	}
 
 	/**
@@ -372,16 +450,17 @@ class Model implements JsonSerializable {
 
 		$this -> beforeSave();
 
-		$insert = empty($this -> {static::$primaryKey});
+		$record = array();
+		$insert = !$this -> isInserted();
 		static::normalizeMaps();
 
-		if (property_exists($this, static::$createdKey) && $insert)
+		if (property_exists($this, static::$createdKey) && $insert && empty($this -> {static::$createdKey}))
 			$this -> {static::$createdKey} = time();
 
 		if (property_exists($this, static::$updatedKey))
 			$this -> {static::$updatedKey} = time();
 
-		$record = $this -> toRecord(!$insert);
+		$record = $this -> toRecord(!$insert, $insert);
 
 		if ($insert) {
 			// Record was newly created.
@@ -393,11 +472,25 @@ class Model implements JsonSerializable {
 			$this -> onCreated();
 		} else {
 			$record -> {static::mapDB(static::$primaryKey)} = $this -> saveField(static::$primaryKey);
-			$DB -> update(static::$table, $record, static::$primaryKey);
+
+			// Only update if we actually have data to update.
+			if (count(array_keys(get_object_vars($record))) > 1)
+				$DB -> update(static::$table, (Object) $record);
 		}
 
 		$this -> onSaved();
+		$this -> takeSnapshot();
+
 		return $this;
+	}
+
+	/**
+	 * Return true when this model instance is in the process of being deleted.
+	 *
+	 * @return bool
+	 */
+	public function isDeleting() {
+		return $this -> instanceDeleting;
 	}
 
 	/**
@@ -409,15 +502,20 @@ class Model implements JsonSerializable {
 	public function delete(?ProgressReporter $reporter = null) {
 		global $DB;
 
+		// TODO: Add informative warning to developer here to let them know.
+		if (!$this -> isInserted())
+			return $this;
+
 		// Don't let core handle deleted event related to models.
 		static::$canHandleModelEvents = false;
+		$this -> instanceDeleting = true;
 
 		$name = static::class . " [" . $this -> {static::$primaryKey} . "]";
 		$child = $reporter ?-> newChild();
 		$reporter ?-> report(
 			0,
 			ProgressReporter::INFO,
-			"Preparing to delete {$name}"
+			"Preparing to delete model <code>{$name}</code>"
 		);
 
 		// Let the model prepare for deletion first, this might be deleting related
@@ -427,7 +525,7 @@ class Model implements JsonSerializable {
 		$reporter ?-> report(
 			0.5,
 			ProgressReporter::INFO,
-			"Deleting {$name}"
+			"Deleting <code>{$name}</code> from database..."
 		);
 
 		$DB -> delete(
@@ -438,7 +536,7 @@ class Model implements JsonSerializable {
 		$reporter ?-> report(
 			0.9,
 			ProgressReporter::INFO,
-			"Cleaning up {$name}"
+			"Cleaning up <code>{$name}</code> leftover data..."
 		);
 
 		self::removeInstance($this -> {static::$primaryKey});
@@ -451,11 +549,12 @@ class Model implements JsonSerializable {
 		$reporter ?-> report(
 			1,
 			ProgressReporter::OKAY,
-			"Successfully deleted {$name}"
+			"Completed deleting <code>{$name}</code>"
 		);
 
 		// Now we can safely enable this again.
 		static::$canHandleModelEvents = true;
+		$this -> instanceDeleting = false;
 
 		return $this;
 	}
@@ -470,7 +569,7 @@ class Model implements JsonSerializable {
 
 	/**
 	 * Event function that will be called when a new instance
-	 * of this has been created.
+	 * of this has been inserted into the database.
 	 *
 	 * @return void
 	 */
@@ -494,10 +593,10 @@ class Model implements JsonSerializable {
 	protected function onDeleted(?ProgressReporter $reporter = null) {}
 
 	/**
-	 * Function for validating if we can safely delete this model, and how many more records will be deleted with this.
+	 * Function for validating if we can safely delete this model, and how many more records will be deleted with this operation.
 	 * If the first item return false, it's mean this delete operation require strict confirmation from user.
 	 *
-	 * @return	array	First item indicates if we can delete this instance, second item indicates amount of records will be removed from the database before this.
+	 * @return	array	First item indicates if we can safely delete this instance, second item indicates amount of records will be removed from the database before this. Example: `[false, 3]`
 	 */
 	public function canDelete() {
 		return array(true, 1);
@@ -648,15 +747,15 @@ class Model implements JsonSerializable {
 	 * Get instance of this model, by ID.
 	 * Will return cached instance if available.
 	 *
-	 * @param	int								$id
-	 * @param	int								$strict				Strictness. Default to IGNORE_MISSING, which will return null when instance not found.
+	 * @param	int		$id
+	 * @param	int		$strict		Strictness. Default to `IGNORE_MISSING`, which will return null when instance not found.
 	 * @return	?M
 	 */
 	public static function getByID(
 		?int $id = null,
 		int $strict = Model::IGNORE_MISSING
 	) {
-		if (static::class === self::class || static::class === DB::class)
+		if (static::class === self::class || static::class === 'Blink\DB')
 			throw new CodingError(self::class . "::getByID(): this function can only be used on an inherited Model.");
 
 		if (empty($id)) {
@@ -666,12 +765,12 @@ class Model implements JsonSerializable {
 			return null;
 		}
 
-		$instance = self::getInstance($id);
+		$instance = static::getInstance($id);
 
 		if (!empty($instance))
 			return $instance;
 
-		$instance = static::where(static::$primaryKey, $id)
+		$instance = static::where(static::col("#"), $id)
 			-> first();
 
 		if (empty($instance)) {
@@ -682,6 +781,53 @@ class Model implements JsonSerializable {
 		}
 
 		return $instance;
+	}
+
+	/**
+	 * Fetch multiple instances of this model, from the specified list of instance IDs.
+	 * Will return cached instances if available.
+	 *
+	 * @param	int[]	$ids		ID list.
+	 * @param	int		$strict		Strictness. Default to `IGNORE_MISSING`, which will return null when instance not found.
+	 * @return	M[]					List of loaded model instances, mapped by ID.
+	 */
+	public static function getByIDs(array $ids, int $strict = Model::IGNORE_MISSING) {
+		$result = array();
+		$fetchIDs = array();
+
+		foreach ($ids as $id) {
+			if ($instance = static::getInstance($id)) {
+				$result[$id] = $instance;
+			} else {
+				$fetchIDs[] = $id;
+			}
+		}
+
+		// Everything has been preloaded, return the result now.
+		if (empty($fetchIDs))
+			return $result;
+
+		$instances = static::where(static::col("#"), $fetchIDs)
+			-> all(idIndexed: true);
+
+		if ($strict === Model::MUST_EXIST) {
+			foreach ($fetchIDs as $fetchID) {
+				if (empty($instances[$fetchID]))
+					throw new ModelInstanceNotFound(static::class, $fetchID);
+			}
+		}
+
+		return $result + $instances;
+	}
+
+	/**
+	 * Preload the specified list of instance ids.
+	 *
+	 * @param	int[]	$ids	ID list.
+	 * @return	M[]				List of loaded model instances, mapped by ID.
+	 */
+	public static function preload(array $ids) {
+		return static::getByIDs($ids, Model::MUST_EXIST);
 	}
 
 	/**
@@ -698,8 +844,8 @@ class Model implements JsonSerializable {
 	/**
 	 * Return field value that will be saved into database.
 	 *
-	 * @param string $name
-	 * @return mixed Value of this field that will be put into database.
+	 * @param	string	$name
+	 * @return	mixed	Value of this field that will be put into database.
 	 */
 	protected function saveField(string $name) {
 		return $this -> {$name};
@@ -722,6 +868,83 @@ class Model implements JsonSerializable {
 		self::$lazyloadWillProcess[static::class][$id][$key] = true;
 
 		return $this;
+	}
+
+	/**
+	 * Take and store snapshot of current state of this model.
+	 *
+	 * @return static
+	 */
+	public function takeSnapshot() {
+		$this -> snapshot = array();
+
+		foreach (static::$fillables as $objKey => $dbKey)
+			$this -> snapshot[$objKey] = $this -> getSaveValue($objKey);
+
+		return $this;
+	}
+
+	/**
+	 * Determine if the model or any of the given property(ies) have been modified.
+	 *
+	 * @param	string|string[]|null		$properties		Property name or a list of property names
+	 * @return	bool
+	 */
+	public function isDirty(string|array|null $properties = null): bool {
+		if (empty($properties))
+			$properties = array_keys(static::$fillables);
+
+		if (!is_array($properties))
+			$properties = [$properties];
+
+		foreach ($properties as $property) {
+			if (!array_key_exists($property, $this -> snapshot))
+				return true;
+
+			if ($this -> snapshot[$property] != $this -> getSaveValue($property))
+				return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Determine if the model or all the given property(ies) have remained the same.
+	 *
+	 * @param	string|string[]|null		$properties		Property name or a list of property names
+	 * @return	bool
+	 */
+	public function isClean(string|array|null $properties = null) {
+		return !$this -> isDirty($properties);
+	}
+
+	/**
+	 * Increase value of specified property to the given amount for this model instance.
+	 *
+	 * @param	string		$key
+	 * @param	int|float	$amount
+	 */
+	public function increase(string $key, int|float $amount = 1) {
+		if (!$this -> isPropertyExists($key))
+			throw new InvalidProperty($key, static::class);
+
+		static::query()
+			-> where(static::col("#"), $this -> getPrimaryValue())
+			-> increase(static::col($key), $amount);
+
+		$this -> {$key} += $amount;
+		$this -> snapshot[$key] = $this -> getSaveValue($key);
+		return $this;
+	}
+
+	/**
+	 * Decrease value of specified property to the given amount for this model instance.
+	 *
+	 * @param	string		$key
+	 * @param	int|float	$amount
+	 */
+	public function decrease(string $key, int|float $amount = 1) {
+		return $this -> increase($key, -$amount);
 	}
 
 	/**
@@ -780,10 +1003,11 @@ class Model implements JsonSerializable {
 			$instance -> set($objKey, $value);
 		}
 
-		$instance -> isPopulatingData = false;
-
 		// Cache our instance for future use.
 		self::saveInstance($instance -> {static::$primaryKey}, $instance);
+
+		$instance -> isPopulatingData = false;
+		$instance -> takeSnapshot();
 
         // Invoke the onLoaded event.
         $r = new ReflectionMethod($instance, "onLoaded");
@@ -839,19 +1063,24 @@ class Model implements JsonSerializable {
 			$realName = preg_replace('/ID$/i', "", $name);
 			$lazyloadMap = static::getLazyloadMapName($realName);
 
-			if ($lazyloadMap && empty($this -> {$lazyloadMap})) {
-				$id = $this -> getInstanceID();
-				$hasLazyloading = !empty(self::$lazyloads[static::class])
-					&& !empty(self::$lazyloads[static::class][$id])
-					&& array_key_exists($realName, self::$lazyloads[static::class][$id]);
+			if (!empty($lazyloadMap)) {
+				if (empty($this -> {$lazyloadMap})) {
+					$id = $this -> getInstanceID();
+					$hasLazyloading = !empty(self::$lazyloads[static::class])
+						&& !empty(self::$lazyloads[static::class][$id])
+						&& array_key_exists($realName, self::$lazyloads[static::class][$id]);
 
-				if ($hasLazyloading)
-					return self::$lazyloads[static::class][$id][$realName];
-			} else if (!empty($this -> {$lazyloadMap})) {
-				if ($this -> {$lazyloadMap} instanceof Model)
-					return $this -> {$lazyloadMap} -> getPrimaryValue();
-				else if ($this -> {$lazyloadMap} instanceof stdClass && !empty($this -> {$lazyloadMap} -> id))
-					return (int) $this -> {$lazyloadMap} -> id;
+					return ($hasLazyloading)
+						? self::$lazyloads[static::class][$id][$realName]
+						: null;
+				} else if (!empty($this -> {$lazyloadMap})) {
+					if ($this -> {$lazyloadMap} instanceof Model)
+						return $this -> {$lazyloadMap} -> getPrimaryValue();
+					else if ($this -> {$lazyloadMap} instanceof stdClass && !empty($this -> {$lazyloadMap} -> id))
+						return (int) $this -> {$lazyloadMap} -> id;
+				}
+
+				return null;
 			}
 		}
 
@@ -886,7 +1115,7 @@ class Model implements JsonSerializable {
 		}
 
 		if (!$sensitive) {
-			$reflection = new ReflectionObject($this);
+			$reflection = $this -> getReflection();
 			$property = $reflection -> getProperty($name);
 			$attrs = $property -> getAttributes(SensitiveField::class);
 
@@ -908,6 +1137,9 @@ class Model implements JsonSerializable {
 			&& !empty(static::$lazyloadMap[static::class][$name]);
 
 		if ($hasLazyloadMapping) {
+			static::$lazyloadWillProcess[static::class][$this -> getInstanceID()][$name] = false;
+			unset(static::$lazyloads[static::class][$this -> getInstanceID()][$name]);
+
 			$virtName = static::$lazyloadMap[static::class][$name];
 			$this -> {$virtName} = $value;
 			return;
@@ -917,13 +1149,22 @@ class Model implements JsonSerializable {
 	}
 
 	public function __isset(string $name) {
-		$realName = $name;
+		// Checking isset on lazyloaded property via an Id prefix.
+		if ((str_ends_with($name, "ID") || str_ends_with($name, "Id")) && !property_exists($this, $name))
+			$name = preg_replace('/ID$/i', "", $name);
+
 		$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
 			&& !empty(static::$lazyloadMap[static::class][$name]);
 
 		if ($hasLazyloadMapping) {
 			$id = $this -> getInstanceID();
-			return isset(self::$lazyloads[static::class][$id][$realName]);
+
+			if (empty(static::$lazyloadWillProcess[static::class][$id][$name])) {
+				$lazyloadName = static::$lazyloadMap[static::class][$name];
+				return isset($this -> {$lazyloadName});
+			} else {
+				return isset(self::$lazyloads[static::class][$id][$name]);
+			}
 		}
 
 		return isset($this -> {$name});
@@ -971,10 +1212,6 @@ class Model implements JsonSerializable {
 		return $out;
 	}
 
-	public function __serialize() {
-		return $this -> out(false, true);
-	}
-
 	/**
 	 * Return json serializable data.
 	 *
@@ -997,7 +1234,7 @@ class Model implements JsonSerializable {
 
 					if (is_a((string) $prop -> getType(), self::class, true)) {
 						if ($depth <= 1) {
-							$out[$objKey] = null;
+							unset($out[$objKey]);
 							continue;
 						}
 
@@ -1024,5 +1261,42 @@ class Model implements JsonSerializable {
 		// Default to return class name.
 		$name = explode("\\", static::class);
 		return end($name);
+	}
+
+	public function __tostring(): string {
+		return "[" . static::class . "({$this -> getPrimaryValue()})#{$this -> getInstanceID()}]";
+	}
+
+	public function __serialize(): array {
+		if (empty($this -> {static::$primaryKey}))
+			return array();
+
+		return (array) $this -> toRecord();
+	}
+
+	public function __unserialize(array $data): void {
+		if (empty($data))
+			return;
+
+		// TODO: Unserializing model instance will create duplicate! Need to find a better way.
+
+		if (!self::getInstance($data[static::$primaryKey])) {
+			$this -> {static::$primaryKey} = $data[static::$primaryKey];
+			self::saveInstance($data[static::$primaryKey], $this);
+		}
+
+		$instance = self::processRecord((object) $data);
+
+		if ($instance !== $this) {
+			foreach ($instance as $key => $value)
+				$this -> {$key} = $value;
+
+			$this -> uniqueModelInstanceID = null;
+			$sourceID = $instance -> getInstanceID();
+			$targetID = $this -> getInstanceID();
+
+			self::$lazyloadWillProcess[static::class][$targetID] = self::$lazyloadWillProcess[static::class][$sourceID];
+			self::$lazyloads[static::class][$targetID] = self::$lazyloads[static::class][$sourceID];
+		}
 	}
 }

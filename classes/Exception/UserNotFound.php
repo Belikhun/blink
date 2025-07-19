@@ -3,8 +3,6 @@
 namespace Blink\Exception;
 
 /**
- * UserNotFound.php
- * 
  * User instance is not found with given conditions.
  * 
  * @author		Belikhun

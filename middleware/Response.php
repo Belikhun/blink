@@ -1,21 +1,21 @@
 <?php
+
+namespace Blink\Middleware;
+
+use Blink\Exception\ClassNotFound;
+use Blink\Middleware\Exception\InvalidMiddlewareReturn;
+use function Blink\stringify;
+
 /**
- * Response.php
- * 
  * Response middleware.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-
-namespace Blink\Middleware;
-use Blink\Exception\ClassNotFound;
-use Blink\Middleware\Exception\InvalidMiddlewareReturn;
-
 class Response {
 	/**
      * List of middleware that will run on every response.
@@ -31,11 +31,11 @@ class Response {
 	/**
 	 * Ran on every request, before routing happend.
 	 * 
-	 * @param	\Blink\Request	$request	The request.
-	 * @param	\Blink\Response	$response	The intercepted response.
-	 * @return	\Blink\Response	Return back the response.
+	 * @param	\Blink\Http\Request		$request	The request.
+	 * @param	\Blink\Http\Response	$response	The intercepted response.
+	 * @return	\Blink\Http\Response	Return back the response.
 	 */
-	public static function handle(\Blink\Request $request, \Blink\Response $response): \Blink\Response {
+	public static function handle(\Blink\Http\Request $request, \Blink\Http\Response $response): \Blink\Http\Response {
 		
 		foreach (static::$middleware as $middleware) {
 			if (!class_exists($middleware))
@@ -50,8 +50,8 @@ class Response {
 				$response = $handled;
 			}
 
-			if (!($response instanceof \Blink\Response))
-				throw new InvalidMiddlewareReturn($middleware, \Blink\Response::class, stringify($response));
+			if (!($response instanceof \Blink\Http\Response))
+				throw new InvalidMiddlewareReturn($middleware, \Blink\Http\Response::class, stringify($response));
 		}
 
 		return $response;

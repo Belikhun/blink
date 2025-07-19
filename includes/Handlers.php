@@ -5,14 +5,12 @@ namespace Blink;
 use Blink\ErrorPage\Renderer;
 
 /**
- * Handlers.php
- * 
  * Interface for core handlers. Built in handlers in this class
  * can be easily extender or overrided by applicaton.
  * 
- * @author    Belikhun
- * @since     1.0.0
- * @license   https://tldrlegal.com/license/mit-license MIT
+ * @author		Belikhun
+ * @since		1.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
  * 
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
@@ -60,7 +58,7 @@ class Handlers {
 				break;
 			}
 
-			case \Blink\Exception\RouteNotFound::class: {
+			case \Blink\Http\Exception\RouteNotFound::class: {
 				$title = "Đường dẫn không tồn tại";
 				$content = "Có vẻ như đường dẫn này không còn tồn tại trên máy chủ. Liên hệ quản trị viên nếu bạn thấy đây là lỗi.";
 				break;

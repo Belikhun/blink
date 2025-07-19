@@ -3,8 +3,6 @@
 namespace Blink\Attribute;
 
 /**
- * SensitiveField.php
- * 
  * Class to mark that this property's value is sensitive and only acessible when specified in getter function.
  * The propery value bearing this will not be included in json encoded data or serialized data by default.
  * 
