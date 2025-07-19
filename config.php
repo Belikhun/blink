@@ -9,9 +9,7 @@
 class ConfigPathProperty {}
 
 /**
- * config.php
- * 
- * Predefine configs that web core needed in order to function.
+ * Predefine configs that blink core needed in order to function.
  * 
  * @author		Belikhun
  * @since		1.0.0
@@ -21,11 +19,6 @@ class ConfigPathProperty {}
  * See LICENSE in the project root for license information.
  */
 class CoreConfig {
-	/**
-	 * App Name
-	 * 
-	 * @var string
-	 */
 	public static string	$APP_NAME = "My Web App";
 
 	public static int		$SESSION_LIFETIME = 86400;
@@ -45,9 +38,6 @@ class CoreConfig {
 	public static string	$FILES_ROOT = DATA_ROOT . "/files";
 
 	#[ConfigPathProperty]
-	public static string	$IMAGES_ROOT = DATA_ROOT . "/images";
-
-	#[ConfigPathProperty]
 	public static string	$CACHE_ROOT = DATA_ROOT . "/caches";
 	
 	#[ConfigPathProperty]
@@ -62,7 +52,6 @@ class CoreConfig {
 	public static array		$INCLUDES = array(
 		CORE_ROOT . "/includes",
 		CORE_ROOT . "/classes",
-		CORE_ROOT . "/db/Exception",
 		CORE_ROOT . "/middleware",
 		BASE_PATH . "/includes",
 		BASE_PATH . "/classes"
