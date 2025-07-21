@@ -212,21 +212,21 @@ if (!isset($RUNTIME)) {
 	$RUNTIME -> start = $BLINK_START;
 }
 
-// Initialize localization and language store.
-new TimingMetric("localization", function () {
-	Localization::setup();
-});
-
 if (!class_exists(User::class))
 	require_once CORE_ROOT . "/defaults/User.php";
 
-$runtimeInitTiming = new TimingMetric("runtime init");
+$runtimeInitTiming = new TimingMetric("php init");
 $runtimeInitTiming -> start = $_SERVER["REQUEST_TIME_FLOAT"];
 $runtimeInitTiming -> time = $BLINK_START;
 
 $setupTiming = new TimingMetric("setup");
 $setupTiming -> start = $BLINK_START;
 $setupTiming -> time();
+
+// Initialize localization and language store.
+new TimingMetric("localization", function () {
+	Localization::setup();
+});
 
 $configTiming = new TimingMetric("config");
 
