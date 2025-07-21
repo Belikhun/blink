@@ -2,11 +2,11 @@
 
 /**
  * Core libraries. Formerly `belibrary.php`.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -65,10 +65,10 @@ class StopClock {
 
 /**
  * Safe JSON Parsing
- * 
+ *
  * This function will throw an error if there is problem
  * while parsing json data.
- * 
+ *
  * @param	string	$json	JSON String
  * @param	string	$path	(Optional) Provide json file path to show in the error message
  * @throws	JSONDecodeError
@@ -127,17 +127,17 @@ function relativeTime(int $timestamp, int $to = null) {
 		$units = array( "năm" => 31536000, "ngày" => 86400, "giờ" => 3600, "phút" => 60, "giây" => 1 );
 		$delta = abs($timestamp - $to);
 		$future = $timestamp > $to;
-	
+
 		$unit = "";
 		$value = "";
 
 		foreach ($units as $unit => $value) {
 			$value = $delta / $value;
-			
+
 			if ($value > 1)
 				break;
 		}
-	
+
 		if ($unit === "ngày" && $value === 1) {
 			$string = ($future) ? "ngày mai" : "hôm qua";
 		} else if ($unit === "năm" && $value === 1) {
@@ -152,7 +152,7 @@ function relativeTime(int $timestamp, int $to = null) {
 
 /**
  * Makes sure the data is using valid utf8, invalid characters are discarded.
- * 
+ *
  * @param	mixed	$value
  * @return	mixed	with proper utf-8 encoding
  */
@@ -188,14 +188,14 @@ function cleanUTF8($value) {
 
         return $result;
     }
-	
+
 	if (is_array($value)) {
         foreach ($value as $k => $v)
             $value[$k] = cleanUTF8($v);
 
         return $value;
     }
-	
+
 	if (is_object($value)) {
         $value = clone($value);
         foreach ($value as $k => $v)
@@ -211,7 +211,7 @@ function cleanUTF8($value) {
 /**
  * This function is used to clean, or cast value into
  * different type.
- * 
+ *
  * @param	mixed	$param		Target variable to clean
  * @param	string	$type		Target variable type
  * @return	mixed
@@ -243,16 +243,16 @@ function cleanParam($param, $type) {
 				return $param;
 
 			$p = strtolower($param);
-			
+
 			if ($p === "on" || $p === "yes" || $p === "true")
 				$param = true;
 			else if ($p === "off" || $p === "no" || $p === "false")
 				$param = false;
 			else
 				$param = empty($param);
-			
+
 			return $param;
-		
+
 		case TYPE_JSON:
 			return safeJSONParsing($param, "cleanParam");
 
@@ -268,11 +268,11 @@ function cleanParam($param, $type) {
  * Validate an value.
  * Return false or throw an exception if value is not an valid
  * format of provided type.
- * 
+ *
  * @param	mixed		$value		Value to check
  * @param	string		$type		Value type
  * @param	bool		$throw		Throw an exception or just return false?
- * 
+ *
  * @return	bool
  * @throws	InvalidValue
  */
@@ -292,7 +292,7 @@ function validate($value, $type, $throw = true) {
 			$valid = (bool) preg_match(
 				"/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/", $value);
 			break;
-		
+
 		case TYPE_USERNAME:
 			$valid = (bool) preg_match("/^[a-zA-Z0-9]+$/", $value);
 			break;
@@ -322,7 +322,7 @@ function validate($value, $type, $throw = true) {
 
 /**
  * Return the first item that make the callback return true.
- * 
+ *
  * @template	T
  * @param		T[]						$items
  * @param		string|callable|null	$callable	A callable function that will ran though each item.
@@ -350,17 +350,17 @@ function first(array $items, $callable = null) {
 
 /**
  * Gets the value of an environment variable.
- * 
+ *
  * @param	string		$key		Environment variable name.
  * @param	mixed		$default	Default value when it's not set.
  * @param	string		$type
- * 
+ *
  * @return	mixed
  */
 function env(string $key, $default = null, string $type = TYPE_TEXT) {
 	if (!isset(Environment::$values[$key]))
 		return $default;
-	
+
 	return cleanParam(Environment::$values[$key], $type);
 }
 
@@ -375,7 +375,7 @@ function view(string $name, array $context = array()) {
 /**
  * Returns a particular value for the named variable, taken from
  * POST or GET, otherwise returning a given default.
- * 
+ *
  * @param	string		$name		Param name
  * @param	string		$type
  * @param	mixed		$default
@@ -395,7 +395,7 @@ function getParam(string $name, $type = TYPE_TEXT, $default = null) {
  * Returns a particular value for the named variable, taken from
  * POST or GET. If the parameter doesn"t exist then an error is
  * thrown because we require this variable.
- * 
+ *
  * @param	string		$name		Param name
  * @param	string		$type
  * @param	mixed		$default
@@ -413,7 +413,7 @@ function requiredParam(string $name, $type = TYPE_TEXT) {
 /**
  * Returns a particular value for the named variable, taken from
  * request headers. This is done in a case-insensitive matter.
- * 
+ *
  * @param	string		$name		Header name
  * @param	string		$type
  * @param	mixed		$default
@@ -436,7 +436,7 @@ function getHeader(string $name, $type = TYPE_TEXT, $default = null) {
 
 /**
  * Set Content-Type header using file extension
- * 
+ *
  * @param	string	$file		File path
  * @param	string	$charset	Charset
  * @param	mixed	$default	Default value
@@ -470,7 +470,7 @@ function expire(int $time) {
 
 /**
  * Return new path relative to webserver's root path.
- * 
+ *
  * @return	string
  */
 function getRelativePath(string $fullPath, string $separator = "/", string $base = BASE_PATH) {
@@ -498,7 +498,7 @@ function getRelativePath(string $fullPath, string $separator = "/", string $base
 
 /**
  * Return the requestor's client IP address.
- * 
+ *
  * @return	string
  */
 function getClientIP(): string {
@@ -507,7 +507,7 @@ function getClientIP(): string {
 
 /**
  * Stringify a subject for displaying purpose.
- * 
+ *
  * @param	mixed		$subject
  * @return	string
  */
@@ -535,10 +535,10 @@ function stringify($subject) {
 
 		if (!empty($subject)) {
 			$output = array();
-	
+
 			foreach ($subject as $key => $value)
 				$output[] = "$key = " . htmlspecialchars($value);
-	
+
 			$output = implode(", ", $output);
 			$output = "[ {$output} ]";
 		}
@@ -557,20 +557,20 @@ function stringify($subject) {
 
 /**
  * Return human readable Size
- * 
+ *
  * @param	int		$bytes		Size in byte
  * @return	string	Readable Size
  */
 function convertSize(int $bytes) {
 	$sizes = array("B", "KB", "MB", "GB", "TB");
 	for ($i = 0; $bytes >= 1024 && $i < (count($sizes) - 1); $bytes /= 1024, $i++);
-	
+
 	return (round($bytes, 2) . " " . $sizes[$i]);
 }
 
 /**
  * Return human readable Time
- * 
+ *
  * @param	float		$time		Time
  * @return	string		Readable time
  */
@@ -591,7 +591,7 @@ function convertTime(float $time) {
 		$v = $time / $uv;
 		if ($v < 1)
 			break;
-		
+
 		$unit = $u;
 		$value = $v;
 	}
@@ -626,7 +626,7 @@ class FileWithPriority {
 /**
  * Glob files and sort them by priority defined by
  * `@priority` in comment doc.
- * 
+ *
  * It"s a good idea to cache the return data of this function as
  * reading big files and performing a regex match with a large
  * string take a lot of time.
@@ -702,7 +702,7 @@ function redirect($url) {
 
 /**
  * Loop through all files inside a folder, recursively.
- * 
+ *
  * @param	string	$path
  * @param	string	$extension
  * @return	\Generator<\SplFileInfo>
@@ -722,7 +722,7 @@ function getFiles(string $path, string $extension = "*") {
 
 /**
  * Render soucre code of a file to a friendly format.
- * 
+ *
  * @param	string	$file	Path to file to be rendered.
  * @param	int		$line	Line number that will be highlighted.
  * @param	int		$count	Number of lines will be rendered.
@@ -819,7 +819,7 @@ function renderSourceCode(string $file, int $line, int $count = 10) {
 
 /**
  * Fast file get content with metric recording.
- * 
+ *
  * @param	string		$path		Path to file
  * @param	string		$default	Default value
  * @return	string|null				File content or default value if failed.
@@ -836,7 +836,7 @@ function fileGet(string $path, $default = null, bool $throw = false): string|nul
 
 	if (class_exists(FileMetric::class))
 		$metric = new FileMetric("r", "text", $path);
-	
+
 	$content = file_get_contents($path);
 
 	if ($content === false) {
@@ -854,7 +854,7 @@ function fileGet(string $path, $default = null, bool $throw = false): string|nul
 
 /**
  * Fast file put content with metric recording.
- * 
+ *
  * @param	string		$path		Path to file
  * @param	string		$content	File content
  * @return	int|null				Bytes written or null if write failed.
@@ -864,7 +864,7 @@ function filePut(string $path, $content): int|null {
 
 	if (class_exists(FileMetric::class))
 		$metric = new FileMetric("w", "text", $path);
-	
+
 	$bytes = file_put_contents($path, $content);
 	$metric ?-> time(($bytes === false) ? -1 : $bytes);
 	return ($bytes === false) ? null : $bytes;
@@ -889,7 +889,7 @@ function isSequential($array) {
 
 /**
  * Generate Random Number
- * 
+ *
  * @param	int|float		$min		Minimum random number
  * @param	int|float		$max		Maximum random number
  * @param   bool			$toInt		To return an Integer value
@@ -905,7 +905,7 @@ function randBetween($min, $max, bool $toInt = true) {
 
 /**
  * Pick a random item in an array.
- * 
+ *
  * @template	Item
  * @param		array<Item>		$array		The array
  * @param		int				$index		The randomized item index
@@ -921,7 +921,7 @@ define("RAND_CHARSET_HEX", "0123456789abcdef");
 
 /**
  * Generate Random String
- * 
+ *
  * @param	int			$len		Length of the randomized string
  * @param	string		$charset	Charset
  * @return	string		Generated String
@@ -948,7 +948,7 @@ function randString(int $len = 16, string $charset = RAND_CHARSET_TEXT) {
 function trimString(string $string, int $maxLen) {
 	if (strlen($string) <= $maxLen)
 		return $string;
-	
+
 	$string = substr($string, 0, $maxLen);
 	$string = rtrim($string, " .,;:-");
 	$string .= "...";
@@ -961,9 +961,9 @@ function backtrace(int $limit = 0) {
 }
 
 /**
- * Process backtrace data returned from {@link debug_backtrace()}
- * or {@link Exception::getTrace()}
- * 
+ * Process backtrace data returned from {@see debug_backtrace()}
+ * or {@see Exception::getTrace()}
+ *
  * @param	\Throwable|array	$data
  * @return	BacktraceFrame[]
  */
@@ -987,7 +987,7 @@ function processBacktrace($data, bool $merges = true) {
 		foreach ([ "file", "line", "class", "type" ] as $key) {
 			if (empty($item[$key]))
 				continue;
-			
+
 			if ($key === "file")
 				$item[$key] = getRelativePath($item[$key]);
 
@@ -1006,7 +1006,7 @@ function processBacktrace($data, bool $merges = true) {
 					$value = $arg -> getMessage();
 					if (str_contains($value, ".php"))
 						$value = getRelativePath($value);
-					
+
 					$arg = [ get_class($arg), $value ];
 				} else if (method_exists($arg, "__toString")) {
 					$value = (string) $arg;
@@ -1063,13 +1063,13 @@ function processBacktrace($data, bool $merges = true) {
 
 			if ($reverse)
 				$target = array_reverse($target);
-			
+
 			foreach ($from as $merge) {
 				foreach ($target as $i => &$check) {
 					if ($merge -> hash() === $check -> hash()) {
 						if (!empty($merge -> file) && $merge -> file)
 							$check -> file = $merge -> file;
-						
+
 						if (!empty($merge -> line) && $merge -> line > 0)
 							$check -> line = $merge -> line;
 
@@ -1082,7 +1082,7 @@ function processBacktrace($data, bool $merges = true) {
 						continue 2;
 					}
 				}
-		
+
 				array_splice($target, $insert - ($reverse ? 1 : 0), 0, [ $merge ] );
 				$insert += 1;
 			}
@@ -1111,7 +1111,7 @@ function processBacktrace($data, bool $merges = true) {
 			if ($frame -> hash() === $next -> hash() || $frame -> function === $next -> function) {
 				if (!empty($next -> file) && $next -> file)
 					$frame -> file = $next -> file;
-				
+
 				if (!empty($next -> line) && $next -> line > 0)
 					$frame -> line = $next -> line;
 
@@ -1138,14 +1138,14 @@ function processBacktrace($data, bool $merges = true) {
 			}
 		}
 	}
-	
+
 	return $frames;
 }
 
 /**
  * Print out response data, set some header
  * and stop script execution!
- * 
+ *
  * @param	int						$code			Response code
  * @param	string					$description	Response description
  * @param	int						$HTTPStatus		Response HTTP status code

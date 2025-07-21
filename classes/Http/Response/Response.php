@@ -6,11 +6,11 @@ use Blink\Http\Exception\HeaderSent;
 
 /**
  * Base class for normal text response.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -18,13 +18,13 @@ class Response {
 	/**
 	 * HTTP response status codes indicate whether a specific HTTP request has been successfully completed.
 	 * Responses are grouped in five classes:
-	 * 
+	 *
 	 * 1. Informational responses (`100` – `199`)
 	 * 2. Successful responses (`200` – `299`)
 	 * 3. Redirection messages (`300` – `399`)
 	 * 4. Client error responses (`400` – `499`)
 	 * 5. Server error responses (`500` – `599`)
-	 * 
+	 *
 	 * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
 	 */
 	protected int $status = 200;
@@ -41,7 +41,7 @@ class Response {
 	/**
 	 * The cookie bag 🍪.
 	 * Key represent the cookie name, while the value is the cookie itself.
-	 * 
+	 *
 	 * @var Cookie[]
 	 */
 	protected array $cookies = array();
@@ -55,7 +55,7 @@ class Response {
 
 	/**
 	 * Set HTTP response code for this response.
-	 * 
+	 *
 	 * @param	int		$status		HTTP Response Code.
 	 * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
 	 */
@@ -66,7 +66,7 @@ class Response {
 
 	/**
 	 * Add a cookie 🍪 to this response.
-	 * 
+	 *
 	 * @param	Cookie	$cookie
 	 */
 	public function cookie(Cookie $cookie) {
@@ -76,13 +76,13 @@ class Response {
 
 	/**
 	 * Add multiple cookie 🍪 to this response.
-	 * 
+	 *
 	 * @param	Cookie[]	$cookies
 	 */
 	public function cookies(array $cookies) {
 		foreach ($cookies as $cookie)
 			$this -> cookie($cookie);
-		
+
 		return $this;
 	}
 
@@ -102,13 +102,13 @@ class Response {
 
 		if (is_array($value))
 			$value = implode("; ", $value);
-		
+
 		if ($overwrite) {
 			if (empty($value))
 				unset($this -> headers[$name]);
 			else
 				$this -> headers[$name] = $value;
-			
+
 			return $this;
 		}
 
@@ -122,7 +122,7 @@ class Response {
 			$header = array();
 			if (!empty($this -> headers[$name]))
 				$header[] = $this -> headers[$name];
-			
+
 			$header[] = $value;
 			$this -> headers[$name] = $header;
 		} else {
@@ -166,7 +166,7 @@ class Response {
 			-> header("Cache-Control", "public, max-age=$time")
 			-> header("Expires", gmdate("D, d M Y H:i:s \G\M\T", time() + $time))
 			-> removeHeader("Pragma");
-		
+
 		return $this;
 	}
 
@@ -176,12 +176,12 @@ class Response {
 
 	/**
 	 * Reponse to the request. This will set necessary status/headers/cookies before
-	 * calling {@link process()} to get the response body.
+	 * calling {@see Response::process()} to get the response body.
 	 * @return	string	Return outputted body.
 	 */
 	public function serve(): ?string {
 		$body = $this -> process();
-		
+
 		http_response_code($this -> status);
 
 		if (headers_sent($hfile, $hline))

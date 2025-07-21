@@ -58,7 +58,7 @@ class Table implements Sequelizable {
 	}
 
 	public function out() {
-		return "{{$this -> table}}";
+		return $this -> table;
 	}
 
 	/**

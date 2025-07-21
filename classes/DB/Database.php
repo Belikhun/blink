@@ -15,11 +15,11 @@ use CONFIG;
 
 /**
  * Abstract class for Database drivers.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -40,7 +40,7 @@ abstract class Database {
 	 * Create a new connection to database.
 	 * This function might need some additional arguments
 	 * based on type of drivers used.
-	 * 
+	 *
 	 * @param	array	$options	Arguments to pass into connect
 	 * 								function. This will vary based on
 	 * 								each sql drivers.
@@ -49,7 +49,7 @@ abstract class Database {
 
 	/**
 	 * Execute a SQL query.
-	 * 
+	 *
 	 * @param	string				$sql		The query
 	 * @param	array				$params
 	 * @param	int					$from
@@ -67,7 +67,7 @@ abstract class Database {
 
 	/**
 	 * Fetch detailed column details from the given table name.
-	 * 
+	 *
 	 * @param	string					$table
 	 * @return	\Blink\DB\ColumnInfo[]	Column array, mapped by column name.
 	 */
@@ -75,7 +75,7 @@ abstract class Database {
 
 	/**
 	 * Normalize SQL parameters.
-	 * 
+	 *
 	 * @return	array
 	 */
 	protected function normalizeParams(string $sql, array $params) {
@@ -88,7 +88,7 @@ abstract class Database {
 				$params[$key] = $value ? 1 : 0;
 		}
 
-		$namedCount = preg_match_all('/(?<!:):([a-z][a-z0-9_])*/', $sql, $namedMatches);
+		$namedCount = preg_match_all('/\:([a-z][a-z0-9_]+)/', $sql, $namedMatches, PREG_SET_ORDER, 0);
 		$qCount = substr_count($sql, "?");
 
 		if ($namedCount && $qCount)
@@ -101,7 +101,7 @@ abstract class Database {
 			return [$sql, array_values($params)];
 		}
 
-		$normalizedSql = preg_replace('/(?<!:):[a-z][a-z0-9_]*/', "?", $sql);
+		$normalizedSql = preg_replace('/\:[a-z][a-z0-9_]+/', "?", $sql);
 		$normalizedParams = array();
 
 		foreach ($namedMatches as $match) {
@@ -110,7 +110,7 @@ abstract class Database {
 			if (!isset($params[$name]))
 				throw new SQLMissingParam($name, $sql, $params);
 
-			$normalizedParams[] = $params;
+			$normalizedParams[] = $params[$name];
 		}
 
 		return [$normalizedSql, $normalizedParams];
@@ -118,7 +118,7 @@ abstract class Database {
 
 	/**
 	 * Return detailed columns information from the given table name. This information is cached.
-	 * 
+	 *
 	 * @param	string					$table
 	 * @param	bool					$cache
 	 * @return	\Blink\DB\ColumnInfo[]	Column array, mapped by column name.
@@ -130,13 +130,13 @@ abstract class Database {
 			return $cache -> content();
 
 		$data = $this -> fetchColumns($table);
-		$cache -> setContent($data);
+		$cache -> setContent($data) -> save();
 		return $data;
 	}
 
 	/**
      * Returns the SQL WHERE conditions.
-	 * 
+	 *
      * @param	array	$conditions		The conditions to build the where clause.
      * @return	array	An array list containing sql 'where' part and 'params'.
      */
@@ -213,7 +213,7 @@ abstract class Database {
 	/**
 	 * Get a number of records as an array of objects where
 	 * all the given conditions met.
-	 * 
+	 *
 	 * @param	string		$table		The table to select from.
 	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
@@ -255,7 +255,7 @@ abstract class Database {
 	/**
 	 * Get a single database record as an object where all
 	 * the given conditions met.
-	 * 
+	 *
 	 * @param	string		$table		The table to select from.
 	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
@@ -285,7 +285,7 @@ abstract class Database {
      * Some conversions and safety checks are carried out. Lobs are supported.
      * If the return ID isn't required, then this just reports success as true/false.
      * $data is an object containing needed data
-	 * 
+	 *
      * @param	string			$table		The database table to be inserted into
      * @param	object|array	$object		A data object with values for one or more fields in the record
      * @return	int				new id
@@ -324,7 +324,7 @@ abstract class Database {
 
 	/**
 	 * Update an record from database.
-	 * 
+	 *
 	 * @param	string			$table		The database table to be inserted into
      * @param	object|array	$object		A data object with values for one or more fields in the record
      * @param	string			$primary	Primary key name
@@ -362,7 +362,7 @@ abstract class Database {
 
 		// Record Metric
 		$metric = new QueryMetric("INSERT", $table);
-		
+
 		$affected = $this -> execute($sql, $values);
 		$metric -> time($affected);
 		return ($affected > 0);
@@ -371,13 +371,13 @@ abstract class Database {
 	/**
 	 * Test whether a record exists in a table where all
 	 * the given conditions met.
-	 * 
+	 *
 	 * @param	string		$table		The table to select from.
 	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).
-	 * 
+	 *
 	 * @return	bool
 	 */
 	public function exist(string $table, array $conditions = array()) {
@@ -389,13 +389,13 @@ abstract class Database {
 
 	/**
 	 * Count the records in a table which match a particular WHERE clause.
-	 * 
+	 *
 	 * @param	string		$table		The table to select from.
 	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).
-	 * 
+	 *
 	 * @return	int
 	 */
 	public function count(string $table, array $conditions = array()) {
@@ -411,25 +411,25 @@ abstract class Database {
 	/**
 	 * Delete the records from a table where all the given conditions met.
      * If conditions not specified, table is truncated.
-	 * 
+	 *
 	 * @param	string		$table		The table to select from.
 	 * @param	array		$conditions	"field" => "value" with AND in between,
 	 * 									default is equal comparision. You can use
 	 * 									different comparision by adding logic after
 	 * 									field name (ex "abc >=" => 123).
-	 * 
+	 *
 	 * @return	int			Affected rows
 	 */
 	public function delete(string $table, array $conditions = array()) {
 		if (empty($conditions)) {
 			// Record Metric
 			$metric = new QueryMetric("TRUNCATE", $table);
-			
+
 			$affected = $this -> execute("TRUNCATE TABLE {" . $table . "}");
 			$metric -> time($affected);
 			return $affected;
 		}
-		
+
 		list($select, $params) = static::whereClause($conditions);
 
 		if (!empty($select))
@@ -456,7 +456,7 @@ function initializeDB() {
 	/**
 	 * Global Database Instance. Initialized based on type of
 	 * SQL driver specified in config.
-	 * 
+	 *
 	 * @var	\Blink\DB\Database	$DB
 	 */
 	global $DB;
@@ -465,13 +465,13 @@ function initializeDB() {
 	if (!empty($DB))
 		return;
 
-	$DB_DRIVER_PATH = CORE_ROOT . "/db/DB." . CONFIG::$DB_DRIVER . ".php";
+	$DB_DRIVER_PATH = CORE_ROOT . "/classes/DB/Driver/" . CONFIG::$DB_DRIVER . ".php";
 
 	if (file_exists($DB_DRIVER_PATH)) {
 		require_once $DB_DRIVER_PATH;
 		$className = "Blink\\DB\\Driver\\" . CONFIG::$DB_DRIVER;
 
-		if (!class_exists($className) || !in_array("Blink\\DB\\Driver", class_parents($className)))
+		if (!class_exists($className) || !in_array(Database::class, class_parents($className)))
 			throw new InvalidSQLDriver(CONFIG::$DB_DRIVER);
 
 		$DB = new $className();
@@ -481,7 +481,7 @@ function initializeDB() {
 				$DB -> connect(array(
 					"path" => CONFIG::$DB_PATH
 				));
-				
+
 				break;
 			}
 
@@ -501,6 +501,7 @@ function initializeDB() {
 
 		DB::$instance = $DB;
 		$dbTiming -> time();
-	} else
+	} else {
 		throw new SQLDriverNotFound(CONFIG::$DB_DRIVER);
+	}
 }

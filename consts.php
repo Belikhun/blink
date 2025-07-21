@@ -1,13 +1,13 @@
 <?php
 /**
  * const.php
- * 
+ *
  * Constants definition.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -129,6 +129,7 @@ define("AUTOLOAD_CLASS_NOTDEFINED", 117);
 define("CLASS_NOTOVERRIDABLE", 118);
 define("NO_INSTANCE", 119);
 define("OVERRIDER_CLASS_NOT_FOUND", 120);
+define("STRING_NOT_FOUND", 121);
 
 define("DATA_TYPE_MISMATCH", 201);
 define("INVALID_JSON", 202);

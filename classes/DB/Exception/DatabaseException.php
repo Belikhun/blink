@@ -3,6 +3,7 @@
 namespace Blink\DB\Exception;
 
 use Blink\Exception\BaseException;
+use Blink\HtmlWriter;
 
 /**
  * DML exception class.

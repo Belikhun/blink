@@ -3,7 +3,7 @@
 namespace Blink\Exception;
 
 /**
- * Class not found exception
+ * Interface not found exception
  *
  * @author		Belikhun
  * @since		1.0.0
@@ -12,23 +12,23 @@ namespace Blink\Exception;
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-class ClassNotFound extends BaseException {
+class InterfaceNotFound extends BaseException {
 	/**
-	 * Target class name that does not exist after
+	 * Target interface name that does not exist after
 	 * autoloading target file.
 	 *
 	 * @var string
 	 */
-	public string $class;
+	public string $interface;
 
-	public function __construct(string $class) {
-		$this -> class = $class;
+	public function __construct(string $interface) {
+		$this -> interface = $interface;
 
 		parent::__construct(
 			AUTOLOAD_CLASS_MISSING,
-			"Class <code>{$class}</code> not found!",
+			"Interface <code>{$interface}</code> not found!",
 			500,
-			array( "class" => $class )
+			array( "interface" => $interface )
 		);
 	}
 }

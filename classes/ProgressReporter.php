@@ -8,11 +8,11 @@ use Blink\Exception\CodingError;
 
 /**
  * Class for reporting task and subtasks progress.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -28,14 +28,14 @@ class ProgressReporter {
 
     /**
      * Parent progress reporter of this child.
-     * 
+     *
      * @var static
      */
     public ?ProgressReporter $parent = null;
 
     /**
      * Child progress reporter in this instance.
-     * 
+     *
      * @var static[]
      */
     public array $childs = array();
@@ -47,21 +47,21 @@ class ProgressReporter {
 
     /**
      * Number of childs is expected to have.
-     * 
+     *
      * @var int
      */
     public int $expectedChildsCount = 0;
 
     /**
      * Number of times update was called.
-     * 
+     *
      * @var int
      */
     public int $updated = 0;
 
     /**
      * Current level of this reporter.
-     * 
+     *
      * @var int
      */
     public int $level = 1;
@@ -69,50 +69,50 @@ class ProgressReporter {
     /**
      * Progress set for this instance.
      * A number in the range [0, 1]
-     * 
+     *
      * @var float
      */
     public float $progress = 0;
 
     /**
      * Calculated progress for this instance, including childs.
-     * Updated by {@link ProgressReporter::update()}.
-     * 
+     * Updated by {@see ProgressReporter::update()}.
+     *
      * @var float
      */
     public float $calculated = 0;
 
     /**
      * Progress weight of this instance, used in parent progress reporter.
-     * 
+     *
      * @var float
      */
     public float $weight = 1;
 
     /**
      * Progress weight, used in calculating `$calculated` progress with childs.
-     * 
+     *
      * @var float
      */
     public float $progressWeight = 0.1;
 
     /**
      * Total child's weight, for fast progress calculation.
-     * 
+     *
      * @var float
      */
     protected float $totalWeight = 0;
 
     /**
      * Update listener.
-     * 
+     *
      * @var callable
      */
     protected ?Closure $updateListener = null;
-    
+
     /**
      * Update progress.
-     * 
+     *
      * @param   ?string     $message        Bubbled up message.
      * @param   ?string     $status         Message status.
      * @return  static
@@ -122,7 +122,7 @@ class ProgressReporter {
 
         if (empty($this -> childs)) {
             $this -> calculated = $this -> progress;
-            
+
             if (!empty($this -> parent))
                 $this -> parent -> update($source, $status, $message);
 
@@ -138,12 +138,12 @@ class ProgressReporter {
                 ? $child -> calculated * (1 / max($this -> expectedChildsCount, count($this -> childs)))
                 : $child -> calculated * ($child -> weight / $this -> totalWeight);
         }
-    
+
         $calculated = ($this -> progress * $this -> progressWeight)
             + ($childProgress * (1 - $this -> progressWeight));
 
         $this -> calculated = max($this -> calculated, $calculated);
-        
+
         if (!empty($this -> parent))
             $this -> parent -> update($source, $status, $message);
 
@@ -155,7 +155,7 @@ class ProgressReporter {
 
     /**
      * Listen for on update event.
-     * 
+     *
      * @param   string|callable     $callable
      * @return  static
      */
@@ -169,12 +169,12 @@ class ProgressReporter {
 
     /**
      * Create a new child for this instance and return it.
-     * 
+     *
      * @return static
      */
     public function newChild(float $weight = 1) {
         $instance = new static();
-        $instance -> level = $this -> level + 1; 
+        $instance -> level = $this -> level + 1;
         $instance -> weight = $weight;
         $instance -> parent = $this;
         $this -> totalWeight += $weight;
@@ -184,7 +184,7 @@ class ProgressReporter {
 
     /**
      * Report progress update.
-     * 
+     *
      * @param   float   $progress   A number in the range [0, 1]
      * @param   int     $status
      * @param   string  $message

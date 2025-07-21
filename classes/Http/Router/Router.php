@@ -9,6 +9,7 @@ use Blink\Exception\UnsupportedAuthScheme;
 use Blink\Http\Request;
 use Blink\Http\Response;
 use Blink\Metric\TimingMetric;
+use Blink\Session;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionAttribute;
@@ -48,7 +49,7 @@ class Router {
 
 	/**
 	 * Currently active route.
-	 * 
+	 *
 	 * @var	Route
 	 */
 	public static $active = null;
@@ -140,7 +141,7 @@ class Router {
 
 	/**
 	 * Register all defined routes in this controller.
-	 * This function will scan all methods inside the controller that has the {@link Route} attribute defined.
+	 * This function will scan all methods inside the controller that has the {@see Route} attribute defined.
 	 *
 	 * @param	class-string	$controller		The controller class name.
 	 */
@@ -215,25 +216,34 @@ class Router {
 	 * @return bool
 	 */
 	protected static function authenticateUser(Request $request): bool {
-		// $auth = $request -> header("Authorization");
+		$auth = $request -> header("Authorization");
 
-		// if (empty($auth))
-		// 	return false;
+		if (empty($auth))
+			return false;
 
-		// list($scheme, $token) = explode(" ", $auth);
+		list($scheme, $token) = explode(" ", $auth);
 
-		// if (empty($scheme) || empty($token))
-		// 	return false;
+		if (empty($scheme) || empty($token))
+			return false;
 
-		// $user = null;
+		$user = null;
 
-		// switch ($scheme) {
-		// 	default:
-		// 		throw new UnsupportedAuthScheme($scheme);
-		// }
+		switch ($scheme) {
+			case "Basic":
+				// Session::start();
+				// Session::token($token);
+				break;
 
-		// if (empty($user))
-		// 	throw new RouterAuthorizationError("Could not retrieve user information during authorization");
+			case "Session":
+				// Session::start($token);
+				break;
+
+			default:
+				throw new UnsupportedAuthScheme($scheme);
+		}
+
+		if (empty($user))
+			throw new RouterAuthorizationError("Could not retrieve user information during authorization");
 
 		return true;
 	}

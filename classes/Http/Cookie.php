@@ -6,11 +6,11 @@ use Blink\Exception\CodingError;
 
 /**
  * Represent a single cookie 🍪.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -51,18 +51,18 @@ class Cookie {
 
 	/**
 	 * Defines the host to which the cookie will be sent.
-	 * 
+	 *
 	 * Only the current domain can be set as the value,
 	 * or a domain of a higher order, unless it is a public suffix.
 	 * Setting the domain will make the cookie available to it,
 	 * as well as to all its subdomains.
-	 * 
+	 *
 	 * If omitted, this attribute defaults to the host of the
 	 * current document URL, not including subdomains.
-	 * 
+	 *
 	 * Multiple host/domain values are not allowed, but if a
 	 * domain is specified, then subdomains are always included.
-	 * 
+	 *
 	 * @param	string	$host	Host name. Set to null or empty
 	 * 		string to remove this attribute.
 	 */
@@ -78,11 +78,11 @@ class Cookie {
 	/**
 	 * Indicates the maximum lifetime of the cookie as
 	 * an HTTP-date timestamp.
-	 * 
+	 *
 	 * If unspecified, the cookie becomes a session cookie.
 	 * A session finishes when the client shuts down, after
 	 * which the session cookie is removed.
-	 * 
+	 *
 	 * @param	int		$timestamp	The date this cookie will
 	 * 		be expired. Set to negative number to remove this attribute.
 	 */
@@ -97,7 +97,7 @@ class Cookie {
 
 	/**
 	 * Forbids JavaScript from accessing the cookie.
-	 * 
+	 *
 	 * @param	bool	$enabled	Enable this attribute?
 	 */
 	public function httpOnly(bool $enabled = true) {
@@ -112,9 +112,9 @@ class Cookie {
 	/**
 	 * Indicates the number of seconds until the cookie expires.
 	 * A zero or negative number will expire the cookie immediately.
-	 * 
+	 *
 	 * If both Expires and Max-Age are set, Max-Age has precedence.
-	 * 
+	 *
 	 * @param	int		$amount		Seconds until this cookie expire.
 	 */
 	public function maxAge(int $amount) {
@@ -128,9 +128,9 @@ class Cookie {
 
 	/**
 	 * Indicates that the cookie should be stored using partitioned storage.
-	 * 
+	 *
 	 * See {@link https://developer.mozilla.org/en-US/docs/Web/Privacy/Partitioned_cookies Cookies Having Independent Partitioned State (CHIPS)} for more details.
-	 * 
+	 *
 	 * @param	bool	$enabled	Enable this attribute?
 	 */
 	public function partitioned(bool $enabled = true) {
@@ -145,10 +145,10 @@ class Cookie {
 	/**
 	 * Indicates the path that must exist in the requested URL
 	 * for the browser to send the `Cookie` header.
-	 * 
+	 *
 	 * The forward slash (`/`) character is interpreted as a
 	 * directory separator, and subdirectories are matched as well.
-	 * 
+	 *
 	 * @param	string	$path	Path. Set to null or empty
 	 * 		string to remove this attribute.
 	 */
@@ -165,9 +165,9 @@ class Cookie {
 	 * Controls whether or not a cookie is sent with cross-site
 	 * requests, providing some protection against cross-site
 	 * request forgery attacks (CSRF).
-	 * 
+	 *
 	 * The possible attribute values are:
-	 * 
+	 *
 	 * * {@see Blink\Http\Request\Cookie::SAMESITE_STRICT}: The browser sends the cookie only for same-site requests
 	 * * {@see Blink\Http\Request\Cookie::SAMESITE_LAX}: The cookie is not sent on cross-site requests
 	 * * {@see Blink\Http\Request\Cookie::SAMESITE_NONE}: The browser sends the cookie with both cross-site and same-site requests
@@ -189,7 +189,7 @@ class Cookie {
 	 * when a request is made with the https: scheme (except
 	 * on localhost), and therefore, is more resistant to
 	 * man-in-the-middle attacks.
-	 * 
+	 *
 	 * @param	bool	$enabled	Enable this attribute?
 	 */
 	public function secure(bool $enabled = true) {

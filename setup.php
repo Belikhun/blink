@@ -1,6 +1,7 @@
 <?php
 
 use Blink\Environment;
+use Blink\Localization;
 use Blink\Metric\TimingMetric;
 use Blink\Http\Router;
 use Blink\Server;
@@ -14,14 +15,14 @@ ini_set("short_open_tag", true);
 
 /**
  * setup.php
- * 
+ *
  * Web core setup file for initializing components,
  * session and handle current request's routing.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -31,35 +32,35 @@ date_default_timezone_set("Asia/Ho_Chi_Minh");
 
 /**
  * Server's base path.
- * 
+ *
  * @var	string
  */
 define("BASE_PATH", str_replace("\\", "/", getcwd()));
 
 /**
- * Server's application root folder. Alias to {@link BASE_PATH}
- * 
+ * Server's application root folder. Alias to {@see BASE_PATH}
+ *
  * @var	string
  */
 define("APP_ROOT", BASE_PATH);
 
 /**
  * Path stores all the vendor packages.
- * 
+ *
  * @var	string
  */
 define("VENDOR_ROOT", BASE_PATH . "/vendor");
 
 /**
  * Server's data path.
- * 
+ *
  * @var	string
  */
 define("DATA_ROOT", BASE_PATH . "/data");
 
 /**
  * Core base path.
- * 
+ *
  * @var	string
  */
 define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME)));
@@ -70,7 +71,7 @@ define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME))
 /**
  * Global Database Instance. Initialized based on type of
  * SQL driver specified in config.
- * 
+ *
  * @var		\Blink\DB\Database		$DB
  * @global	\Blink\DB\Database		$DB
  */
@@ -121,7 +122,7 @@ if ($PATH === "/index" || $PATH === "/index.php")
 //* -----------------------------------------------------------
 //*  Try to load config defined in application, fallback to
 //*  core default config if none exist.
-//*  
+//*
 //*  This also setup class autoload.
 //* ===========================================================
 
@@ -129,7 +130,7 @@ require_once CORE_ROOT . "/consts.php";
 require_once CORE_ROOT . "/config.php";
 
 if (!file_exists(BASE_PATH . "/.htaccess")) {
-	copy(CORE_ROOT . "/files/index.htaccess", BASE_PATH . "/.htaccess");
+	copy(CORE_ROOT . "/files/root.htaccess", BASE_PATH . "/.htaccess");
 	header("Location: /", true);
 	die();
 }
@@ -145,8 +146,9 @@ if (!file_exists(BASE_PATH . "/config.php")) {
 		copy(BASE_PATH . "/config.default.php", BASE_PATH . "/config.php");
 		require_once BASE_PATH . "/config.php";
 	}
-} else
+} else {
 	require_once BASE_PATH . "/config.php";
+}
 
 if (!class_exists(\CONFIG::class)) {
 	echo "Define your \"CONFIG\" class inside \"config.define.php\"!!!";
@@ -183,11 +185,15 @@ if (!file_exists(DATA_ROOT . "/.htaccess"))
 	copy(CORE_ROOT . "/files/data.htaccess", DATA_ROOT . "/.htaccess");
 
 if (!file_exists(BASE_PATH . "/.gitignore"))
-	copy(CORE_ROOT . "/files/index.gitignore", BASE_PATH . "/.gitignore");
+	copy(CORE_ROOT . "/files/root.gitignore", BASE_PATH . "/.gitignore");
+
+if (!file_exists(BASE_PATH . "/.editorconfig"))
+	copy(CORE_ROOT . "/files/root.editorconfig", BASE_PATH . "/.editorconfig");
 
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";
+require_once CORE_ROOT . "/global.php";
 require_once CORE_ROOT . "/autoload.php";
 
 // We have registered our handlers, dispose of all garbage output from now.
@@ -196,7 +202,7 @@ ob_start();
 
 /**
  * Clock for tracking runtime since request started.
- * 
+ *
  * @var	StopClock	$RUNTIME
  */
 global $RUNTIME;
@@ -205,6 +211,11 @@ if (!isset($RUNTIME)) {
 	$RUNTIME = new StopClock();
 	$RUNTIME -> start = $BLINK_START;
 }
+
+// Initialize localization and language store.
+new TimingMetric("localization", function () {
+	Localization::setup();
+});
 
 if (!class_exists(User::class))
 	require_once CORE_ROOT . "/defaults/User.php";
@@ -228,6 +239,8 @@ if (file_exists(BASE_PATH . "/config.store.php")) {
 
 $configTiming -> time();
 
+// Initialize DB.
+require_once CORE_ROOT . "/classes/DB/Database.php";
 
 
 //* ===========================================================
@@ -244,13 +257,6 @@ new TimingMetric("env", function () {
 
 // We can now proceed to parse current Server info.
 Server::setup();
-
-if (file_exists(BASE_PATH . "/setup.php")) {
-	new TimingMetric("page setup", function () {
-		// Include page setup file.
-		require_once BASE_PATH . "/setup.php";
-	});
-}
 
 new TimingMetric("session", function() {
 	// Initialize session
@@ -272,7 +278,7 @@ new TimingMetric("session", function() {
 					Session::start();
 					Session::token($token);
 					break;
-				
+
 				case "Session":
 					Session::start($token);
 					break;
@@ -282,6 +288,13 @@ new TimingMetric("session", function() {
 		}
 	}
 });
+
+if (file_exists(BASE_PATH . "/setup.php")) {
+	new TimingMetric("page setup", function () {
+		// Include page setup file.
+		require_once BASE_PATH . "/setup.php";
+	});
+}
 
 // Add default endpoint for error page.
 Router::$processingFile = "blink:core";

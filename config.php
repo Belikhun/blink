@@ -10,11 +10,11 @@ class ConfigPathProperty {}
 
 /**
  * Predefine configs that blink core needed in order to function.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -39,13 +39,13 @@ class CoreConfig {
 
 	#[ConfigPathProperty]
 	public static string	$CACHE_ROOT = DATA_ROOT . "/caches";
-	
+
 	#[ConfigPathProperty]
 	public static string	$ERRORS_ROOT = DATA_ROOT . "/errors";
 
 	#[ConfigPathProperty]
 	public static string	$ROUTES_ROOT = BASE_PATH . "/routes";
-	
+
 	#[ConfigPathProperty]
 	public static string	$TEMPLATES_ROOT = BASE_PATH . "/templates";
 
@@ -55,6 +55,11 @@ class CoreConfig {
 		CORE_ROOT . "/middleware",
 		BASE_PATH . "/includes",
 		BASE_PATH . "/classes"
+	);
+
+	public static array		$LANGS = array(
+		CORE_ROOT . "/lang",
+		BASE_PATH . "/lang"
 	);
 
 	public static string	$FILE_STORE = FILE_STORE_FS;

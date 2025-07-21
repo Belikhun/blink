@@ -5,11 +5,11 @@ namespace Blink;
 /**
  * Simple HTML builder for rendering html code in
  * dev-friendly way.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -30,7 +30,7 @@ class HtmlWriter {
 			if (str_contains($target, "#") || str_contains($target, ".")) {
 				// Parse ID and classes.
 				$re = '/([.#])([a-zA-Z0-9\-\_]+)/m';
-	
+
 				if (preg_match_all($re, $target, $cM, PREG_SET_ORDER)) {
 					foreach ($cM as $item) {
 						if ($item[1] === ".")
@@ -44,16 +44,16 @@ class HtmlWriter {
 			if (str_contains($target, "[")) {
 				// Parse attributes
 				$re = '/\[([a-zA-Z0-9=\'\" ]+)\]/mU';
-	
+
 				if (preg_match_all($re, $target, $aM, PREG_SET_ORDER)) {
 					foreach ($aM as $item) {
 						$parts = explode("=", $item[1]);
-						
+
 						if (empty($parts[1])) {
 							$attributes[$parts[0]] = true;
 							continue;
 						}
-	
+
 						$attributes[$parts[0]] = trim($parts[1], "\"'");
 					}
 				}
@@ -71,7 +71,7 @@ class HtmlWriter {
 	 * @param	string		$content
 	 * @param	bool		$end			Append end tag
 	 * @return	string
-	 * 
+	 *
 	 * @version	1.0
 	 * @author	Belikhun <belivipro9x99@gmail.com>
 	 */
@@ -122,7 +122,7 @@ class HtmlWriter {
 
 		if (!in_array($tag, static::SELF_CLOSING)) {
 			$html .= ">$content";
-	
+
 			if ($end)
 				$html .= self::end($tag);
 		} else {
@@ -134,14 +134,14 @@ class HtmlWriter {
 
 	/**
 	 * Build the HTML string tag and return it.
-	 * Alias of {@link HtmlWriter::build}
+	 * Alias of {@see HtmlWriter::build()}
 	 *
 	 * @param	string		$tag			Tag name. Accept CSS expression.
 	 * @param	array		$attributes
 	 * @param	string		$content
 	 * @param	bool		$end			Append end tag
 	 * @return	string
-	 * 
+	 *
 	 * @version	1.0
 	 * @author	Belikhun <belivipro9x99@gmail.com>
 	 */

@@ -1,11 +1,11 @@
 <?php
 /**
  * System autoload logics.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -32,12 +32,12 @@ function updateAutoloadData() {
 	$nsre = "/namespace ([a-zA-Z0-9\\\\]+);/mi";
 
 	// Class name regex
-	$clre = '/^(?:[\t\n]*|[\t\n]*abstract\s+|[\t\n]*final\s+)(?:class|trait|enum) ([a-zA-Z0-9\_]+)[\\a-zA-Z0-9\ \,\t\n]*\{/m';
+	$clre = '/^(?:[\t\n]*|[\t\n]*abstract\s+|[\t\n]*final\s+)(?:class|trait|enum|interface) ([a-zA-Z0-9\_]+)[\\a-zA-Z0-9\ \,\t\n]*\{/m';
 
 	foreach (\CONFIG::$INCLUDES as $include) {
 		if (!file_exists($include))
 			continue;
-		
+
 		$files = getFiles($include, "php");
 
 		foreach ($files as $file) {
@@ -50,7 +50,7 @@ function updateAutoloadData() {
 			$content = fileGet(($path[0] === "/" && !str_starts_with($path, BASE_PATH))
 				? BASE_PATH . $path
 				: $path);
-			
+
 			$namespace = "";
 			$classes = array();
 
@@ -292,7 +292,7 @@ function AutoloadClass(string $class) {
 		// Unset this class data and start fallback autoloading.
 		unset($AUTOLOAD_DATA[$class]);
 	}
-	
+
 	// We might have a new class here that the code is requesting. Update the
 	// autoload cache and try again.
 	updateAutoloadData();

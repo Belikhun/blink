@@ -8,11 +8,11 @@ use Blink\Exception\FileInstanceNotFound;
 
 /**
  * File store interface.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -20,13 +20,21 @@ class File {
 	public static string $ROOT;
 
 	public ?int $id;
+
 	public string $hash;
+
 	public string $filename;
+
 	public string $extension;
+
 	public string $mimetype;
+
 	public int $size;
+
 	public ?\User $author;
+
 	public int $created;
+
 
 	public function __construct(
 		?int $id = null,
@@ -89,7 +97,7 @@ class File {
 			}
 		}
 	}
-	
+
 	public function getStorePath() {
 		return self::$ROOT . "/{$this -> hash}";
 	}
@@ -101,7 +109,7 @@ class File {
 
 	/**
 	 * Get file by hash.
-	 * 
+	 *
 	 * @param	string					$hash
 	 * @return	File
 	 * @throws	FileInstanceNotFound
@@ -135,8 +143,8 @@ class File {
 
 	/**
 	 * Get file by ID. It's not recommend to use this function.
-	 * This function will not be available when file store is {@link FILE_STORE_FS}
-	 * 
+	 * This function will not be available when file store is {@see FILE_STORE_FS}
+	 *
 	 * @param	int						$id
 	 * @return	File
 	 * @throws	FileInstanceNotFound

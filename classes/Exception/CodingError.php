@@ -4,7 +4,7 @@ namespace Blink\Exception;
 
 /**
  * Class representing a runtime error, caught by
- * {@link set_error_handler()}.
+ * {@see set_error_handler()}.
  *
  * @author		Belikhun
  * @since		1.0.0

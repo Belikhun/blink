@@ -11,11 +11,11 @@ use Blink\Exception\CodingError;
 
 /**
  * MySQLi database driver.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -52,7 +52,7 @@ class MySQLi extends Database {
 
 	/**
 	 * Execute a SQL query.
-	 * 
+	 *
 	 * @param	string		$sql	The query
 	 * @param	array		$params
 	 * @param	int			$from
@@ -90,7 +90,7 @@ class MySQLi extends Database {
 
 			if ($limit < 1)
 				$limit = "18446744073709551615";
-			
+
 			$sql .= " LIMIT $from, $limit";
 		}
 
@@ -151,10 +151,10 @@ class MySQLi extends Database {
 
 			while ($row = $res -> fetch_array(MYSQLI_ASSOC)) {
 				$row = (object) $row;
-	
+
 				if (isset($row -> id))
 					$row -> id = (int) $row -> id;
-	
+
 				$rows[] = $row;
 			}
 
@@ -188,7 +188,7 @@ class MySQLi extends Database {
 			case SQL_DELETE:
 			case SQL_TRUNCATE:
 				return $affected;
-			
+
 			default:
 				throw new BaseException(UNKNOWN_ERROR, "\$DB -> execute(): Something went really wrong!", 500);
 		}
@@ -208,7 +208,7 @@ class MySQLi extends Database {
 
 		foreach ($results as $result) {
 			$column = new ColumnInfo($result -> table_name, $result -> column_name);
-			$column -> position = intval($result -> original_position);
+			$column -> position = intval($result -> ordinal_position);
 			$column -> default = $result -> column_default;
 			$column -> nullable = boolval($result -> is_nullable);
 			$column -> type = match ($result -> data_type) {
