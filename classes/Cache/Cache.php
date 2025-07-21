@@ -7,7 +7,7 @@ use Throwable;
 
 /**
  * Global variable to store created cache instances.
- * 
+ *
  * @var		Cache[]	$CACHES
  * @global	Cache[]	$CACHES
  */
@@ -17,11 +17,11 @@ $CACHES = array();
 
 /**
  * Cache interface.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
+ *
  * Copyright (C) 2018-2023 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
@@ -29,7 +29,7 @@ class Cache {
 	const NO_EXPIRE = -1;
 
 	public static string $ROOT;
-	
+
 	public string $id;
 
 	protected CachedData $data;
@@ -75,8 +75,8 @@ class Cache {
 
 	/**
 	 * Try to fetch current data of this cache.
-	 * 
-	 * @return bool 
+	 *
+	 * @return bool
 	 */
 	public function fetch() {
 		if (!file_exists($this -> path))
@@ -92,7 +92,7 @@ class Cache {
 
 	/**
 	 * Initialize clean record of this cache.
-	 * 
+	 *
 	 * @return Cache
 	 */
 	public function initialize() {
@@ -108,7 +108,7 @@ class Cache {
 	/**
 	 * Set cache age.
 	 * If set to `Cache::NO_EXPIRE`, this cache will never expire.
-	 * 
+	 *
 	 * @param	int		$age
 	 */
 	public function setAge(int $age) {
@@ -119,7 +119,7 @@ class Cache {
 	/**
 	 * Validate cache age and content.
 	 * Return `true` if cache lifetime is within set age and content is set.
-	 * 
+	 *
 	 * @return	bool
 	 */
 	public function validate() {
@@ -134,7 +134,7 @@ class Cache {
 		return $this -> data;
 	}
 
-	public function content() {
+	public function content(): mixed {
 		$this -> hit = true;
 		return $this -> data -> content;
 	}
@@ -169,7 +169,7 @@ class Cache {
 
 	public static function remove(string $id) {
 		$path = static::path($id);
-		
+
 		if (file_exists($path))
 			unlink($path);
 	}

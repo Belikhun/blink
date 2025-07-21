@@ -126,7 +126,7 @@ abstract class Database {
 	public function getColumns(string $table, bool $cache = true) {
 		$cache = Cache::instance("database.columns.{$table}");
 
-		if ($cache -> validate())
+		if ($cache -> fetch() && $cache -> validate())
 			return $cache -> content();
 
 		$data = $this -> fetchColumns($table);

@@ -221,7 +221,7 @@ class MySQLi extends Database {
 				default => ColumnType::UNKNOWN
 			};
 
-			$columns[] = $column;
+			$columns[$column -> column] = $column;
 		}
 
 		return $columns;

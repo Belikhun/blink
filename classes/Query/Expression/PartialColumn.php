@@ -155,7 +155,7 @@ class PartialColumn implements Sequelizable {
 
 		return ($this -> tableAlias && $useAlias)
 			? "`{$this -> tableAlias}`.{$this -> column}"
-			: "{{$this -> table}}.{$this -> column}";
+			: "{$this -> table}.{$this -> column}";
 	}
 
 	public function sequelize(Query $query): array {
