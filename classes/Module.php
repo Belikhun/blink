@@ -3,6 +3,7 @@
 namespace Blink;
 
 use Blink\Http\Router;
+use Blink\Ticker\Orbit;
 
 /**
  * A unit of application wiring.
@@ -45,6 +46,14 @@ abstract class Module {
 	public function detach(): void {}
 
 	/**
+	 * Declare work that comes round on a schedule.
+	 *
+	 * Called by `ticker:tick`, once a minute, so it must stay cheap: build the
+	 * entries and return. Whether one is actually due is decided afterwards.
+	 */
+	public function orbits(Orbit $orbit): void {}
+
+	/**
 	 * Console commands this module ships.
 	 *
 	 * @return	class-string<\Blink\Console\Command>[]
@@ -70,5 +79,19 @@ abstract class Module {
 	 */
 	protected function routes(string $directory): void {
 		Router::loadRoutesFrom($directory);
+	}
+
+	/**
+	 * Add a directory of schema layers to the stack.
+	 *
+	 * Call it from `define()`: discovery happens before any module attaches,
+	 * and a path registered later would be missed by the apply that has
+	 * already run.
+	 */
+	protected function layers(string $directory): void {
+		$directory = rtrim(str_replace("\\", "/", $directory), "/");
+
+		if (!in_array($directory, \CONFIG::$TERRA_PATHS, true))
+			\CONFIG::$TERRA_PATHS[] = $directory;
 	}
 }

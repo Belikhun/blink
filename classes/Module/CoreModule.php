@@ -61,6 +61,16 @@ class CoreModule extends Module {
 			Command\TerraRebuild::class,
 			Command\TerraMake::class,
 
+			Command\TickerRun::class,
+			Command\TickerTick::class,
+			Command\TickerOrbits::class,
+			Command\TickerStatus::class,
+			Command\TickerFailed::class,
+			Command\TickerRetry::class,
+			Command\TickerForget::class,
+			Command\TickerClear::class,
+			Command\TickerRestart::class,
+
 			Command\CacheClear::class,
 			Command\RouteList::class,
 

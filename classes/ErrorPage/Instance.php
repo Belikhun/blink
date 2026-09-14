@@ -7,6 +7,7 @@ use Blink\Environment;
 use Blink\ErrorPage\Exception\ReportNotFound;
 use Blink\Ether;
 use Blink\Ether\ErrorPage\ErrorPageContext;
+use Blink\Http\Response\APIResponse;
 use Blink\Http\Router;
 use Blink\Server;
 use Blink\Session;
@@ -382,12 +383,48 @@ class Instance {
 		return \CONFIG::$ERRORS_ROOT . "/{$id}.report";
 	}
 
+	/**
+	 * Build and store a report for a throwable that never reached a response.
+	 *
+	 * A task that fails inside a runner, or an entry that fails inside a tick,
+	 * has nobody to show an error page to, but the report is still the only
+	 * place the stack trace and context survive.
+	 */
+	public static function fromException(\Throwable $e, int $status = 500): Instance {
+		$code = ($e instanceof \Blink\Exception\BaseException)
+			? $e -> code
+			: 1000 + $e -> getCode();
+
+		$description = ($e instanceof \Blink\Exception\BaseException)
+			? $e -> description
+			: $e -> getMessage();
+
+		$response = new APIResponse($code, $description, $status, $e);
+		return static::create($response -> output());
+	}
+
+	/**
+	 * The command that was running, as it was typed.
+	 */
+	protected static function commandLine(): string {
+		global $argv;
+
+		return is_array($argv)
+			? "blink " . implode(" ", array_slice($argv, 1))
+			: "blink";
+	}
+
 	public static function create(array $data = null): Instance {
 		global $PATH, $AUTOLOADED, $AUTOLOAD_MISSES, $RUNTIME;
 
 		$instance = new static(bin2hex(random_bytes(10)));
 		$instance -> data = $data;
-		$instance -> path = $PATH;
+
+		// A console command has no request behind it, so there is no path to
+		// record. The command line stands in for one, since that is what a
+		// reader of the report will want to know.
+		$instance -> path = $PATH ?? (BLINK_IS_CLI ? static::commandLine() : "/");
+
 		$instance -> method = Server::$METHOD ?? "ERRR";
 		$instance -> protocol = Server::$PROTOCOL ?? "ERRR";
 		$instance -> ip = getClientIP();
