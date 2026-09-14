@@ -1,14 +1,12 @@
 <?php
 /**
- * const.php
- *
- * Constants definition.
+ * Constants and global functions available before autoloading starts.
  *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
  *
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
@@ -130,6 +128,7 @@ define("CLASS_NOTOVERRIDABLE", 118);
 define("NO_INSTANCE", 119);
 define("OVERRIDER_CLASS_NOT_FOUND", 120);
 define("STRING_NOT_FOUND", 121);
+define("MODULE_NOT_FOUND", 122);
 
 define("DATA_TYPE_MISMATCH", 201);
 define("INVALID_JSON", 202);
@@ -151,7 +150,6 @@ define("CONFIG_GROUP_DEFINED", 216);
 define("CONFIG_ITEM_DEFINED", 217);
 define("CONFIG_NO_ACTIVE_GROUP", 218);
 define("CONFIG_ITEM_NOT_FOUND", 219);
-define("INVALID_MOODLE_USER", 220);
 define("FIELD_DATA_ERROR", 221);
 define("INSTANCE_EXISTS", 222);
 define("USER_NOT_IN_GROUP", 223);
@@ -159,6 +157,9 @@ define("INVALID_EXTENSION", 224);
 define("INVALID_PROPERTY", 225);
 define("UNSUPPORTED_AUTH_SCHEME", 226);
 define("ROUTER_AUTH_ERROR", 228);
+define("FILE_LOCK_ERROR", 229);
+define("LOCK_ALREADY_ACQUIRED", 230);
+define("ETHER_INVALID_MIDDLEWARE", 232);
 
 define("ACCESS_DENIED", 300);
 define("LOGGED_IN", 301);
@@ -172,7 +173,45 @@ define("SQL_ERROR", 400);
 define("SQL_DRIVER_NOT_FOUND", 401);
 define("INVALID_SQL_DRIVER", 402);
 define("DATABASE_NOT_UPGRADED", 403);
+define("TERRA_UNSUPPORTED", 404);
 
 define("INVALID_TOKEN", 500);
 define("INVALID_SECRET", 501);
 define("TOKEN_EXPIRED", 502);
+
+define("ESSENCE_INVALID_CONCRETE", 601);
+define("ESSENCE_INVALID_INSTANCE", 602);
+define("ESSENCE_BINDING_NOT_DEFINED", 603);
+define("ESSENCE_INVALID_CALLABLE", 604);
+define("ESSENCE_CALL_MISSING_PARAM", 605);
+define("ESSENCE_CALL_MISSING_BIND", 606);
+define("ESSENCE_CALL_ARGUMENT_MISMATCH", 607);
+define("ESSENCE_CIRCULAR_DEPENDENCY", 608);
+
+define("CONSOLE_COMMAND_NOT_FOUND", 700);
+define("CONSOLE_INVALID_INPUT", 701);
+
+define("TICKER_INVALID_PATTERN", 710);
+define("TICKER_TASK_UNSERIALIZABLE", 711);
+define("TICKER_STORE_NOT_FOUND", 712);
+
+/**
+ * Return string content of given string identifier.
+ *
+ * Declared here rather than in `libs.php` because that file lives under the
+ * `Blink` namespace, and this helper has to stay global to be callable
+ * unqualified from every namespace.
+ *
+ * @param	string	$identifier		String identifier.
+ * @param	array	$placeholders	Placeholder values to be replaced inside string. String placeholders are capsuled between `{}`. Example: `{name}`
+ * @param	string	$lang			Override language to return, default to current set language.
+ * @return	string
+ */
+function __(
+	string $identifier,
+	array $placeholders = [],
+	string $lang = null,
+	bool $strict = false
+): string {
+	return \Blink\Localization::string($identifier, $placeholders, $lang, $strict);
+}

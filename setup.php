@@ -23,12 +23,13 @@ ini_set("short_open_tag", true);
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
  *
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
-setlocale(LC_TIME, "vi_VN.UTF-8");
-date_default_timezone_set("Asia/Ho_Chi_Minh");
+// A placeholder until CONFIG loads and the real zone is applied below. Date
+// functions warn without one, and config cannot be read this early.
+date_default_timezone_set("UTC");
 
 /**
  * Server's base path.
@@ -162,6 +163,8 @@ if (!in_array(CoreConfig::class, class_parents(\CONFIG::class, false))) {
 	die();
 }
 
+date_default_timezone_set(CONFIG::$TIMEZONE);
+
 // Initialise paths in config
 $configRef = new ReflectionClass(CONFIG::class);
 $configProps = $configRef -> getProperties(ReflectionProperty::IS_STATIC);
@@ -193,7 +196,6 @@ if (!file_exists(BASE_PATH . "/.editorconfig"))
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";
-require_once CORE_ROOT . "/global.php";
 require_once CORE_ROOT . "/autoload.php";
 
 // We have registered our handlers, dispose of all garbage output from now.

@@ -90,5 +90,24 @@ class Localization {
 
 	public static function setup() {
 		static::load(static::BASE_LANG);
+		static::setLanguage(\CONFIG::$LANG);
+	}
+
+	/**
+	 * Switch the language strings are returned in, loading its store if this is
+	 * the first time it has been asked for. A language with no file of its own
+	 * still resolves, falling back to {@see Localization::BASE_LANG} per string.
+	 *
+	 * @param	string	$lang
+	 * @return	void
+	 */
+	public static function setLanguage(string $lang) {
+		$lang = strtolower(trim($lang));
+
+		if (empty($lang))
+			return;
+
+		static::load($lang);
+		static::$currentLanguage = $lang;
 	}
 }
