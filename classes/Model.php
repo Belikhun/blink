@@ -92,6 +92,23 @@ class Model implements JsonSerializable {
 	private static array $instances = array();
 
 	/**
+	 * How deep the running deletions are nested. The outermost `delete()` owns
+	 * rolling the journal back when the shared transaction fails.
+	 *
+	 * @var int
+	 */
+	private static int $deletionDepth = 0;
+
+	/**
+	 * Teardown journal for the running deletion. Each entry is an instance,
+	 * this one or a related one removed by `beforeDelete()`, recorded with
+	 * enough to put it back if the transaction rolls back.
+	 *
+	 * @var array<array{0: Model, 1: string, 2: int, 3: string}>
+	 */
+	private static array $deletionJournal = array();
+
+	/**
 	 * List of lazyloading properties, mapped by ID.
 	 *
 	 * @var array<string, array<string, array>>
@@ -138,13 +155,6 @@ class Model implements JsonSerializable {
 	 * @var bool
 	 */
 	public bool $isPopulatingData = false;
-
-	/**
-	 * Current query conditions for this model.
-	 *
-	 * @var string
-	 */
-	protected array $conditions = array();
 
 	protected static array $dbMaps = array();
 
@@ -496,14 +506,19 @@ class Model implements JsonSerializable {
 	/**
 	 * Delete this model instance in the database.
 	 *
+	 * The whole teardown runs in one transaction: the related rows
+	 * `beforeDelete()` clears, the record itself, and the hooks afterwards
+	 * either all commit or all roll back. A rollback also puts the in-memory
+	 * instances back, so a caller holding one still has something usable
+	 * rather than a half-erased object.
+	 *
 	 * @param	?ProgressReporter	$reporter
 	 * @return 	M
 	 */
 	public function delete(?ProgressReporter $reporter = null) {
 		global $DB;
 
-		// TODO: Add informative warning to developer here to let them know.
-		if (!$this -> isInserted())
+		if (!$this -> isInserted() || $this -> instanceDeleting)
 			return $this;
 
 		// Don't let core handle deleted event related to models.
@@ -511,6 +526,7 @@ class Model implements JsonSerializable {
 		$this -> instanceDeleting = true;
 
 		$name = static::class . " [" . $this -> {static::$primaryKey} . "]";
+		$primaryValue = $this -> {static::$primaryKey};
 		$child = $reporter ?-> newChild();
 		$reporter ?-> report(
 			0,
@@ -518,32 +534,64 @@ class Model implements JsonSerializable {
 			"Preparing to delete model <code>{$name}</code>"
 		);
 
-		// Let the model prepare for deletion first, this might be deleting related
-		// row with this instance.
-		$this -> beforeDelete($child);
+		// A related instance torn down by `beforeDelete()` runs its own
+		// `delete()` inside this transaction. Counting the nesting is what
+		// lets the outermost call own the rollback for all of them.
+		self::$deletionDepth++;
 
-		$reporter ?-> report(
-			0.5,
-			ProgressReporter::INFO,
-			"Deleting <code>{$name}</code> from database..."
-		);
+		try {
+			DB::transaction(function () use ($DB, $name, $child, $reporter, $primaryValue) {
+				// Let the model prepare for deletion first, this might be deleting related
+				// row with this instance.
+				$this -> beforeDelete($child);
 
-		$DB -> delete(
-			static::$table,
-			array( static::$primaryKey => $this -> saveField(static::$primaryKey) )
-		);
+				$reporter ?-> report(
+					0.5,
+					ProgressReporter::INFO,
+					"Deleting <code>{$name}</code> from database..."
+				);
 
-		$reporter ?-> report(
-			0.9,
-			ProgressReporter::INFO,
-			"Cleaning up <code>{$name}</code> leftover data..."
-		);
+				$DB -> delete(
+					static::$table,
+					array( static::$primaryKey => $this -> saveField(static::$primaryKey) )
+				);
 
-		self::removeInstance($this -> {static::$primaryKey});
-		unset($this -> {static::$primaryKey});
+				$reporter ?-> report(
+					0.9,
+					ProgressReporter::INFO,
+					"Cleaning up <code>{$name}</code> leftover data..."
+				);
 
-		$this -> onInstanceDeleted();
-		$this -> onDeleted($child);
+				self::removeInstance($this -> {static::$primaryKey});
+				unset($this -> {static::$primaryKey});
+
+				// Journalled so a later step failing can put this back.
+				self::$deletionJournal[] = array( $this, static::class, $primaryValue, static::$primaryKey );
+
+				$this -> onInstanceDeleted();
+				$this -> onDeleted($child);
+			});
+		} catch (\Throwable $e) {
+			$this -> instanceDeleting = false;
+
+			// One transaction rolled back, so one restore pass covers every
+			// instance torn down inside it.
+			if (self::$deletionDepth === 1) {
+				foreach (self::$deletionJournal as [ $instance, $class, $primary, $primaryKey ])
+					self::restoreDeletedInstance($instance, $class, $primary, $primaryKey);
+			}
+
+			throw $e;
+		} finally {
+			self::$deletionDepth--;
+
+			if (self::$deletionDepth === 0) {
+				self::$deletionJournal = array();
+
+				// Now we can safely enable this again.
+				static::$canHandleModelEvents = true;
+			}
+		}
 
 		$child ?-> setCompleted();
 		$reporter ?-> report(
@@ -552,11 +600,24 @@ class Model implements JsonSerializable {
 			"Completed deleting <code>{$name}</code>"
 		);
 
-		// Now we can safely enable this again.
-		static::$canHandleModelEvents = true;
 		$this -> instanceDeleting = false;
 
 		return $this;
+	}
+
+	/**
+	 * Put back the in-memory state of an instance whose deletion rolled back,
+	 * so it can be used again as though it had never been torn down.
+	 *
+	 * @param	Model	$instance		The torn-down instance.
+	 * @param	string	$class			The instance's model class.
+	 * @param	int		$primary		The primary key value it had before deletion.
+	 * @param	string	$primaryKey		The primary key property name.
+	 */
+	private static function restoreDeletedInstance(Model $instance, string $class, int $primary, string $primaryKey): void {
+		$instance -> {$primaryKey} = $primary;
+		self::$instances[$class][$primary] = $instance;
+		$instance -> instanceDeleting = false;
 	}
 
 	/**
@@ -633,6 +694,142 @@ class Model implements JsonSerializable {
 	 * @return void
 	 */
 	protected function onInstanceDeleted() {}
+
+	/**
+	 * The fillable fields this save changed, as
+	 * `[objectKey => ["old" => <previous save value>, "new" => <current save value>]]`,
+	 * measured against the pre-save snapshot. The primary key is left out.
+	 *
+	 * Values are the database-facing ones, scalars and ids, so the delta can
+	 * be carried around and stored without dragging whole model graphs with
+	 * it.
+	 *
+	 * Only meaningful for an update. See {@see Model::collectInitialValues()}
+	 * for why an insert cannot use the dirty-field diff.
+	 *
+	 * @return	array<string, array{old: mixed, new: mixed}>
+	 */
+	protected function collectChanges(): array {
+		$changes = array();
+
+		foreach (array_keys(static::$fillables) as $objKey) {
+			if ($objKey === static::$primaryKey || !$this -> isDirty($objKey))
+				continue;
+
+			$changes[$objKey] = array(
+				"old" => $this -> snapshot[$objKey] ?? null,
+				"new" => $this -> getSaveValue($objKey)
+			);
+		}
+
+		return $changes;
+	}
+
+	/**
+	 * Every fillable paired with the value the insert gave it, shaped like
+	 * {@see Model::collectChanges()} with a null `old` throughout, since a new
+	 * row is new in its entirety.
+	 *
+	 * An insert deliberately does not reuse the dirty-field diff. A model can
+	 * already have had its snapshot baselined by the time the row is written,
+	 * which a save path persisting in more than one step does, and that leaves
+	 * nothing dirty. The delta for a brand new row would come out empty, and
+	 * a consumer asking "did any field I care about change?" would skip
+	 * creates entirely.
+	 *
+	 * @return	array<string, array{old: mixed, new: mixed}>
+	 */
+	protected function collectInitialValues(): array {
+		$changes = array();
+
+		foreach (array_keys(static::$fillables) as $objKey) {
+			if ($objKey === static::$primaryKey)
+				continue;
+
+			$changes[$objKey] = array(
+				"old" => null,
+				"new" => $this -> getSaveValue($objKey)
+			);
+		}
+
+		return $changes;
+	}
+
+	/**
+	 * Every fillable paired with the value it held as the row went away,
+	 * shaped like {@see Model::collectChanges()} with a null `new` throughout.
+	 *
+	 * This is the last chance to read them: once the deletion lands the row is
+	 * gone, and a lookup by id returns nothing. Reading a field must never
+	 * break the teardown, so one that cannot be read comes back null rather
+	 * than throwing.
+	 *
+	 * @return	array<string, array{old: mixed, new: mixed}>
+	 */
+	protected function collectFinalValues(): array {
+		$changes = array();
+
+		foreach (array_keys(static::$fillables) as $objKey) {
+			if ($objKey === static::$primaryKey)
+				continue;
+
+			try {
+				$value = $this -> getSaveValue($objKey);
+			} catch (\Throwable $e) {
+				// A relation whose row went first, or a property never set.
+				$value = null;
+			}
+
+			$changes[$objKey] = array(
+				"old" => $value,
+				"new" => null
+			);
+		}
+
+		return $changes;
+	}
+
+	/**
+	 * Drop every cached instance, of this model or of all of them.
+	 *
+	 * A web request ends and takes the cache with it. A long-running process
+	 * does not, and would otherwise hold every row it has ever touched.
+	 *
+	 * @param	bool	$all	Clear every model rather than just this one.
+	 */
+	public static function flushInstances(bool $all = false): void {
+		if ($all) {
+			self::$instances = array();
+			self::$lazyloads = array();
+			return;
+		}
+
+		unset(self::$instances[static::class]);
+	}
+
+	/**
+	 * Whether a property is typed as another model.
+	 *
+	 * Casting the type to a string was close enough while every lazyloaded
+	 * property was plainly typed, but a nullable or union type stringifies to
+	 * something like `?Blink\File` or `A|B`, which matches no class at all and
+	 * quietly reported false.
+	 */
+	protected function isModelProperty(ReflectionProperty $property): bool {
+		$type = $property -> getType();
+
+		if ($type instanceof \ReflectionNamedType)
+			return is_a($type -> getName(), self::class, true);
+
+		if ($type instanceof \ReflectionUnionType) {
+			foreach ($type -> getTypes() as $member) {
+				if ($member instanceof \ReflectionNamedType && is_a($member -> getName(), self::class, true))
+					return true;
+			}
+		}
+
+		return false;
+	}
 
 	protected static function saveInstance(int $id, Model $instance) {
 		if (!isset(self::$instances[static::class]))
@@ -1192,7 +1389,7 @@ class Model implements JsonSerializable {
 				if ($lazyloadMap) {
 					$prop = $ref -> getProperty($lazyloadMap);
 
-					if (is_a((string) $prop -> getType(), self::class, true)) {
+					if ($this -> isModelProperty($prop)) {
 						if ($depth <= 1) {
 							$out[$objKey] = null;
 							continue;
@@ -1232,7 +1429,7 @@ class Model implements JsonSerializable {
 				if ($lazyloadMap) {
 					$prop = $ref -> getProperty($lazyloadMap);
 
-					if (is_a((string) $prop -> getType(), self::class, true)) {
+					if ($this -> isModelProperty($prop)) {
 						if ($depth <= 1) {
 							unset($out[$objKey]);
 							continue;
