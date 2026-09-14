@@ -17,6 +17,13 @@ class QueryMetric extends MetricInstance {
 	public string $table;
 	public int $rows;
 
+	/**
+	 * Whether the statement raised rather than returned. A failed query still
+	 * took time and still belongs in the timeline, so it is recorded and
+	 * marked rather than dropped.
+	 */
+	public bool $errored = false;
+
 	public function __construct(string $mode, string $table) {
 		$this -> mode = $mode;
 		$this -> table = $table;
@@ -32,10 +39,11 @@ class QueryMetric extends MetricInstance {
 	}
 
 	public function __toString(): string {
-		return sprintf("%5s %8s %16s %2d",
+		return sprintf("%5s %8s %16s %2d%s",
 			$this -> timeFormat(),
 			$this -> mode,
 			$this -> table,
-			$this -> rows);
+			$this -> rows,
+			$this -> errored ? " [errored]" : "");
 	}
 }

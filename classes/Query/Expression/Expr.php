@@ -133,8 +133,8 @@ class Expr {
 	 * @param	Sequelizable|string		$column
 	 * @return	CallableFunction
 	 */
-	public static function count(Sequelizable|string $column) {
-		return new CallableFunction("COUNT", static::processValue($column, resolveAsColumn: true));
+	public static function count(Sequelizable|string $column, bool $distinct = false) {
+		return new Count($column, $distinct);
 	}
 
 	/**
@@ -145,6 +145,36 @@ class Expr {
 	 */
 	public static function max(Sequelizable|string|int|float ...$values) {
 		return new CallableFunction("MAX", ...static::processValues($values, resolveAsColumn: true));
+	}
+
+	/**
+	 * Escape the wildcards in a piece of text so `LIKE` matches it literally.
+	 *
+	 * User-supplied text almost always goes through here first: a `%` typed
+	 * into a search box would otherwise match everything.
+	 *
+	 * @param	string		$text		Text to match literally.
+	 * @param	string		$surround	Wrap the result in `%` on the given side:
+	 * 									`both`, `start`, `end` or `none`.
+	 * @return	string
+	 */
+	public static function likePattern(string $text, string $surround = "both"): string {
+		$escape = Comparator::LIKE_ESCAPE;
+
+		// The escape character itself has to go first, or it would escape the
+		// escapes added after it.
+		$text = str_replace(
+			array( $escape, "%", "_" ),
+			array( $escape . $escape, "{$escape}%", "{$escape}_" ),
+			$text
+		);
+
+		return match ($surround) {
+			"both" => "%{$text}%",
+			"start" => "%{$text}",
+			"end" => "{$text}%",
+			default => $text
+		};
 	}
 
 	/**
@@ -206,8 +236,7 @@ class Expr {
 	 * @return	CallableFunction
 	 */
 	public static function concatWs(NativeValue|string $separator, Sequelizable|string|int|float ...$values) {
-		return new CallableFunction(
-			"CONCAT_WS",
+		return new ConcatWs(
 			static::processValue($separator),
 			...static::processValues($values, resolveAsColumn: true)
 		);

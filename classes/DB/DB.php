@@ -37,6 +37,40 @@ abstract class DB extends Model {
 	}
 
 	/**
+	 * Run a callable inside a database transaction.
+	 *
+	 * Committed when the callable returns, rolled back when it throws, and the
+	 * error is re-thrown either way so the caller still sees what happened.
+	 *
+	 * @template	T
+	 * @param		callable():T	$callback
+	 * @return		T
+	 */
+	public static function transaction(callable $callback) {
+		global $DB;
+
+		$DB -> beginTransaction();
+
+		try {
+			$result = $callback();
+		} catch (\Throwable $e) {
+			$DB -> rollback();
+			throw $e;
+		}
+
+		$DB -> commit();
+		return $result;
+	}
+
+	/**
+	 * The engine family behind the connection, either `mysql` or `sqlite`.
+	 */
+	public static function family(): string {
+		global $DB;
+		return $DB -> family();
+	}
+
+	/**
 	 * Execute raw SQL query.
 	 * Should be used only when no other method suitable.
 	 *
@@ -85,6 +119,24 @@ abstract class DB extends Model {
 	public static function insert(string $table, stdClass|array $object): int {
 		global $DB;
 		return $DB -> insert($table, $object);
+	}
+
+	/**
+	 * Insert many records in as few statements as possible.
+	 *
+	 * Every record has to carry the same columns.
+	 *
+	 * @param	string					$table
+	 * @param	array|\Traversable		$objects
+	 * @return	int						Records inserted.
+	 */
+	public static function inserts(string $table, array|\Traversable $objects): int {
+		global $DB;
+
+		if ($objects instanceof \Traversable)
+			$objects = iterator_to_array($objects);
+
+		return $DB -> insertMany($table, $objects);
 	}
 
 	/**

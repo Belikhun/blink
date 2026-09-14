@@ -3,7 +3,12 @@
 namespace Blink;
 
 use Exception;
+use Blink\DB\Exception\DatabaseColumnNotFound;
+use Blink\DB\Exception\DatabaseInvalidColumn;
+use Blink\Ether;
+use Blink\Ether\Query\QueryContext;
 use Blink\Exception\CodingError;
+use Blink\Metric\QueryMetric;
 use Blink\Query\Expression\Expr;
 use Blink\Query\Expression\MatchAgainst;
 use Blink\Query\Expression\PartialColumn;
@@ -195,6 +200,28 @@ class Query extends QueryConditionBuilder {
 	public bool $disableAlias = false;
 
 	/**
+	 * Query middleware references attached to this query.
+	 *
+	 * @var string[]
+	 */
+	protected array $middleware = array();
+
+	/**
+	 * Query middleware references this query opts out of.
+	 *
+	 * @var string[]
+	 */
+	protected array $excludedMiddleware = array();
+
+	/**
+	 * The builder state as it was before a terminal operation started, or null
+	 * while none is running.
+	 *
+	 * @var ?array
+	 */
+	protected ?array $snapshotState = null;
+
+	/**
 	 * Create a new query.
 	 *
 	 * @param	class-string<G>					$class		Class to create new instance to.
@@ -320,6 +347,14 @@ class Query extends QueryConditionBuilder {
 	 * @param	string					$column		Column name or alias
 	 * @return	Column|PartialColumn
 	 */
+	/**
+	 * Short form of {@see Query::getColumn()}, for the many places a column
+	 * reference reads better than a method call.
+	 */
+	public function col(string $name): Column|PartialColumn {
+		return $this -> getColumn($name);
+	}
+
 	public function getColumn(string $column): Column|PartialColumn {
 		if (isset($this -> aliasesMap[$column]) && $this -> aliasesMap[$column] instanceof Column)
 			return $this -> aliasesMap[$column];
@@ -589,18 +624,26 @@ class Query extends QueryConditionBuilder {
 		$searchWhere = null;
 		$tokens = explode(" ", $query);
 		$leftover = array();
-		$re = '/^([a-zA-Z0-9-_.]+)(=|>|<|>=|<=|<>)([a-zA-Z0-9]+)$/';
+		// The left side has to start like an identifier, so a token such as
+		// `2024=2024` reads as text rather than as a column comparison.
+		$re = '/^([a-zA-Z_][a-zA-Z0-9\-_.]*)(=|>|<|>=|<=|<>)([a-zA-Z0-9]+)$/';
 
 		foreach ($tokens as $token) {
+			$compared = false;
+
 			// Try matching the column value format.
 			if (preg_match($re, $token, $match)) {
-				$left = $this -> getColumn($match[1]);
-				$comparator = $match[2];
-				$right = Expr::value($match[3]);
-				$this -> where($left, $comparator, $right);
-
-				continue;
+				try {
+					$this -> where($this -> getColumn($match[1]), $match[2], Expr::value($match[3]));
+					$compared = true;
+				} catch (DatabaseInvalidColumn | DatabaseColumnNotFound) {
+					// Names no column this query knows, so it goes on as an
+					// ordinary keyword rather than failing the whole search.
+				}
 			}
+
+			if ($compared)
+				continue;
 
 			if ($fulltext) {
 				$leftover[] = $token;
@@ -613,7 +656,7 @@ class Query extends QueryConditionBuilder {
 			if (empty($searchWhere))
 				$searchWhere = Expr::lower(Expr::concatWs(Expr::value(" "), ...$columns));
 
-			$group -> where($searchWhere, "LIKE", "%" . mb_strtolower($token) . "%");
+			$group -> where($searchWhere, "LIKE", Expr::likePattern(mb_strtolower($token)));
 		}
 
 		if ($fulltext && !empty($leftover)) {
@@ -863,28 +906,251 @@ class Query extends QueryConditionBuilder {
 	}
 
 	/**
+	 * Attach query middleware to this query.
+	 *
+	 * @param	string	...$middleware
+	 * @return	static<G>
+	 */
+	public function middleware(string ...$middleware) {
+		Ether::assertQueryMiddleware(...$middleware);
+
+		foreach ($middleware as $reference) {
+			if (!in_array($reference, $this -> middleware, true))
+				$this -> middleware[] = $reference;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Opt this query out of middleware that would otherwise run.
+	 *
+	 * @param	string	...$middleware
+	 * @return	static<G>
+	 */
+	public function withoutMiddleware(string ...$middleware) {
+		Ether::assertQueryMiddleware(...$middleware);
+
+		foreach ($middleware as $reference) {
+			if (!in_array($reference, $this -> excludedMiddleware, true))
+				$this -> excludedMiddleware[] = $reference;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * @return	string[]
+	 */
+	public function getMiddleware(): array {
+		return $this -> middleware;
+	}
+
+	/**
+	 * @return	string[]
+	 */
+	public function getExcludedMiddleware(): array {
+		return $this -> excludedMiddleware;
+	}
+
+	/**
+	 * @return	array<Column|Sequelizable>
+	 */
+	public function getGroupBy(): array {
+		return $this -> groupBy;
+	}
+
+	/**
+	 * @return	QueryOrder[]
+	 */
+	public function getSortBy(): array {
+		return $this -> sortBy;
+	}
+
+	/**
+	 * @return	JoinTable[]
+	 */
+	public function getJoins(): array {
+		return $this -> joins;
+	}
+
+	/**
+	 * Remember the builder state, so whatever a middleware adds to the query
+	 * lasts only for the operation that is running.
+	 *
+	 * Without this a query reused across two calls would carry the first
+	 * call's injected conditions into the second.
+	 *
+	 * @return	static<G>
+	 */
+	public function snapshot(): static {
+		if ($this -> snapshotState !== null)
+			return $this;
+
+		$this -> snapshotState = array(
+			"conditions" => $this -> conditions,
+			"groupBy" => $this -> groupBy,
+			"sortBy" => $this -> sortBy,
+			"joins" => $this -> joins
+		);
+
+		return $this;
+	}
+
+	/**
+	 * Alias of {@see Query::snapshot()}.
+	 *
+	 * @return	static<G>
+	 */
+	public function fork(): static {
+		return $this -> snapshot();
+	}
+
+	/**
+	 * Put the builder back the way {@see Query::snapshot()} found it.
+	 *
+	 * @return	static<G>
+	 */
+	public function restore(): static {
+		if ($this -> snapshotState === null)
+			return $this;
+
+		foreach ($this -> snapshotState as $key => $value)
+			$this -> {$key} = $value;
+
+		$this -> snapshotState = null;
+		return $this;
+	}
+
+	/**
+	 * Run one terminal operation through the query middleware stack.
+	 *
+	 * @template	T
+	 * @param		string						$operation	Name of the operation, for the context.
+	 * @param		string						$kind		One of `QueryContext::KIND_*`.
+	 * @param		callable(QueryContext): T	$destination
+	 * @return		T
+	 */
+	protected function executeOperation(string $operation, string $kind, callable $destination) {
+		$this -> snapshot();
+		$context = new QueryContext($this, $operation, $kind);
+
+		try {
+			return Ether::dispatchQuery($this, $context, $destination);
+		} finally {
+			$this -> restore();
+		}
+	}
+
+	/**
+	 * Run a statement that has already been built, without starting another
+	 * middleware pipeline around it.
+	 *
+	 * @return	object[]|int
+	 */
+	protected function executeRawStatement(string $sql, array $params = array(), int $from = 0, int $count = 0) {
+		global $DB;
+
+		$metric = new QueryMetric(static::statementMode($sql), $this -> metricTable());
+
+		try {
+			$result = $DB -> execute($sql, $params, $from, $count);
+		} catch (\Throwable $e) {
+			$metric -> errored = true;
+			$metric -> time(-1);
+			throw $e;
+		}
+
+		$metric -> time(is_array($result) ? count($result) : (int) $result);
+		return $result;
+	}
+
+	/**
+	 * Run an arithmetic update over every matching row.
+	 *
+	 * @param	Column|string	$column
+	 * @return	bool
+	 */
+	protected function adjustColumn(string $operation, Column|string $column, int|float $amount) {
+		if ($this -> table -> table instanceof Query)
+			throw new CodingError("Cannot perform UPDATE operation on subquery!");
+
+		return $this -> executeOperation($operation, QueryContext::KIND_WRITE, function (QueryContext $context) use ($column, $amount) {
+			if (is_string($column))
+				$column = $this -> getColumn($column);
+
+			$this -> disableAlias = true;
+
+			try {
+				// Bare on both sides: SQLite rejects a qualified name on the
+				// left of SET, and an UPDATE only ever touches the one table.
+				$target = $column -> column;
+				$params = array();
+
+				$sql = "UPDATE {$this -> table -> table -> out()}"
+					. "\nSET {$target} = ({$target} + ({$amount}))";
+
+				list($where, $whereParams) = $this -> sequelize($this);
+
+				if (!empty($where)) {
+					$sql .= "\nWHERE {$where}";
+					$params = array_merge($params, $whereParams);
+				}
+
+				$context -> sql = $sql;
+				$context -> params = $params;
+
+				return $this -> executeRawStatement($sql, $params);
+			} finally {
+				$this -> disableAlias = false;
+			}
+		});
+	}
+
+	/**
+	 * The statement's leading keyword, which is what a metric records as its
+	 * mode.
+	 */
+	protected static function statementMode(string $sql): string {
+		return strtoupper((string) strtok(ltrim($sql), " \t\n\r"));
+	}
+
+	/**
+	 * The table name a metric is filed under.
+	 */
+	protected function metricTable(): string {
+		$table = $this -> table -> table;
+
+		return ($table instanceof Table)
+			? $table -> getName()
+			: "[subquery]";
+	}
+
+	/**
 	 * Fetch the first record and return it.
 	 *
 	 * @return ?G
 	 */
 	public function first() {
-		global $DB;
+		return $this -> executeOperation("first", QueryContext::KIND_READ, function (QueryContext $context) {
+			list($sql, $params) = $this -> makeSQLCall();
+			$context -> sql = $sql;
+			$context -> params = $params;
 
-		list($sql, $params) = $this -> makeSQLCall();
+			if (empty($sql))
+				return null;
 
-		if (empty($sql))
-			return null;
+			$records = $this -> executeRawStatement($sql, $params, 0, 1);
+			$record = reset($records);
 
-		$record = $DB -> execute($sql, $params, 0, 1);
-		$record = reset($record);
+			if (empty($record))
+				return null;
 
-		if (empty($record))
-			return null;
+			if (!$this -> isModelQuery())
+				return $record;
 
-		if (!$this -> isModelQuery())
-			return $record;
-
-		return $this -> class::processRecord($record);
+			return $this -> class::processRecord($record);
+		});
 	}
 
 	/**
@@ -913,7 +1179,17 @@ class Query extends QueryConditionBuilder {
 
 		if (!$this -> isModelQuery()) {
 			// Query not related to model. We will perform raw insert into target table.
-			$id = $DB -> insert($table, $fill);
+			$metric = new QueryMetric(SQL_INSERT, $table);
+
+			try {
+				$id = $DB -> insert($table, $fill);
+			} catch (\Throwable $e) {
+				$metric -> errored = true;
+				$metric -> time(-1);
+				throw $e;
+			}
+
+			$metric -> time(1);
 			$fill -> id = $id;
 			return $fill;
 		}
@@ -928,15 +1204,19 @@ class Query extends QueryConditionBuilder {
 	 * @return bool
 	 */
 	public function exists() {
-		global $DB;
+		return $this -> executeOperation("exists", QueryContext::KIND_READ, function (QueryContext $context) {
+			list($sql, $params) = $this -> makeSQLCall([Expr::value("x")]);
+			$context -> sql = $sql;
+			$context -> params = $params;
 
-		list($sql, $params) = $this -> makeSQLCall([Expr::value("x")]);
+			if (empty($sql))
+				return false;
 
-		if (empty($sql))
-			return false;
-
-		$result = $DB -> execute($sql, $params);
-		return !empty($result);
+			// One row is all the answer needs, and stopping there keeps the
+			// cost off a table that matches a great many.
+			$records = $this -> executeRawStatement($sql, $params, 0, 1);
+			return !empty($records);
+		});
 	}
 
 	/**
@@ -950,32 +1230,53 @@ class Query extends QueryConditionBuilder {
 		if ($this -> table -> table instanceof Query)
 			throw new CodingError("Cannot perform DELETE operation on subquery!");
 
-		$this -> disableAlias = true;
-
-		try {
-			list($where, $params) = parent::sequelize($this);
-			$result = false;
-
-			if (empty($where))
-				return false;
-
-			list($table, $tableParams) = $this -> table -> sequelize($this);
-
-			$sql = "DELETE FROM {$table}"
-				. "\nWHERE ({$where})";
-
-			$result = DB::exec($sql, array_merge($tableParams, $params));
-		} catch (Exception $e) {
-			$this -> disableAlias = false;
-			throw $e;
+		if (!empty($this -> joins) && $DB -> family() !== "mysql") {
+			throw new CodingError(
+				"Cannot perform a joined DELETE on this database.",
+				"Only MySQL supports the multi-table <code>DELETE table FROM table JOIN ...</code> form. "
+					. "Select the ids first, then delete by them."
+			);
 		}
 
-		$this -> disableAlias = false;
-		return $result;
+		return $this -> executeOperation("delete", QueryContext::KIND_WRITE, function (QueryContext $context) {
+			global $DB;
+
+			$this -> disableAlias = true;
+
+			try {
+				list($table, $params) = $this -> table -> sequelize($this);
+
+				// The target has to be named twice in the joined form, once as
+				// what is being deleted and once as what is being read.
+				$sql = (!empty($this -> joins))
+					? "DELETE {$table} FROM {$table}"
+					: "DELETE FROM {$table}";
+
+				foreach ($this -> joins as $join) {
+					list($joinSQL, $joinParams) = $join -> sequelize($this);
+					$sql .= "\n{$joinSQL}";
+					$params = array_merge($params, $joinParams);
+				}
+
+				list($where, $whereParams) = parent::sequelize($this);
+
+				if (!empty($where)) {
+					$sql .= "\nWHERE {$where}";
+					$params = array_merge($params, $whereParams);
+				}
+
+				$context -> sql = $sql;
+				$context -> params = $params;
+
+				return $this -> executeRawStatement($sql, $params);
+			} finally {
+				$this -> disableAlias = false;
+			}
+		});
 	}
 
 	/**
-	 * Truncate the table entirely.
+	 * Empty the table entirely.
 	 *
 	 * @return bool
 	 */
@@ -983,7 +1284,15 @@ class Query extends QueryConditionBuilder {
 		if ($this -> table -> table instanceof Query)
 			throw new CodingError("Cannot perform TRUNCATE operation on subquery!");
 
-		return DB::exec("TRUNCATE TABLE {" . $this -> table -> table -> getName() . "}");
+		return $this -> executeOperation("truncate", QueryContext::KIND_WRITE, function (QueryContext $context) {
+			// `DELETE FROM` rather than `TRUNCATE`, which SQLite has no
+			// statement for.
+			$sql = "DELETE FROM `" . $this -> table -> table -> getName() . "`";
+			$context -> sql = $sql;
+			$context -> params = array();
+
+			return $this -> executeRawStatement($sql);
+		});
 	}
 
 	/**
@@ -995,35 +1304,32 @@ class Query extends QueryConditionBuilder {
 	 * @return	G[]
 	 */
 	public function all(int $from = 0, int $count = 0, bool $idIndexed = false) {
-		global $DB;
+		return $this -> executeOperation("all", QueryContext::KIND_READ, function (QueryContext $context) use ($from, $count, $idIndexed) {
+			$instances = array();
+			list($sql, $params) = $this -> makeSQLCall(limit: false);
+			$context -> sql = $sql;
+			$context -> params = $params;
 
-		$instances = array();
+			if (empty($sql))
+				return array();
 
-		list($sql, $params) = $this -> makeSQLCall(limit: false);
+			$records = $this -> executeRawStatement($sql, $params, $from, $count);
 
-		if (empty($sql))
-			return array();
-
-		$records = $DB -> execute($sql, $params, $from, $count);
-
-		if (!$this -> isModelQuery()) {
-			if (!$idIndexed)
+			if (!$this -> isModelQuery())
 				return array_values($records);
 
-			return $records;
-		}
-
-		if ($idIndexed) {
-			foreach ($records as $record) {
-				$record = $this -> class::processRecord($record);
-				$instances[$record -> getPrimaryValue()] = $record;
+			if ($idIndexed) {
+				foreach ($records as $record) {
+					$record = $this -> class::processRecord($record);
+					$instances[$record -> getPrimaryValue()] = $record;
+				}
+			} else {
+				foreach ($records as $record)
+					$instances[] = $this -> class::processRecord($record);
 			}
-		} else {
-			foreach ($records as $record)
-				$instances[] = $this -> class::processRecord($record);
-		}
 
-		return $instances;
+			return $instances;
+		});
 	}
 
 	/**
@@ -1041,31 +1347,59 @@ class Query extends QueryConditionBuilder {
 	/**
 	 * Return an array of values from the specified column.
 	 *
-	 * @param	Column|string	$column
-	 * @param	int				$from			Return a subset of records, starting at this point.
-	 * @param	int				$count			Return a subset comprising this many records in total.
+	 * @param	Column|Sequelizable|string	$column
+	 * @param	int							$from			Return a subset of records, starting at this point.
+	 * @param	int							$count			Return a subset comprising this many records in total.
 	 * @return	string[]
 	 */
-	public function values(Column|string $column, int $from = 0, int $count = 0) {
-		global $DB;
+	public function values(Column|Sequelizable|string $column, int $from = 0, int $count = 0) {
+		$column = $this -> resolveValueColumn($column);
 
-		if ($column === "#") {
-			$column = ($this -> isModelQuery())
-				? $this -> class::col($column)
-				: "id";
-		}
+		return $this -> executeOperation("values", QueryContext::KIND_READ, function (QueryContext $context) use ($column, $from, $count) {
+			$select = new SelectColumn($column, "value");
+			list($sql, $params) = $this -> makeSQLCall([$select], limit: false, distinct: true);
+			$context -> sql = $sql;
+			$context -> params = $params;
 
-		if (is_string($column))
-			$column = $this -> getColumn($column);
+			if (empty($sql))
+				return array();
 
-		$select = new SelectColumn($column, "value");
-		list($sql, $params) = $this -> makeSQLCall([$select], limit: false, distinct: true);
+			$records = $this -> executeRawStatement($sql, $params, $from, $count);
+			return array_values(array_map(fn ($record) => $record -> value, $records));
+		});
+	}
 
-		if (empty($sql))
-			return array();
+	/**
+	 * Return the first value of the specified expression or column.
+	 *
+	 * Mostly for an aggregate: `Expr::sum()`, `Expr::avg()`, `Expr::max()` and
+	 * the rest, where one row with one value is the whole answer.
+	 *
+	 * @param	Column|Sequelizable|string	$column
+	 * @return	?string|float
+	 */
+	public function value(Column|Sequelizable|string $column) {
+		$column = $this -> resolveValueColumn($column);
 
-		$records = $DB -> execute($sql, $params, $from, $count);
-		return array_values(array_map(fn ($record) => $record -> value, $records));
+		return $this -> executeOperation("value", QueryContext::KIND_READ, function (QueryContext $context) use ($column) {
+			$select = new SelectColumn($column, "value");
+			list($sql, $params) = $this -> makeSQLCall([$select], limit: false);
+			$context -> sql = $sql;
+			$context -> params = $params;
+
+			if (empty($sql))
+				return null;
+
+			$records = $this -> executeRawStatement($sql, $params, 0, 1);
+			$record = reset($records);
+
+			if (empty($record) || $record -> value === null)
+				return null;
+
+			return is_numeric($record -> value)
+				? floatval($record -> value)
+				: $record -> value;
+		});
 	}
 
 	/**
@@ -1079,73 +1413,92 @@ class Query extends QueryConditionBuilder {
 	 * @return	QueryIterator<G>
 	 */
 	public function iterator(int $from = 0, int $count = 0) {
-		global $DB;
+		return $this -> executeOperation("iterator", QueryContext::KIND_READ, function (QueryContext $context) use ($from, $count) {
+			list($sql, $params) = $this -> makeSQLCall(limit: false);
+			$context -> sql = $sql;
+			$context -> params = $params;
 
-		list($sql, $params) = $this -> makeSQLCall(limit: false);
+			if (empty($sql))
+				return new QueryIterator();
 
-		if (empty($sql))
-			return new QueryIterator();
+			$records = $this -> executeRawStatement($sql, $params, $from, $count);
 
-		$iter = $DB -> execute($sql, $params, $from, $count);
-
-		return ($this -> isModelQuery())
-			? new QueryIterator($iter, $this -> class)
-			: new QueryIterator($iter);
+			return ($this -> isModelQuery())
+				? new QueryIterator($records, $this -> class)
+				: new QueryIterator($records);
+		});
 	}
 
 	/**
 	 * Count all the matching records and return the amount of it.
 	 *
 	 * @param	Column|string	$column
-	 * @param	bool			$distinct	Select distinct.
+	 * @param	bool			$distinct	Count only distinct values.
 	 * @param	bool			$over		Add `OVER()` to select count query.
 	 * @return	int
 	 */
 	public function count(Column|string $column = "x", bool $distinct = false, bool $over = false) {
-		global $DB;
-
 		if (is_string($column)) {
-			$column = ($column == "x")
+			$column = ($column === "x")
 				? Expr::value($column)
 				: $this -> getColumn($column);
 		}
 
-		$select = new SelectColumn(Expr::count($column), "count");
-		$select -> over = $over;
+		return $this -> executeOperation("count", QueryContext::KIND_READ, function (QueryContext $context) use ($column, $distinct, $over) {
+			// A windowed count over a grouped query counts result rows, which
+			// are groups, so its argument has to be grouped or aggregated. A
+			// constant is both, and gives the group count whichever column was
+			// asked for.
+			if ($over && !empty($this -> groupBy)) {
+				$column = Expr::value("x");
+				$distinct = false;
+			}
 
-		list($sql, $params) = $this -> makeSQLCall([$select], distinct: $distinct);
+			$select = new SelectColumn(Expr::count($column, distinct: $distinct), "count");
+			$select -> over = $over;
 
-		if (empty($sql))
-			return 0;
+			list($sql, $params) = $this -> makeSQLCall([$select]);
+			$context -> sql = $sql;
+			$context -> params = $params;
 
-		$count = $DB -> execute($sql, $params);
-		return empty($count -> count) ? 0 : (int) $count -> count;
+			if (empty($sql))
+				return 0;
+
+			$records = $this -> executeRawStatement($sql, $params, 0, 1);
+			$record = reset($records);
+
+			return empty($record -> count) ? 0 : (int) $record -> count;
+		});
 	}
 
 	/**
 	 * Take the sum of a column for all of the matching records and return the sum of it.
 	 *
 	 * @param	Column|string	$column
-	 * @param	bool			$distinct	Select distinct.
+	 * @param	bool			$distinct	Sum only distinct values.
 	 * @param	bool			$over		Add `OVER()` to select count query.
 	 * @return	int|float
 	 */
 	public function sum(Column|string $column, bool $distinct = false, bool $over = false) {
-		global $DB;
-
 		if (is_string($column))
 			$column = $this -> getColumn($column);
 
-		$select = new SelectColumn(Expr::sum($column), "sum");
-		$select -> over = $over;
+		return $this -> executeOperation("sum", QueryContext::KIND_READ, function (QueryContext $context) use ($column, $distinct, $over) {
+			$select = new SelectColumn(Expr::sum($column), "sum");
+			$select -> over = $over;
 
-		list($sql, $params) = $this -> makeSQLCall([$select], distinct: $distinct);
+			list($sql, $params) = $this -> makeSQLCall([$select], distinct: $distinct);
+			$context -> sql = $sql;
+			$context -> params = $params;
 
-		if (empty($sql))
-			return 0;
+			if (empty($sql))
+				return 0;
 
-		$count = $DB -> execute($sql, $params);
-		return empty($count -> sum) ? 0 : (float) $count -> sum;
+			$records = $this -> executeRawStatement($sql, $params, 0, 1);
+			$record = reset($records);
+
+			return empty($record -> sum) ? 0 : (float) $record -> sum;
+		});
 	}
 
 	/**
@@ -1155,46 +1508,42 @@ class Query extends QueryConditionBuilder {
 	 * @return	bool
 	 */
 	public function update() {
-		global $DB;
-
 		if ($this -> table -> table instanceof Query)
 			throw new CodingError("Cannot perform UPDATE operation on subquery!");
 
 		if (empty($this -> sets))
 			throw new CodingError("<code>Query::update()</code> called without any value set directives. Call <code>Query::set()</code> first!");
 
-		$sets = array();
-		$params = array();
-		$this -> disableAlias = true;
-		$result = false;
+		return $this -> executeOperation("update", QueryContext::KIND_WRITE, function (QueryContext $context) {
+			$sets = array();
+			$params = array();
+			$this -> disableAlias = true;
 
-		try {
-			foreach ($this -> sets as $set) {
-				[$s, $p] = $set -> sequelize($this);
-				$sets[] = $s;
-				$params = array_merge($params, $p);
+			try {
+				foreach ($this -> sets as $set) {
+					list($s, $p) = $set -> sequelize($this);
+					$sets[] = $s;
+					$params = array_merge($params, $p);
+				}
+
+				$sql = "UPDATE {$this -> table -> table -> out()}"
+					. "\nSET " . implode(", ", $sets);
+
+				list($where, $whereParams) = $this -> sequelize($this);
+
+				if (!empty($where)) {
+					$sql .= "\nWHERE {$where}";
+					$params = array_merge($params, $whereParams);
+				}
+
+				$context -> sql = $sql;
+				$context -> params = $params;
+
+				return $this -> executeRawStatement($sql, $params);
+			} finally {
+				$this -> disableAlias = false;
 			}
-
-			$sql = "UPDATE {$this -> table -> table -> out()}"
-				. "\nSET " . implode(", ", $sets);
-
-			list($where, $wparams) = $this -> sequelize($this);
-
-			if (!empty($where)) {
-				$sql .= "\nWHERE {$where}";
-				$params = array_merge($params, $wparams);
-			}
-
-			$this -> sql($sql, $params);
-			$result = $this -> exec();
-		} catch (Exception $e) {
-			// Make sure we reset flag even when we errored.
-			$this -> disableAlias = false;
-			throw $e;
-		}
-
-		$this -> disableAlias = false;
-		return $result;
+		});
 	}
 
 	/**
@@ -1205,27 +1554,7 @@ class Query extends QueryConditionBuilder {
 	 * @return	bool
 	 */
 	public function increase(Column|string $column, int|float $amount = 1) {
-		global $DB;
-
-		if ($this -> table -> table instanceof Query)
-			throw new CodingError("Cannot perform UPDATE operation on subquery!");
-
-		if (is_string($column))
-			$column = $this -> getColumn($column);
-
-		[$column, $params] = $column -> sequelize($this);
-		$sql = "UPDATE {$this -> table -> table -> out()}"
-			. "\nSET {$column} = ({$column} + ({$amount}))";
-
-		list($where, $wparams) = $this -> sequelize($this);
-
-		if (!empty($where)) {
-			$sql .= "\nWHERE {$where}";
-			$params = array_merge($params, $wparams);
-		}
-
-		$this -> sql($sql, $params);
-		return $this -> exec();
+		return $this -> adjustColumn("increase", $column, $amount);
 	}
 
 	/**
@@ -1236,7 +1565,7 @@ class Query extends QueryConditionBuilder {
 	 * @return	bool
 	 */
 	public function decrease(string $column, int|float $amount = 1) {
-		return $this -> increase($column, -$amount);
+		return $this -> adjustColumn("decrease", $column, -$amount);
 	}
 
 	/**
@@ -1245,11 +1574,34 @@ class Query extends QueryConditionBuilder {
 	 * @return	bool
 	 */
 	public function exec() {
-		global $DB;
-
 		if (empty($this -> sql))
 			throw new CodingError(static::class . " -> exec(): exec can only be used in raw mode.");
 
-		return $DB -> execute($this -> sql, $this -> sqlParams);
+		return $this -> executeOperation("exec", QueryContext::KIND_RAW, function (QueryContext $context) {
+			$params = $this -> sqlParams ?? array();
+			$context -> sql = $this -> sql;
+			$context -> params = $params;
+
+			return $this -> executeRawStatement($this -> sql, $params);
+		});
+	}
+
+	/**
+	 * Turn whatever was handed to `values()` or `value()` into something that
+	 * can be selected.
+	 *
+	 * @param	Column|Sequelizable|string	$column
+	 * @return	Column|Sequelizable
+	 */
+	protected function resolveValueColumn(Column|Sequelizable|string $column) {
+		if ($column === "#") {
+			$column = ($this -> isModelQuery())
+				? $this -> class::col($column)
+				: "id";
+		}
+
+		return is_string($column)
+			? $this -> getColumn($column)
+			: $column;
 	}
 }

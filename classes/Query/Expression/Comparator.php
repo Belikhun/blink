@@ -18,6 +18,18 @@ class Comparator implements Sequelizable {
 
 	protected const VALID_OPS = array( "=", ">", "<", ">=", "<=", "<>", "LIKE", "IN" );
 
+	/**
+	 * Character that escapes a wildcard inside a `LIKE` pattern.
+	 *
+	 * Not a backslash: MySQL reads one as an escape inside a string literal
+	 * and SQLite does not, so `ESCAPE '\'` cannot be written the same way for
+	 * both. This one needs no escaping in either.
+	 *
+	 * Build patterns with {@see Expr::likePattern()} rather than escaping by
+	 * hand.
+	 */
+	public const LIKE_ESCAPE = "!";
+
 	public readonly string $id;
 
 	public Sequelizable $left;
@@ -66,6 +78,14 @@ class Comparator implements Sequelizable {
 			$comparator = "IN";
 		}
 
-		return ["{$lSql} {$comparator} {$rSql}", array_merge($lParams, $rParams)];
+		$sql = "{$lSql} {$comparator} {$rSql}";
+
+		// MySQL treats a backslash as the LIKE escape character by default and
+		// SQLite treats nothing as one, so saying it outright is what makes a
+		// pattern mean the same thing on both.
+		if (strtoupper($comparator) === "LIKE")
+			$sql .= " ESCAPE '" . static::LIKE_ESCAPE . "'";
+
+		return [$sql, array_merge($lParams, $rParams)];
 	}
 }

@@ -36,9 +36,12 @@ class QueryUpdateSet implements Sequelizable {
 	}
 
 	public function sequelize(Query $query): array {
-		[$column, $columnParams] = $this -> column -> sequelize($query);
-		[$value, $valueParams] = $this -> value -> sequelize($query);
-		$params = array_merge($columnParams, $valueParams);
+		// The assignment target is written bare. SQLite rejects a qualified
+		// name on the left of SET, and an UPDATE only ever assigns to the
+		// table it names, so there is nothing to qualify it against.
+		$column = $this -> column -> column;
+		[$value, $params] = $this -> value -> sequelize($query);
+
 		return ["{$column} = {$value}", $params];
 	}
 }
