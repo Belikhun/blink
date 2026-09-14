@@ -131,6 +131,12 @@ function ShutdownHandler() {
 		\Blink\Essence::clearConstructorStack();
 	});
 
+	// A module that threw during boot may never have reached its bindings, and
+	// the steps below still have to resolve blink's own services.
+	step("essence.core", function () {
+		\Blink::registerCoreSingletons();
+	});
+
 	step("modules.detach", function () {
 		\Blink::detachModules();
 	});

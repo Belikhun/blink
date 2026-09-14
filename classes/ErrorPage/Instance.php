@@ -5,6 +5,8 @@ namespace Blink\ErrorPage;
 use Blink\BacktraceFrame;
 use Blink\Environment;
 use Blink\ErrorPage\Exception\ReportNotFound;
+use Blink\Ether;
+use Blink\Ether\ErrorPage\ErrorPageContext;
 use Blink\Http\Router;
 use Blink\Server;
 use Blink\Session;
@@ -571,6 +573,13 @@ class Instance {
 				$provider($instance)
 			);
 		}
+
+		Ether::dispatchErrorPage(
+			new ErrorPageContext($instance, $data, \Blink::debuggingEnabled()),
+			static function (ErrorPageContext $context) {
+				return $context;
+			}
+		);
 
 		filePut(static::path($instance -> id), serialize($instance));
 		return $instance;

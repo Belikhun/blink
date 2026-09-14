@@ -48,6 +48,14 @@ class Response {
 
 	protected string $body;
 
+	/**
+	 * The request this response answers, attached by the router once a route
+	 * has been matched.
+	 *
+	 * @var ?Request
+	 */
+	public ?Request $request = null;
+
 	public function __construct(string $body = "") {
 		$this -> body($body);
 		$this -> header("Content-Type", "text/html; charset=utf-8");
@@ -62,6 +70,10 @@ class Response {
 	public function status(int $status) {
 		$this -> status = $status;
 		return $this;
+	}
+
+	public function getStatus(): int {
+		return $this -> status;
 	}
 
 	/**

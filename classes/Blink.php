@@ -11,6 +11,8 @@
  */
 
 use Blink\Essence;
+use Blink\Ether\Registry\MiddlewareRegistry;
+use Blink\Ether\Registry\MiddlewareRegistryCache;
 use Blink\Exception\CodingError;
 use Blink\Exception\InvalidDefinition;
 use Blink\Exception\ModuleNotFound;
@@ -71,6 +73,17 @@ final class Blink {
 
 	public static function debuggingEnabled(): bool {
 		return class_exists("CONFIG") && \CONFIG::$DEBUG;
+	}
+
+	/**
+	 * Bind the services blink resolves for itself.
+	 *
+	 * Kept apart from module loading so the shutdown handler can reach them
+	 * after a failure that stopped a module partway through.
+	 */
+	public static function registerCoreSingletons(): void {
+		Essence::singletonIf(MiddlewareRegistryCache::class);
+		Essence::singletonIf(MiddlewareRegistry::class);
 	}
 
 	/**

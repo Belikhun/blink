@@ -66,22 +66,30 @@ class Session {
 	 */
 	public static ?Token $token = null;
 
+	public static function started(): bool {
+		return session_status() === PHP_SESSION_ACTIVE;
+	}
+
 	public static function start(string $sessionID = null) {
+		// Middleware owns session start now, and more than one of them can ask
+		// for it. Calling `session_name()` after the session is up raises a
+		// warning, so the second call has to leave early.
+		if (static::started())
+			return;
+
 		session_name("Session");
 
 		if (!empty($sessionID))
 			session_id($sessionID);
 
-		if (session_status() !== PHP_SESSION_ACTIVE) {
-			ini_set("session.gc_maxlifetime", static::$lifetime);
-			session_cache_expire(static::$lifetime / 60);
-			session_set_cookie_params(array(
-				"lifetime" => static::$lifetime
-			));
+		ini_set("session.gc_maxlifetime", static::$lifetime);
+		session_cache_expire(static::$lifetime / 60);
+		session_set_cookie_params(array(
+			"lifetime" => static::$lifetime
+		));
 
-			session_start();
-			setcookie(session_name(), session_id(), time() + static::$lifetime, "/");
-		}
+		session_start();
+		setcookie(session_name(), session_id(), time() + static::$lifetime, "/");
 
 		if (empty($_SESSION["username"])) {
 			$_SESSION["username"] = null;

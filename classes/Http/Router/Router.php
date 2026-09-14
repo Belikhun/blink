@@ -3,13 +3,14 @@
 namespace Blink\Http;
 
 use Blink;
-use Blink\Exception\RequestDenied;
-use Blink\Http\Exception\RouterAuthorizationError;
-use Blink\Exception\UnsupportedAuthScheme;
+use Blink\Ether;
+use Blink\Ether\Request\RequestContext;
+use Blink\Ether\Response\ResponseContext;
+use Blink\Ether\Route\RouteContext;
 use Blink\Http\Request;
 use Blink\Http\Response;
+use Blink\Metric\RouteMetric;
 use Blink\Metric\TimingMetric;
-use Blink\Session;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionAttribute;
@@ -19,6 +20,8 @@ use Blink\Http\Exception\RouteInvalidResponse;
 use Blink\Http\Exception\RouteNotFound;
 use Blink\Http\Response\JsonResponse;
 use Blink\Http\Router\Attribute\HttpMethod;
+use Blink\Http\Router\Attribute\Middleware as MiddlewareAttribute;
+use Blink\Http\Router\Attribute\WithoutMiddleware as WithoutMiddlewareAttribute;
 use Blink\Http\Router\Route;
 use function Blink\requestHeaders;
 use function Blink\stringify;
@@ -163,6 +166,8 @@ class Router {
 			$uris = array();
 			$methods = array();
 			$priority = 0;
+			$routeMiddleware = array();
+			$routeExcludedMiddleware = array();
 
 			/** @var ReflectionAttribute[] */
 			$attributes = $method -> getAttributes(\Blink\Http\Router\Attribute\Route::class);
@@ -176,6 +181,12 @@ class Router {
 				$priorityAttr = array_pop($priorityAttr);
 				$priority = intval($priorityAttr -> getArguments()[0]);
 			}
+
+			foreach ($method -> getAttributes(MiddlewareAttribute::class) as $attribute)
+				$routeMiddleware = array_merge($routeMiddleware, $attribute -> getArguments());
+
+			foreach ($method -> getAttributes(WithoutMiddlewareAttribute::class) as $attribute)
+				$routeExcludedMiddleware = array_merge($routeExcludedMiddleware, $attribute -> getArguments());
 
 			foreach ($attributes as $attribute) {
 				$args = $attribute -> getArguments();
@@ -200,12 +211,16 @@ class Router {
 				}
 			}
 
-			if (empty($methods)) {
-				foreach ($uris as $uri)
-					static::ANY($uri, [$controller, $method -> getName()], $priority);
-			} else {
-				foreach ($uris as $uri)
-					static::match($methods, $uri, [$controller, $method -> getName()], $priority);
+			foreach ($uris as $uri) {
+				$route = empty($methods)
+					? static::ANY($uri, [$controller, $method -> getName()], $priority)
+					: static::match($methods, $uri, [$controller, $method -> getName()], $priority);
+
+				if (!empty($routeMiddleware))
+					$route -> middleware(...$routeMiddleware);
+
+				if (!empty($routeExcludedMiddleware))
+					$route -> withoutMiddleware(...$routeExcludedMiddleware);
 			}
 		}
 	}
@@ -235,81 +250,43 @@ class Router {
 	}
 
 	/**
-	 * Try to authenticate user and setup environment to be ready to handle
-	 * incoming request.
-	 *
-	 * @return bool
-	 */
-	protected static function authenticateUser(Request $request): bool {
-		$auth = $request -> header("Authorization");
-
-		if (empty($auth))
-			return false;
-
-		list($scheme, $token) = explode(" ", $auth);
-
-		if (empty($scheme) || empty($token))
-			return false;
-
-		$user = null;
-
-		switch ($scheme) {
-			case "Basic":
-				// Session::start();
-				// Session::token($token);
-				break;
-
-			case "Session":
-				// Session::start($token);
-				break;
-
-			default:
-				throw new UnsupportedAuthScheme($scheme);
-		}
-
-		if (empty($user))
-			throw new RouterAuthorizationError("Could not retrieve user information during authorization");
-
-		return true;
-	}
-
-	/**
-	 * Setup request session environment (timezone, language, etc...)
-	 *
-	 * @param	Request		$request
-	 */
-	protected static function setupSessionEnvironment(Request $request) {
-
-	}
-
-	/**
 	 * Handle the requested path.
 	 *
 	 * @param	string	$path
 	 * @param	string	$method
 	 */
 	public static function route(string $path, string $method) {
-		$args = array();
-		$found = false;
-		$routingTiming = new TimingMetric("routing");
-
-		// Up case method just to be sure
-		$method = strtoupper($method);
-
 		$request = new Request(
-			$method, $path, $args,
+			strtoupper($method), $path, array(),
 			$_GET, $_POST, requestHeaders(),
 			$_COOKIE, $_FILES);
 
-		$authenticatedByHeader = static::authenticateUser($request);
-		$isCrossSite = ($request -> header("Sec-Fetch-Site") === "cross-site");
+		$response = static::dispatch($request);
+		static::handleResponse($response, static::$active);
+	}
 
-		if ($isCrossSite && !$authenticatedByHeader && Session::loggedIn())
-			throw new RequestDenied("Authentication must be made via <code>Authorization</code> header when request is in cross-site mode");
+	/**
+	 * Run a request through the router and return the response without
+	 * emitting it.
+	 *
+	 * @throws	RouteNotFound	when no registered route matches.
+	 */
+	public static function dispatch(Request $request): Response {
+		$args = array();
+		$routingTiming = new TimingMetric("routing");
 
-		static::setupSessionEnvironment($request);
+		$routeContext = new RouteContext($request);
+		$routeContext -> isOptionRequest = (strtoupper($request -> method) === "OPTIONS");
+
+		Ether::dispatchRoute($routeContext, static function (RouteContext $context) {
+			return $context;
+		});
+
+		// Route middleware is allowed to swap the request out, so everything
+		// below reads from the context rather than the original.
+		$request = $routeContext -> request;
 		$path = $request -> path;
-		$method = $request -> method;
+		$method = strtoupper($request -> method);
 		$isOptionRequest = ($method === "OPTIONS");
 
 		// Sort routes by priority
@@ -324,18 +301,30 @@ class Router {
 			if (!static::isRouteMatch($route, $path, $args))
 				continue;
 
-			$found = true;
 			$routingTiming -> time();
 			static::$active = $route;
+			$routeTiming = new RouteMetric($route);
 
 			// Update the request instance.
 			$request -> route = $route;
 			$request -> args = $args;
 			$response = null;
 
-			if (!$isOptionRequest) {
-				$data = $route -> callback($request);
+			$requestContext = new RequestContext($request, $route);
+			$requestContext -> authenticatedByHeader = $routeContext -> authenticatedByHeader;
+			$requestContext -> isCrossSite = $routeContext -> isCrossSite;
+			$requestContext -> isOptionRequest = $isOptionRequest;
 
+			$data = Ether::dispatchRequest($route, $requestContext, static function (RequestContext $context) {
+				if ($context -> isOptionRequest)
+					return null;
+
+				return $context -> route -> callback($context -> request);
+			});
+
+			$request = $requestContext -> request;
+
+			if (!$isOptionRequest) {
 				if (is_callable($data)) {
 					// Get the actual response data from callable.
 					$data = $data();
@@ -354,35 +343,37 @@ class Router {
 					$response = "";
 				}
 
-				if ($response === null)
+				if ($response === null) {
+					$routeTiming -> time(-1);
 					throw new RouteInvalidResponse($route -> uri, stringify($response));
+				}
 
 				if (!($response instanceof Response))
 					$response = new Response($response);
 			} else {
-				// We don't need to run the route to get the response object itself.
-				// Just create an empty one and we are fine.
+				// A preflight never reaches the handler, so an empty response
+				// is all the CORS middleware needs to put its headers on.
 				$response = new Response();
 			}
 
-			if ($isOptionRequest || $isCrossSite || $authenticatedByHeader) {
-				// For requests that authenticated via the `Authorization` header in the request, we
-				// will allow cross-origin request for this route to allow Web Workers and Webapps in
-				// different domain request to our sevrer.
-				$origin = $request -> header("Origin");
-				$response -> header("Access-Control-Allow-Origin", $origin ?: "*");
-				$response -> header("Access-Control-Allow-Methods", implode(", ", array_merge(static::$verbs, ["OPTIONS"])));
-				$response -> header("Access-Control-Allow-Headers", "*");
-			}
+			$response -> request = $request;
 
-			static::handleResponse($response, $route);
-			break;
+			$responseContext = new ResponseContext($request, $route, $response);
+			$responseContext -> authenticatedByHeader = $requestContext -> authenticatedByHeader;
+			$responseContext -> isCrossSite = $requestContext -> isCrossSite;
+			$responseContext -> isOptionRequest = $requestContext -> isOptionRequest;
+
+			$response = Ether::dispatchResponse($route, $responseContext, static function (ResponseContext $context) {
+				return $context -> response;
+			});
+
+			$request = $responseContext -> request;
+			$routeTiming -> time($response -> getStatus(), $request, $response);
+			return $response;
 		}
 
-		if (!$found) {
-			$routingTiming -> time();
-			throw new RouteNotFound($path, $method);
-		}
+		$routingTiming -> time();
+		throw new RouteNotFound($path, $method);
 	}
 
 	/**

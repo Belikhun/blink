@@ -16,6 +16,9 @@ class Metric {
 	/** @var Metric\RequestMetric[] */
 	public static $requests = array();
 
+	/** @var Metric\RouteMetric[] */
+	public static $routes = array();
+
 	/** @var Metric\QueryMetric[] */
 	public static $queries = array();
 

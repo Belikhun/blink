@@ -3,6 +3,7 @@
 namespace Blink\Http\Router;
 
 use Blink\Essence;
+use Blink\Ether;
 use Blink\Essence\Exception\EssenceCallArgumentMismatch;
 use Blink\Essence\Exception\EssenceCallMissingParam;
 use Blink\Http\Request;
@@ -60,6 +61,20 @@ class Route {
 	 * @param ?string
 	 */
 	public ?string $file = null;
+
+	/**
+	 * Router lifecycle middleware references attached to this route.
+	 *
+	 * @var	string[]
+	 */
+	protected array $middleware = array();
+
+	/**
+	 * Router lifecycle middleware references this route opts out of.
+	 *
+	 * @var	string[]
+	 */
+	protected array $excludedMiddleware = array();
 
 	/**
 	 * Construct a new Route object
@@ -129,6 +144,56 @@ class Route {
 		} catch (\ArgumentCountError $e) {
 			throw new BaseException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
 		}
+	}
+
+	/**
+	 * Attach router lifecycle middleware to this route, on top of whatever is
+	 * registered globally. Takes class names, aliases and group names alike.
+	 *
+	 * @param	string	...$middleware
+	 * @return	static
+	 */
+	public function middleware(string ...$middleware) {
+		Ether::assertRouterLifecycleMiddleware(...$middleware);
+
+		foreach ($middleware as $reference) {
+			if (!in_array($reference, $this -> middleware, true))
+				$this -> middleware[] = $reference;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Opt this route out of router lifecycle middleware that would otherwise
+	 * run, whether it came from the global stack or a group.
+	 *
+	 * @param	string	...$middleware
+	 * @return	static
+	 */
+	public function withoutMiddleware(string ...$middleware) {
+		Ether::assertRouterLifecycleMiddleware(...$middleware);
+
+		foreach ($middleware as $reference) {
+			if (!in_array($reference, $this -> excludedMiddleware, true))
+				$this -> excludedMiddleware[] = $reference;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * @return	string[]
+	 */
+	public function getMiddleware(): array {
+		return $this -> middleware;
+	}
+
+	/**
+	 * @return	string[]
+	 */
+	public function getExcludedMiddleware(): array {
+		return $this -> excludedMiddleware;
 	}
 
 	public function __toString() {

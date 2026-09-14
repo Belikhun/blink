@@ -6,9 +6,7 @@ use Blink\Localization;
 use Blink\Metric\TimingMetric;
 use Blink\Http\Router;
 use Blink\Server;
-use Blink\Session;
 use Blink\StopClock;
-use function Blink\getHeader;
 
 $BLINK_START = microtime(true);
 
@@ -264,38 +262,6 @@ new TimingMetric("modules", function () {
 
 if (BLINK_IS_CLI)
 	return;
-
-new TimingMetric("session", function() {
-	// Initialize session
-	if (class_exists(Session::class)) {
-		$auth = getHeader("Authorization");
-
-		if (!empty($auth)) {
-			$auth = explode(" ", $auth);
-
-			if (empty($auth[1])) {
-				$token = $auth[0];
-				$type = "Basic";
-			} else {
-				list($type, $token) = $auth;
-			}
-
-			switch ($type) {
-				case "Basic":
-					Session::start();
-					Session::token($token);
-					break;
-
-				case "Session":
-					Session::start($token);
-					break;
-			}
-		} else {
-			Session::start();
-		}
-	}
-});
-
 
 //* ===========================================================
 //*  Handle Routing

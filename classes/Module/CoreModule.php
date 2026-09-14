@@ -3,7 +3,11 @@
 namespace Blink\Module;
 
 use Blink\ErrorPage\Instance;
+use Blink\Ether;
 use Blink\Http\Router;
+use Blink\Http\Router\Middleware\ApplyCorsHeaders;
+use Blink\Http\Router\Middleware\AuthenticateUser;
+use Blink\Http\Router\Middleware\SetupSessionEnvironment;
 use Blink\Module;
 
 /**
@@ -17,7 +21,22 @@ use Blink\Module;
  * See LICENSE in the project root for license information.
  */
 class CoreModule extends Module {
+	public function define(): void {
+		\Blink::registerCoreSingletons();
+	}
+
 	public function attach(): void {
+		// Authentication runs ahead of the environment setup, so a middleware
+		// reading the session language gets the authenticated user's.
+		Ether::use(AuthenticateUser::class, "auth", 200);
+		Ether::use(SetupSessionEnvironment::class, "setupEnv", 100);
+		Ether::use(ApplyCorsHeaders::class, "cors", 100);
+
+		// Named so a route can opt the pair out together with
+		// `withoutMiddleware("router")`, which is what an endpoint serving
+		// unauthenticated traffic wants.
+		Ether::group("router", "auth", "setupEnv");
+
 		Router::$processingFile = "blink:core";
 
 		// Negative priority keeps these behind anything the application
