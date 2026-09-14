@@ -10,6 +10,7 @@
  * See LICENSE in the project root for license information.
  */
 
+use Blink\Essence;
 use Blink\Exception\CodingError;
 use Blink\Exception\InvalidDefinition;
 use Blink\Exception\ModuleNotFound;
@@ -103,8 +104,10 @@ final class Blink {
 			$module -> define();
 		});
 
+		// Through Essence so a module can type-hint the services it wires
+		// against, rather than resolving each one by hand.
 		static::runPhase("attach", function (Module $module) {
-			$module -> attach();
+			Essence::call([ $module, "attach" ]);
 		});
 	}
 
@@ -173,23 +176,34 @@ final class Blink {
 		if (!is_subclass_of($class, UserBase::class))
 			throw new InvalidDefinition($class, UserBase::class);
 
+		Essence::bind(UserBase::class, $class);
 		static::$userClass = $class;
 	}
 
 	/**
 	 * Return the user class the application registered.
 	 *
+	 * Read off the Essence binding rather than a static of its own, so an
+	 * application that binds {@see UserBase} directly gets the same answer as
+	 * one going through {@see Blink::useUserClass()}.
+	 *
 	 * @return	class-string<UserBase>
 	 */
 	public static function userClass(): string {
-		if (empty(static::$userClass)) {
+		if (!empty(static::$userClass))
+			return static::$userClass;
+
+		$concrete = Essence::getBinding(UserBase::class) ?-> concrete;
+
+		if (empty($concrete) || !is_string($concrete)) {
 			throw new CodingError(
 				"Blink::userClass(): no user class has been registered.",
-				"Create a class extending <code>\Blink\Model\UserBase</code> and register it with "
+				"Create a class extending <code>\\Blink\\Model\\UserBase</code> and register it with "
 					. "<code>Blink::useUserClass()</code> from your module's <code>define()</code>."
 			);
 		}
 
+		static::$userClass = $concrete;
 		return static::$userClass;
 	}
 

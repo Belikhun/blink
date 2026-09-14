@@ -2,6 +2,9 @@
 
 namespace Blink\Http\Router;
 
+use Blink\Essence;
+use Blink\Essence\Exception\EssenceCallArgumentMismatch;
+use Blink\Essence\Exception\EssenceCallMissingParam;
 use Blink\Http\Request;
 use Blink\Http\Router;
 use Blink\Exception\BaseException;
@@ -108,71 +111,23 @@ class Route {
 	public function callback(Request $request) {
 		$args = $this -> args = $request -> args;
 
-		if (is_callable($this -> action)) {
-			if (is_array($this -> action)) {
-				$class = new \ReflectionClass($this -> action[0]);
-				$info = $class -> getMethod($this -> action[1]);
-			} else {
-				$info = new \ReflectionFunction($this -> action);
-			}
-
-			$params = $info -> getParameters();
-			$callArgs = array();
-
-			foreach ($params as $param) {
-				$type = $param -> getType();
-				$name = $param -> getName();
-
-				if ($type && $type instanceof \ReflectionNamedType) {
-					if ($type -> getName() === Request::class) {
-						$callArgs[] = $request;
-						continue;
-					}
-				}
-
-				if ($param -> isVariadic()) {
-					// Merge left over args and end processing.
-					$callArgs = array_merge($callArgs, $args);
-					break;
-				}
-
-				if (!isset($args[$name])) {
-					// Check if our param here is optional?
-
-					if (!$param -> isOptional())
-						throw new RouteCallbackInvalidParam($this -> uri, $name);
-					else
-						$args[$name] = $param -> getDefaultValue();
-				}
-
-				$callArgs[] = $args[$name];
-				unset($args[$name]);
-			}
-
-			try {
-				return call_user_func_array($this -> action, $callArgs);
-			} catch (\TypeError $e) {
-				$message = $e -> getMessage();
-				$traces = $e -> getTrace();
-				$matches = array();
-
-				// Determine that error was thrown by calling Route handler
-				// Because this catch can be triggered somewhere inside handler
-				if ($traces[1]["function"] === "call_user_func_array") {
-					if (preg_match("/(Argument (\d+) passed to .+) must be/m", $message, $matches)) {
-						$key = array_keys($args)[((int) $matches[2]) - 1];
-						$message = str_replace($matches[1], "Value of \"$key\"", $message);
-
-						throw new RouteArgumentMismatch($this, $message);
-					}
-				}
-
-				throw $e;
-			} catch (\ArgumentCountError $e) {
-				throw new BaseException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
-			}
-		} else {
+		if (!is_callable($this -> action))
 			throw new RouteInvalidCallback($this -> action, $this -> uri);
+
+		try {
+			return Essence::call($this -> action, $args, array(
+				Request::class => $request,
+				Route::class => $this
+			));
+		} catch (EssenceCallMissingParam $e) {
+			// A handler asking for a URI parameter the pattern never captures
+			// is a routing mistake, so it reads as one rather than as a
+			// container failure.
+			throw new RouteCallbackInvalidParam($this -> uri, $e -> data["name"]);
+		} catch (EssenceCallArgumentMismatch $e) {
+			throw new RouteArgumentMismatch($this, $e -> getMessage());
+		} catch (\ArgumentCountError $e) {
+			throw new BaseException(ROUTE_CALLBACK_ARGUMENTCOUNT_ERROR, $e -> getMessage(), 500);
 		}
 	}
 

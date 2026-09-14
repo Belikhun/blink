@@ -124,6 +124,13 @@ function ShutdownHandler() {
 	if (function_exists("fastcgi_finish_request"))
 		fastcgi_finish_request();
 
+	// An error earlier in the request can abort a construction without
+	// unwinding Essence's constructor stack. Clearing it keeps the steps below
+	// from tripping over a circular dependency that never happened.
+	step("essence.clear", function () {
+		\Blink\Essence::clearConstructorStack();
+	});
+
 	step("modules.detach", function () {
 		\Blink::detachModules();
 	});
