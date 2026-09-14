@@ -137,6 +137,31 @@ abstract class Database {
 	abstract public function fetchColumns(string $table): array;
 
 	/**
+	 * Run a statement under a query metric.
+	 *
+	 * A statement that throws is still recorded, marked errored: it took time
+	 * and belongs in the timeline, and the mark is what tells the two apart.
+	 *
+	 * @param	?int	$rows	What to record as the row count. Left out, the
+	 * 							result stands in: its size for a list, itself
+	 * 							for a number.
+	 */
+	protected function measure(string $sql, array $params, \Closure $statement, ?int $rows = null) {
+		$metric = new QueryMetric($sql, $params);
+
+		try {
+			$result = $statement();
+		} catch (\Throwable $e) {
+			$metric -> errored = true;
+			$metric -> time(-1);
+			throw $e;
+		}
+
+		$metric -> time($rows ?? (is_array($result) ? count($result) : (int) $result));
+		return $result;
+	}
+
+	/**
 	 * Normalize SQL parameters.
 	 *
 	 * @return	array
@@ -294,12 +319,10 @@ abstract class Database {
 				}
 			}
 
-			$metric = new QueryMetric(SQL_INSERT, $table);
 			$sql = "INSERT INTO `{$table}` ({$fields}) VALUES " . implode(", ", array_fill(0, count($batch), $placeholders));
 
-			$this -> raw($sql, $params);
+			$this -> measure($sql,$params, fn () => $this -> raw($sql, $params), count($batch));
 			$inserted += count($batch);
-			$metric -> time(count($batch));
 		}
 
 		return $inserted;
@@ -413,14 +436,8 @@ abstract class Database {
 		if (!empty($sort))
 			$sort = "ORDER BY $sort";
 
-		// Record Metric
-		$metric = new QueryMetric("SELECT", $table);
-
 		$sql = "SELECT $fields FROM `$table` $select $sort";
-		$results = $this -> execute($sql, $params, $from, $limit);
-
-		$metric -> time(count($results));
-		return $results;
+		return $this -> measure($sql,$params, fn () => $this -> execute($sql, $params, $from, $limit));
 	}
 
 	/**
@@ -485,12 +502,7 @@ abstract class Database {
 		$fields = implode(", ", $fields);
 		$sql = "INSERT INTO `$table` ($fields) VALUES ($questions)";
 
-		// Record Metric
-		$metric = new QueryMetric("INSERT", $table);
-
-		$results = $this -> execute($sql, $values);
-		$metric -> time(1);
-		return $results;
+		return $this -> measure($sql,$values, fn () => $this -> execute($sql, $values), 1);
 	}
 
 	/**
@@ -531,12 +543,7 @@ abstract class Database {
 		$sets = implode(", ", $sets);
 		$sql = "UPDATE {$table} SET $sets WHERE {$table}.{$primary} = ?";
 
-		// Record Metric
-		$metric = new QueryMetric(SQL_UPDATE, $table);
-
-		$affected = $this -> execute($sql, $values);
-		$metric -> time($affected);
-		return ($affected > 0);
+		return $this -> measure($sql,$values, fn () => $this -> execute($sql, $values)) > 0;
 	}
 
 	/**
@@ -593,14 +600,10 @@ abstract class Database {
 	 */
 	public function delete(string $table, array $conditions = array()) {
 		if (empty($conditions)) {
-			// Record Metric
-			$metric = new QueryMetric(SQL_TRUNCATE, $table);
-
 			// `DELETE FROM` rather than `TRUNCATE`, which SQLite has no
 			// statement for at all.
-			$affected = $this -> execute("DELETE FROM `{$table}`");
-			$metric -> time($affected);
-			return $affected;
+			$sql = "DELETE FROM `{$table}`";
+			return $this -> measure($sql,array(), fn () => $this -> execute($sql));
 		}
 
 		list($select, $params) = static::whereClause($conditions);
@@ -610,12 +613,7 @@ abstract class Database {
 
 		$sql = "DELETE FROM `$table` $select";
 
-		// Record Metric
-		$metric = new QueryMetric(SQL_DELETE, $table);
-
-		$affected = $this -> execute($sql, $params);
-		$metric -> time($affected);
-		return $affected;
+		return $this -> measure($sql,$params, fn () => $this -> execute($sql, $params));
 	}
 
 	/**

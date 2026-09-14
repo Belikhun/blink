@@ -13,7 +13,6 @@
 
 namespace Blink;
 
-use Blink\BacktraceFrame;
 use Blink\Cache;
 use Blink\Environment;
 use Blink\Exception\BaseException;
@@ -23,12 +22,9 @@ use Blink\Exception\FileReadError;
 use Blink\Exception\InvalidValue;
 use Blink\Exception\JSONDecodeError;
 use Blink\Exception\MissingParam;
-use Blink\Exception\RuntimeError;
 use Blink\FileIO;
-use Blink\HtmlWriter;
 use Blink\Metric\FileMetric;
 use Blink\Http\Response;
-use Blink\Http\Response\APIResponse;
 use Blink\Server;
 use Blink\Template;
 use Blink\URL;
@@ -757,103 +753,6 @@ function getFiles(string $path, string $extension = "*") {
 }
 
 /**
- * Render soucre code of a file to a friendly format.
- *
- * @param	string	$file	Path to file to be rendered.
- * @param	int		$line	Line number that will be highlighted.
- * @param	int		$count	Number of lines will be rendered.
- */
-function renderSourceCode(string $file, int $line, int $count = 10) {
-	if (!file_exists($file)) {
-		echo "<code>File does not exits: {$file}</code>";
-		return;
-	}
-
-	$content = htmlspecialchars(fileGet($file));
-	$lines = explode("\n", $content);
-
-	$from = $line - floor($count / 2);
-	$to = $line + ceil($count / 2);
-	$max = count($lines) - 1;
-
-	if ($from < 0) {
-		$to -= $from;
-		$from = 0;
-
-		if ($to > $max)
-			$to = $max;
-	} else if ($to > $max) {
-		$from -= $to - $max;
-		$to = $max;
-
-		if ($from < 0)
-			$from = 0;
-	}
-
-	// Only get the part we need.
-	$lines = array_slice($lines, $from, $to - $from + 1);
-	$content = implode("\n", $lines);
-
-	// Keywords regex
-	$keywords = array(	"try", "catch", "return", "public", "protected", "private", "static", "include_once",
-						"include", "require_once", "require", "global", "if", "else", "use", "throw",
-						"new", "\$this", "self", "echo", "print", "foreach", "for", "continue", "break", "instanceof",
-						"default", "while", "switch", "case", "match", "class", "extends", "implement", "parent",
-						"namespace" );
-	$re = '/(^|[\t\n\(\! ])(' . implode("|", $keywords) . ')(?=[\t\n\(\{\:\; ])/mi';
-	$content = preg_replace($re, '$1<span class="sc-keyword">$2</span>', $content);
-
-	// Function regex
-	$re = '/([\t\n\( ]|^)(function)(?=[\t\n\(\{ ])/mi';
-	$content = preg_replace($re, '$1<span class="sc-function">$2</span>', $content);
-
-	// Class name regex
-	$re = '/(^| |\(|\t)([A-Z\\\\]{1}[a-zA-Z0-9\\\\]+)([\t\n\;\(\)\{\:\- ]|$)/m';
-	$content = preg_replace($re, '$1<span class="sc-class">$2</span>$3', $content);
-
-	// String
-	$re = '/(&quot;(.*)&quot;|\'(.*)\')/mU';
-	$content = preg_replace($re, '<span class="sc-string">$1</span>', $content);
-
-	// Variables
-	$re = '/(\$[a-zA-Z0-9_]+)/m';
-	$content = preg_replace($re, '<span class="sc-variable">$1</span>', $content);
-
-	// Functions
-	$re = '/([a-zA-Z0-9_]+)(\()/m';
-	$content = preg_replace($re, '<span class="sc-function-name">$1</span>$2', $content);
-
-	// Comments
-	$re = '/([\t ]|^)(\/\/|\*|\/\*\*)(.*)$/m';
-	$content = preg_replace($re, '$1<span class="sc-comment">$2$3</span>', $content);
-
-	// PHP tag
-	$content = str_replace("&lt;?php", '<span class="sc-meta">&lt;?php</span>', $content);
-	$content = str_replace("?&gt;", '<span class="sc-meta">?&gt;</span>', $content);
-
-	$lines = explode("\n", $content);
-	$numHtml = "";
-	$lineHtml = "";
-
-	for ($i = 0; $i < count($lines); $i++) {
-		$code = trim($lines[$i], "\n\r");
-		$classes = array( "line" );
-
-		// Index start from 0, but file's line start from 1
-		if ($i == $line - $from - 1)
-			$classes[] = "current";
-
-		$numHtml .= HtmlWriter::div(array( "class" => $classes ), $from + $i + 1);
-		$lineHtml .= HtmlWriter::div(array( "class" => $classes ), "<span>{$code}</span>");
-	}
-
-	echo HtmlWriter::startDIV(array( "class" => "sourceCode" ));
-	echo HtmlWriter::span(array( "class" => "nums" ), $numHtml);
-	echo HtmlWriter::build("code", array( "class" => "lines" ), $lineHtml);
-	echo HtmlWriter::endDIV();
-}
-
-/**
  * Fast file get content with metric recording.
  *
  * @param	string		$path		Path to file
@@ -991,319 +890,128 @@ function trimString(string $string, int $maxLen) {
 	return $string;
 }
 
-function backtrace(int $limit = 0) {
-	$data = debug_backtrace(0, $limit);
-	return processBacktrace($data);
+/**
+ * Append to a file under an exclusive lock, so lines from concurrent writers
+ * never interleave.
+ *
+ * @param	string|string[]	$data	Text to append, or lines each written with
+ * 									a newline after it.
+ */
+function filePush(string $path, string|array $data): bool {
+	$metric = null;
+
+	if (class_exists(FileMetric::class))
+		$metric = new FileMetric("a", "text", $path);
+
+	$handle = @fopen($path, "a");
+
+	if (!$handle) {
+		$metric ?-> time(-1);
+		throw new FileWriteError($path);
+	}
+
+	try {
+		if (!flock($handle, LOCK_EX)) {
+			$metric ?-> time(-1);
+			throw new FileLockError($path, "another process holds the lock");
+		}
+
+		$bytes = 0;
+
+		if (is_array($data)) {
+			foreach ($data as $line)
+				$bytes += (int) fwrite($handle, $line . PHP_EOL);
+		} else {
+			$bytes = (int) fwrite($handle, $data);
+		}
+
+		flock($handle, LOCK_UN);
+		$metric ?-> time($bytes);
+		return true;
+	} finally {
+		fclose($handle);
+	}
 }
 
 /**
- * Process backtrace data returned from {@see debug_backtrace()}
- * or {@see Exception::getTrace()}
- *
- * @param	\Throwable|array	$data
- * @return	BacktraceFrame[]
+ * The last resort when even the error page cannot render: the bare facts as
+ * preformatted text.
  */
-function processBacktrace($data, bool $merges = true) {
-	global $ERROR_STACK;
+function printException(Throwable $e): void {
+	$lines = array(
+		get_class($e),
+		"",
+		$e -> getMessage(),
+		"",
+		"Stacktrace:",
+		$e -> getTraceAsString()
+	);
 
-	$exception = null;
-	$frames = array();
-
-	if ($data instanceof Throwable) {
-		$exception = $data;
-		$data = ($exception instanceof BaseException)
-			? $exception -> trace()
-			: $exception -> getTrace();
-	}
-
-	foreach ($data as $item) {
-		$frame = new BacktraceFrame($item["function"]);
-		$frames[] = $frame;
-
-		foreach ([ "file", "line", "class", "type" ] as $key) {
-			if (empty($item[$key]))
-				continue;
-
-			if ($key === "file")
-				$item[$key] = getRelativePath($item[$key]);
-
-			$frame -> {$key} = $item[$key];
-		}
-
-		if (empty($item["args"]))
-			continue;
-
-		foreach ($item["args"] as $arg) {
-			if (is_string($arg)) {
-				if (strlen($arg) > 5 && (str_contains($arg, ".php") || realpath($arg)))
-					$arg = getRelativePath($arg);
-			} else if (is_object($arg)) {
-				if ($arg instanceof Throwable) {
-					$value = $arg -> getMessage();
-					if (str_contains($value, ".php"))
-						$value = getRelativePath($value);
-
-					$arg = [ get_class($arg), $value ];
-				} else if (method_exists($arg, "__toString")) {
-					$value = (string) $arg;
-					if (str_contains($value, ".php"))
-						$value = getRelativePath($value);
-
-					$arg = [ get_class($arg), $value ];
-				} else
-					$arg = get_class($arg);
-			} else if (is_bool($arg)) {
-				$arg = $arg ? "true" : "false";
-			} else if (is_array($arg)) {
-				$count = count($arg);
-
-				if (isSequential($arg)) {
-					$arg = $count > 0
-						? "[ ...({$count})... ]"
-						: "[]";
-				} else {
-					$arg = $count > 0
-						? "{ ...({$count})... }"
-						: "{}";
-				}
-			} else if ($arg === null) {
-				$arg = "[NULL]";
-			}
-
-			$frame -> args[] = $arg;
-		}
-	}
-
-	if (!empty($exception) && !($exception instanceof RuntimeError)) {
-		$file = getRelativePath($exception -> getFile());
-		$line = $exception -> getLine();
-
-		if ($file && $line && (empty($frames) || ($frames[0] -> file !== $file || $frames[0] -> line !== $line))) {
-			// Add missing top frame.
-			$trace = new BacktraceFrame(get_class($exception));
-			$trace -> file = $file;
-			$trace -> line = $exception -> getLine();
-			$trace -> fault = true;
-			array_unshift($frames, $trace);
-		}
-	}
-
-	if (!empty($exception) && $merges) {
-		/**
-		 * Merge frames.
-		 * @param	BacktraceFrame[]	$from
-		 * @param	BacktraceFrame[]	$target
-		 */
-		$merge = function (array $from, array $target, bool $reverse = false) {
-			$insert = 0;
-
-			if ($reverse)
-				$target = array_reverse($target);
-
-			foreach ($from as $merge) {
-				foreach ($target as $i => &$check) {
-					if ($merge -> hash() === $check -> hash()) {
-						if (!empty($merge -> file) && $merge -> file)
-							$check -> file = $merge -> file;
-
-						if (!empty($merge -> line) && $merge -> line > 0)
-							$check -> line = $merge -> line;
-
-						$check -> function = $merge -> function ?: $check -> function;
-
-						if (empty($check -> args) && !empty($merge -> args))
-							$check -> args = $merge -> args;
-
-						$insert = $i;
-						continue 2;
-					}
-				}
-
-				array_splice($target, $insert - ($reverse ? 1 : 0), 0, [ $merge ] );
-				$insert += 1;
-			}
-
-			return $reverse
-				? array_reverse($target)
-				: $target;
-		};
-
-		// Add previous exceptions.
-		foreach ($ERROR_STACK as $e) {
-			if ($exception == $e)
-				continue;
-
-			$frames = $merge($frames, processBacktrace($e, false));
-		}
-
-		// Merge exception frames with full backtrace.
-		$frames = $merge(backtrace(), $frames);
-
-		// Reduce duplicate.
-		for ($i = 0; $i < count($frames) - 1; $i++) {
-			$frame = &$frames[$i];
-			$next = $frames[$i + 1];
-
-			if ($frame -> hash() === $next -> hash() || $frame -> function === $next -> function) {
-				if (!empty($next -> file) && $next -> file)
-					$frame -> file = $next -> file;
-
-				if (!empty($next -> line) && $next -> line > 0)
-					$frame -> line = $next -> line;
-
-				$frame -> function = $next -> function ?: $frame -> function;
-
-				if (empty($frame -> args) && !empty($next -> args))
-					$frame -> args = $next -> args;
-
-				array_splice($frames, $i + 1, 1);
-			}
-		}
-
-		// Reset frame pointer to prevent error in next loop.
-		unset($frame);
-
-		// Update fault points.
-		foreach ($ERROR_STACK as $e) {
-			$file = getRelativePath($e -> getFile());
-			$line = $e -> getLine();
-
-			foreach ($frames as $frame) {
-				if ($frame -> file === $file && $frame -> line === $line)
-					$frame -> fault = true;
-			}
-		}
-	}
-
-	return $frames;
+	echo "<pre>" . htmlspecialchars(implode("\n", $lines)) . "</pre>";
 }
 
 /**
- * Print out response data, set some header
- * and stop script execution!
+ * Render a report as the HTML error page.
  *
- * @param	int						$code			Response code
- * @param	string					$description	Response description
- * @param	int						$HTTPStatus		Response HTTP status code
- * @param	array|object|\Throwable	$data			Response data (optional)
- * @param	bool|mixed				$hashData		To hash the data/Data to hash
- * @return	void
+ * The application's own `error.php` gets the first try, blink's the second
+ * and {@see printException()} the last, so a broken error page still shows
+ * the error that led to it.
+ *
+ * @param	bool	$redirect	The headers are already out, so the status can
+ * 								no longer change. Hop to `/error`, which renders
+ * 								the page out of the session with the right one.
+ * @param	bool	$terminate	Whether to end the script afterwards. False only
+ * 								from a shutdown function, where an exit would
+ * 								skip the steps still to run.
  */
-function stop(
-	int $code = 0,
-	string $description = "",
-	int $status = 200,
-	array|object $data = array(),
-	$hashData = false
-) {
-	$response = new APIResponse($code, $description, $status, $data, $hashData);
+function renderErrorPage(ErrorPage $page, bool $redirect = false, bool $terminate = true): void {
+	$_SESSION["LAST_ERROR"] = $page;
+	$_SERVER["REDIRECT_STATUS"] = $page -> status;
 
-	// Create a new error page instance!
-	$instance = \Blink\ErrorPage\Instance::create($response -> output());
-	$response -> set("report", (string) $instance -> url());
+	if (!defined("BLINK_HANDLING_ERROR"))
+		define("BLINK_HANDLING_ERROR", true);
 
-	$pageType = "NORMAL";
-	$errored = ($status >= 300 || $code !== 0);
-	$accepts = explode(",", getHeader("Accept"));
+	if ($redirect && !defined("ERROR_NO_REDIRECT")) {
+		echo "<script>location.href = `/error?redirect=true`;</script>";
 
-	if ($errored) {
-		foreach ($accepts as $accept) {
-			if (str_starts_with($accept, "text/html")) {
-				$pageType = "NORMAL";
-				break;
-			}
+		if ($terminate)
+			exit;
 
-			if (str_starts_with($accept, "application/json")) {
-				$pageType = "API";
-				break;
-			}
-		}
-	} else {
-		if (!defined("PAGE_TYPE"))
-			define("PAGE_TYPE", "NORMAL");
-
-		$pageType = strtoupper(PAGE_TYPE);
+		return;
 	}
 
-	switch ($pageType) {
-		case "NORMAL":
-			if (!headers_sent()) {
-				$response -> header("Output", $response -> code);
-				$response -> header("Report-ID", $instance -> id);
-				$response -> serve();
-			}
-
-			if ($errored)
-				renderErrorPage($instance, headers_sent());
-
-			break;
-
-		case "API":
-			$response -> header("Access-Control-Allow-Origin", "*");
-			$response -> header("Report-ID", $instance -> id);
-			echo $response -> serve();
-			break;
-
-		default:
-			print "<h1>Code $status</h1><p>$description</p>";
-			break;
-	}
-
-	die();
-}
-
-function printException(Throwable $e) {
-	$lines = array();
-
-	$lines[] = get_class($e);
-	$lines[] = "";
-	$lines[] = $e -> getMessage();
-	$lines[] = "Stacktrace:";
-	$lines[] = $e -> getTraceAsString();
-
-	echo "<pre>" . implode("\n", $lines) . "</pre>";
-	die();
-}
-
-function renderErrorPage(\Blink\ErrorPage\Instance $data, bool $redirect = false) {
-	$_SESSION["LAST_ERROR"] = $data;
-	$_SERVER["REDIRECT_STATUS"] = $data -> status;
-
-	if (file_exists(BASE_PATH . "/error.php") && !defined("CUSTOM_ERROR_HANDING")) {
-		if ($redirect && !defined("ERROR_NO_REDIRECT"))
-			redirect("/error?redirect=true");
-
-		define("CUSTOM_ERROR_HANDING", true);
-		header("Content-Type: text/html; charset=utf-8");
-
-		try {
-			require BASE_PATH . "/error.php";
-			unset($_SESSION["LAST_ERROR"]);
-			die();
-		} catch (Throwable $e) {
-			try {
-				\Blink\Handlers\ExceptionHandler($e);
-				die();
-			} catch (Throwable $e) {
-				printException($e);
-			}
-		}
-	}
-
-	// Fall back to built in error page.
 	if (!headers_sent())
 		header("Content-Type: text/html; charset=utf-8");
 
-	try {
-		require CORE_ROOT . "/error.php";
-		unset($_SESSION["LAST_ERROR"]);
-		die();
-	} catch (Throwable $e) {
+	$candidates = array( CORE_ROOT . "/error.php" );
+
+	if (file_exists(BASE_PATH . "/error.php") && !defined("CUSTOM_ERROR_HANDING"))
+		array_unshift($candidates, BASE_PATH . "/error.php");
+
+	$failure = null;
+
+	foreach ($candidates as $file) {
+		// Buffered, so a page that fails halfway leaves nothing behind for
+		// the next candidate to render under.
+		ob_start();
+
 		try {
-			\Blink\Handlers\ExceptionHandler($e);
-			die();
+			require $file;
+			ob_end_flush();
+			unset($_SESSION["LAST_ERROR"]);
+
+			if ($terminate)
+				exit;
+
+			return;
 		} catch (Throwable $e) {
-			printException($e);
+			ob_end_clean();
+			$failure = $e;
 		}
 	}
+
+	printException($failure);
+
+	if ($terminate)
+		exit;
 }

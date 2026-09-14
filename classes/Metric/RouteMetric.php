@@ -5,9 +5,10 @@ namespace Blink\Metric;
 use Blink\Http\Request;
 use Blink\Http\Response;
 use Blink\Http\Router\Route;
+use function Blink\stringify;
 
 /**
- * Route metric
+ * One route handling one request.
  *
  * @author		Belikhun
  * @since		2.0.0
@@ -26,8 +27,9 @@ class RouteMetric extends MetricInstance {
 	public ?Response $response = null;
 
 	public function __construct(Route $route) {
+		parent::__construct();
+
 		$this -> route = $route;
-		$this -> start = microtime(true);
 		\Blink\Metric::$routes[] = $this;
 	}
 
@@ -41,6 +43,20 @@ class RouteMetric extends MetricInstance {
 		$this -> response = $response;
 		$this -> time = microtime(true);
 		return $this;
+	}
+
+	public function save(): ?array {
+		if (empty($this -> response))
+			return null;
+
+		return array(
+			"uri" => $this -> route -> uri,
+			"method" => $this -> request ?-> method,
+			"action" => stringify($this -> route -> action),
+			"status" => $this -> status,
+			"delta_start" => $this -> deltaStart,
+			"duration" => $this -> getTime()
+		);
 	}
 
 	public function __toString(): string {

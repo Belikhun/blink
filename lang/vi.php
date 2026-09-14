@@ -34,6 +34,19 @@ return array(
 	"errorpage.notLoggedIn.title" => "Bạn chưa đăng nhập",
 	"errorpage.notLoggedIn.content" => "Trang này yêu cầu một phiên đã xác thực. Hãy đăng nhập và thử lại.",
 
+	"errorpage.etherInvalidMiddleware.title" => "Tham chiếu middleware không hợp lệ",
+	"errorpage.etherInvalidMiddleware.content" => "<b>{reference}</b> không phải là một class middleware, một alias đã đăng ký hay một group. "
+		. "Đăng ký nó bằng <code>Ether::register()</code> trong <code>attach()</code> của module, hoặc kiểm tra lại chính tả.",
+
+	"errorpage.essenceBindingNotDefined.title" => "Chưa có binding cho abstract này",
+	"errorpage.essenceBindingNotDefined.content" => "<b>{abstract}</b> là một interface hoặc abstract class, nên Essence không thể tự khởi tạo nó. "
+		. "Gắn nó với một class cụ thể bằng <code>Essence::bind()</code> trong <code>define()</code> của module.",
+
+	"errorpage.noUserClass.title" => "Chưa đăng ký class người dùng",
+	"errorpage.noUserClass.content" => "Có thứ gì đó cần người dùng hiện tại, nhưng chưa module nào khai báo class đại diện cho người dùng. "
+		. "Tạo một class kế thừa <code>Blink\\Model\\UserBase</code> và đăng ký nó bằng "
+		. "<code>Blink::useUserClass()</code> trong <code>define()</code> của module.",
+
 	"time.now" => "mới đây",
 	"time.ago" => "{value} {unit} trước",
 	"time.in" => "{value} {unit} sau",

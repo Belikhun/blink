@@ -2,55 +2,41 @@
 
 namespace Blink\Http\Response;
 
-use Blink\Exception\BaseException;
-use Blink\Session;
-use function Blink\getRelativePath;
-use function Blink\processBacktrace;
-
 /**
- * Return formatted API response for use with `belibrary`.
- * 
+ * The JSON envelope blink's API routes answer with: a code, a description,
+ * the data, and what the request cost.
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ *
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class APIResponse extends JsonResponse {
-
 	/**
-	 * Response code. Mapped in `consts.php`
-	 * 
-	 * @var	int
+	 * Response code. Mapped in `consts.php`.
 	 */
 	public int $code = 0;
 
 	/**
-	 * Response description. This will tell developer most of the information about the request.
-	 * 
-	 * @var	string
+	 * What happened, for the developer reading the response.
 	 */
 	public string $description = "";
 
 	/**
-	 * Additional data passed to the client.
-	 * 
-	 * @var	array|object|null
+	 * Additional data passed to the client. A throwable here becomes the
+	 * exception section of the payload.
 	 */
 	protected array|object|null $data = array();
 
 	/**
-	 * Data computed hash. Used to indicate that changes happend to response data.
-	 * 
-	 * @var	?string
+	 * Digest of the data, so a client can tell whether it changed.
 	 */
 	protected ?string $hash = null;
 
 	/**
-	 * Generated output data, to make sure output does not get computed twice.
-	 * 
-	 * @var	array
+	 * The built payload, so it is never computed twice.
 	 */
 	private ?array $output = null;
 
@@ -75,13 +61,13 @@ class APIResponse extends JsonResponse {
 	}
 
 	public function description(string $description) {
-		// Remove absolute path.
 		$this -> description = str_replace(BASE_PATH, "", $description);
 		return $this;
 	}
 
 	public function data(array|object $data) {
 		$this -> data = $data;
+		$this -> output = null;
 		return $this;
 	}
 
@@ -94,74 +80,31 @@ class APIResponse extends JsonResponse {
 		} else {
 			$this -> hash = md5(serialize($hash));
 		}
-		
+
 		return $this;
 	}
 
+	/**
+	 * The full payload, exception section included. What actually goes to the
+	 * client passes through {@see ResponsePayloadBuilder::redact()} first.
+	 */
 	public function output(): array {
-		global $RUNTIME, $ERROR_STACK;
-
-		if (!empty($this -> output))
+		if ($this -> output !== null)
 			return $this -> output;
 
-		$exceptionData = null;
-		$caller = "hidden";
-		$exception = null;
-		$details = null;
-	
-		if ($this -> data instanceof \Throwable) {
-			/** @var \Throwable */
-			$exception = $this -> data;
-
-			$stacktrace = null;
-			$additionalData = null;
-	
-			$ERROR_STACK[] = $exception;
-			$file = getRelativePath($exception -> getFile());
-	
-			if (class_exists("CONFIG") && \CONFIG::$DEBUG) {
-				$stacktrace = processBacktrace($exception);
-				$caller = $stacktrace[0] -> getCallString();
-			}
-	
-			if ($exception instanceof BaseException) {
-				$additionalData = $exception -> data;
-				$details = $exception -> details;
-			}
-	
-			$exceptionData = array(
-				"class" => get_class($exception),
-				"file" => $file,
-				"line" => $exception -> getLine(),
-				"data" => $additionalData,
-				"stacktrace" => $stacktrace
-			);
-	
-			$this -> data = ($exception instanceof BaseException)
-				? $exception -> data
-				: null;
-		}
-	
-		$this -> output = array(
-			"code" => $this -> code,
-			"status" => $this -> status,
-			"description" => $this -> description,
-			"details" => $details,
-			"caller" => "{$caller}()",
-			"user" => class_exists(Session::class, true)
-				? Session::$username
-				: null,
-			"data" => $this -> data,
-			"hash" => $this -> hash,
-			"runtime" => $RUNTIME -> stop(),
-			"exception" => $exceptionData
+		$this -> output = ResponsePayloadBuilder::build(
+			$this -> code,
+			$this -> description,
+			$this -> status,
+			$this -> data,
+			$this -> hash
 		);
 
 		return $this -> output;
 	}
 
 	public function process(): string {
-		$this -> json(array_merge($this -> output(), $this -> json));
+		$this -> json(array_merge(ResponsePayloadBuilder::redact($this -> output()), $this -> json));
 		return parent::process();
 	}
 }

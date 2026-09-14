@@ -5,13 +5,13 @@ namespace Blink\Ether\ErrorPage;
 use Blink\ErrorPage\ContextGroup;
 use Blink\ErrorPage\ContextItem;
 use Blink\ErrorPage\ContextRenderer;
-use Blink\ErrorPage\Instance;
+use Blink\ErrorPage;
 
 /**
  * Error page middleware execution context.
  *
  * Wraps the report being built. Anything added here lands in
- * {@see Instance::$contexts}, which is serialized into the stored report and
+ * {@see ErrorPage::$contexts}, which is serialized into the stored report and
  * rendered later by `error.php`.
  *
  * @author		Belikhun
@@ -23,12 +23,12 @@ use Blink\ErrorPage\Instance;
  */
 class ErrorPageContext {
 	/**
-	 * @param	Instance	$page			The error page being built.
+	 * @param	ErrorPage	$page			The error page being built.
 	 * @param	?array		$data			The raw report payload (status, exception, ...).
 	 * @param	bool		$debugging		Whether site debugging is enabled.
 	 */
 	public function __construct(
-		public Instance $page,
+		public ErrorPage $page,
 		public ?array $data = null,
 		public bool $debugging = false
 	) {}

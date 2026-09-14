@@ -3,7 +3,7 @@
 namespace Blink\Module;
 
 use Blink\Console\Command;
-use Blink\ErrorPage\Instance;
+use Blink\ErrorPage;
 use Blink\Ether;
 use Blink\Http\Router;
 use Blink\Http\Router\Middleware\ApplyCorsHeaders;
@@ -43,8 +43,8 @@ class CoreModule extends Module {
 
 		// Negative priority keeps these behind anything the application
 		// registers on the same paths.
-		Router::GET("/error/{id}", [ Instance::class, "handle" ], -1);
-		Router::GET("/error", [ Instance::class, "index" ], -1);
+		Router::GET("/error/{id}", [ ErrorPage::class, "handle" ], -1);
+		Router::GET("/error", [ ErrorPage::class, "index" ], -1);
 
 		Router::$processingFile = null;
 	}

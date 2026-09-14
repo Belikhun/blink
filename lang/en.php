@@ -34,6 +34,19 @@ return array(
 	"errorpage.notLoggedIn.title" => "You are not signed in",
 	"errorpage.notLoggedIn.content" => "This page needs an authenticated session. Sign in and try again.",
 
+	"errorpage.etherInvalidMiddleware.title" => "Middleware reference is invalid",
+	"errorpage.etherInvalidMiddleware.content" => "<b>{reference}</b> is not a middleware class, a registered alias or a group. "
+		. "Register it with <code>Ether::register()</code> from a module's <code>attach()</code>, or check the spelling.",
+
+	"errorpage.essenceBindingNotDefined.title" => "No binding for this abstract",
+	"errorpage.essenceBindingNotDefined.content" => "<b>{abstract}</b> is an interface or abstract class, so Essence cannot build it on its own. "
+		. "Bind it to a concrete class with <code>Essence::bind()</code> from a module's <code>define()</code>.",
+
+	"errorpage.noUserClass.title" => "No user class is registered",
+	"errorpage.noUserClass.content" => "Something needed the current user, and no module has said which class represents one. "
+		. "Create a class extending <code>Blink\\Model\\UserBase</code> and register it with "
+		. "<code>Blink::useUserClass()</code> from a module's <code>define()</code>.",
+
 	"time.now" => "just now",
 	"time.ago" => "{value} {unit} ago",
 	"time.in" => "in {value} {unit}",

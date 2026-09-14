@@ -12,23 +12,39 @@
 
 namespace Blink\Handlers;
 
+use Blink\ErrorPage;
+use Blink\ErrorPage\ResponseAdapter;
+use Blink\ErrorPage\TerminalRenderer;
 use Blink\Exception\BaseException;
 use Blink\Exception\ClassNotFound;
 use Blink\Exception\FatalError;
 use Blink\Exception\InterfaceNotFound;
 use Blink\Exception\RuntimeError;
-use function Blink\stop;
 
-global $ERROR_STACK;
+/**
+ * Give the engine's own "not found" errors a blink class, so the error page
+ * has a tip for them.
+ */
+function translate(\Throwable $e): \Throwable {
+	if ($e instanceof BaseException)
+		return $e;
 
-/** @var \Throwable[] */
-$ERROR_STACK = array();
+	if (preg_match('/Class "(.+)" not found/', $e -> getMessage(), $matches)) {
+		$error = new ClassNotFound($matches[1]);
+		$error -> applyFrom($e);
+		return $error;
+	}
+
+	if (preg_match('/Interface "(.+)" not found/', $e -> getMessage(), $matches)) {
+		$error = new InterfaceNotFound($matches[1]);
+		$error -> applyFrom($e);
+		return $error;
+	}
+
+	return $e;
+}
 
 function ErrorHandler(int $code, string $text, string $file, int $line) {
-	// Discard all output buffer to avoid garbage html.
-	while (ob_get_level())
-		ob_end_clean();
-
 	$error = new RuntimeError(1000 + $code, $text);
 	$error -> file = $file;
 	$error -> line = $line;
@@ -36,35 +52,18 @@ function ErrorHandler(int $code, string $text, string $file, int $line) {
 	if (BLINK_IS_CLI)
 		CliExceptionHandler($error);
 
-	stop($error -> code, $error -> description, 500, $error);
+	ResponseAdapter::handleThrowable($error, $error -> code, $error -> description, 500);
 }
 
 function ExceptionHandler(\Throwable $e) {
-	// Discard all output buffer to avoid garbage html.
-	while (ob_get_level())
-		ob_end_clean();
+	$e = translate($e);
 
-	if ($e instanceof BaseException)
-		stop($e -> code, $e -> description, $e -> status, $e);
-
-	// Little hack to check if we got class not found error, translate
-	// it to a proper class.
-	$error = $e;
-	$matches = null;
-
-	$re = '/Class \"(.+)\" not found/';
-	if (preg_match($re, $e -> getMessage(), $matches)) {
-		$error = new ClassNotFound($matches[1]);
-		$error -> applyFrom($e);
+	if ($e instanceof BaseException) {
+		ResponseAdapter::handleThrowable($e, $e -> code, $e -> description, $e -> status);
+		return;
 	}
 
-	$re = '/Interface \"(.+)\" not found/';
-	if (preg_match($re, $e -> getMessage(), $matches)) {
-		$error = new InterfaceNotFound($matches[1]);
-		$error -> applyFrom($e);
-	}
-
-	stop(1000 + $error -> getCode(), $error -> getMessage(), 500, $error);
+	ResponseAdapter::handleThrowable($e, 1000 + $e -> getCode(), $e -> getMessage(), 500);
 }
 
 /**
@@ -86,6 +85,40 @@ function isFatal(?array $error): bool {
 	), true);
 }
 
+function fatalFrom(array $error): FatalError {
+	$fatal = new FatalError($error["type"], $error["message"]);
+	$fatal -> file = $error["file"];
+	$fatal -> line = $error["line"];
+	return $fatal;
+}
+
+/**
+ * Make room to report a request that ran out of memory.
+ *
+ * The limit was hit with everything the request allocated still alive, so
+ * without more headroom building the report is the next thing to fail, and
+ * that one fails silently.
+ */
+function reserveMemory(array $error): void {
+	if (!str_contains($error["message"] ?? "", "Allowed memory size"))
+		return;
+
+	$limit = trim((string) ini_get("memory_limit"));
+
+	if ($limit === "" || $limit === "-1")
+		return;
+
+	$value = (int) $limit;
+	$bytes = match (strtoupper(substr($limit, -1))) {
+		"G" => $value << 30,
+		"M" => $value << 20,
+		"K" => $value << 10,
+		default => $value
+	};
+
+	ini_set("memory_limit", (string) ($bytes + 64 * 1024 * 1024));
+}
+
 /**
  * Run one shutdown step, keeping its failure to itself.
  *
@@ -101,32 +134,10 @@ function step(string $name, callable $handler): void {
 	}
 }
 
-function ShutdownHandler() {
-	if (!defined("BLINK_SHUTTING_DOWN"))
-		define("BLINK_SHUTTING_DOWN", true);
-
-	$error = error_get_last();
-
-	if (isFatal($error)) {
-		// Discard all output buffer to avoid garbage html.
-		while (ob_get_level())
-			ob_end_clean();
-
-		$fatal = new FatalError($error["type"], $error["message"]);
-		$fatal -> file = $error["file"];
-		$fatal -> line = $error["line"];
-
-		// Renders the error page and terminates. The steps below never get
-		// their turn, which is the right call while the request is in a state
-		// none of them can trust.
-		stop($error["type"], $error["message"], 500, $fatal);
-	}
-
-	// FastCGI hands the response to the client before shutdown functions
-	// finish, so everything below costs the client nothing.
-	if (function_exists("fastcgi_finish_request"))
-		fastcgi_finish_request();
-
+/**
+ * The teardown both shutdown handlers share.
+ */
+function shutdownSteps(): void {
 	// An error earlier in the request can abort a construction without
 	// unwinding Essence's constructor stack. Clearing it keeps the steps below
 	// from tripping over a circular dependency that never happened.
@@ -161,28 +172,48 @@ function ShutdownHandler() {
 	});
 }
 
+function ShutdownHandler() {
+	if (!defined("BLINK_SHUTTING_DOWN"))
+		define("BLINK_SHUTTING_DOWN", true);
+
+	$error = error_get_last();
+
+	if (isFatal($error)) {
+		reserveMemory($error);
+
+		// Rendered without exiting. An exit here would end this function, and
+		// the steps below would never get their turn.
+		step("errorpage.fatal", function () use ($error) {
+			ResponseAdapter::handleThrowable(fatalFrom($error), $error["type"], $error["message"], 500, terminate: false);
+		});
+	}
+
+	// FastCGI hands the response to the client before shutdown functions
+	// finish, so everything below costs the client nothing.
+	if (function_exists("fastcgi_finish_request"))
+		fastcgi_finish_request();
+
+	shutdownSteps();
+}
+
 /**
  * Report a failure to a terminal, where the HTML error page would only be
- * thousands of lines of markup scrolling past.
+ * thousands of lines of markup scrolling past. The report is still stored, so
+ * `error:list` finds it.
  */
 function printToTerminal(\Throwable $e): void {
-	$stream = defined("STDERR") ? STDERR : fopen("php://stderr", "w");
-	$description = ($e instanceof BaseException)
-		? $e -> description
-		: $e -> getMessage();
-
-	fwrite($stream, PHP_EOL . $e::class . ": " . strip_tags($description) . PHP_EOL);
-	fwrite($stream, "  at " . \Blink\getRelativePath($e -> getFile()) . ":" . $e -> getLine() . PHP_EOL);
-
-	if ($e instanceof BaseException && !empty($e -> details))
-		fwrite($stream, "  " . strip_tags($e -> details) . PHP_EOL);
-
-	if (\Blink::debuggingEnabled())
-		fwrite($stream, PHP_EOL . $e -> getTraceAsString() . PHP_EOL);
+	try {
+		TerminalRenderer::print(ErrorPage::fromException($e) -> save());
+	} catch (\Throwable $reportError) {
+		$stream = defined("STDERR") ? STDERR : fopen("php://stderr", "w");
+		fwrite($stream, PHP_EOL . get_class($e) . ": " . strip_tags($e -> getMessage()) . PHP_EOL);
+		fwrite($stream, "  at " . \Blink\getRelativePath($e -> getFile()) . ":" . $e -> getLine() . PHP_EOL);
+		fwrite($stream, "  (the report could not be stored: " . $reportError -> getMessage() . ")" . PHP_EOL);
+	}
 }
 
 function CliExceptionHandler(\Throwable $e) {
-	printToTerminal($e);
+	printToTerminal(translate($e));
 	exit(\Blink\Console::EXIT_FAILURE);
 }
 
@@ -193,44 +224,17 @@ function CliShutdownHandler() {
 	$error = error_get_last();
 
 	if (isFatal($error)) {
-		$fatal = new FatalError($error["type"], $error["message"]);
-		$fatal -> file = $error["file"];
-		$fatal -> line = $error["line"];
+		reserveMemory($error);
 
-		printToTerminal($fatal);
+		step("errorpage.fatal", function () use ($error) {
+			printToTerminal(fatalFrom($error));
+		});
 	}
 
-	step("essence.clear", function () {
-		\Blink\Essence::clearConstructorStack();
-	});
-
-	step("essence.core", function () {
-		\Blink::registerCoreSingletons();
-	});
-
-	// Handlers that asked to run once the response was out. Before the module
-	// teardown, since they may still need what a module wired up.
-	step("lightrail.shutdown", function () {
-		\Blink\Lightrail::coordinator() -> flushShutdownDispatches();
-	});
-
-	step("modules.detach", function () {
-		\Blink::detachModules();
-	});
-
-	// Last of the writes: the trail buffered during the request, including
-	// anything the steps above added to it.
-	step("lightrail.trail", function () {
-		\Blink\Essence::make(\Blink\Lightrail\Service\Recorder::class) -> flush();
-	});
-
-	step("autoload.save", function () {
-		\Blink\Autoload\save();
-	});
+	shutdownSteps();
 }
 
 if (BLINK_IS_CLI) {
-	// The error page is HTML rendered into a response nobody is reading here.
 	set_exception_handler("Blink\\Handlers\\CliExceptionHandler");
 	set_error_handler("Blink\\Handlers\\ErrorHandler", E_ALL);
 	register_shutdown_function("Blink\\Handlers\\CliShutdownHandler");

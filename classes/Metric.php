@@ -3,13 +3,13 @@
 namespace Blink;
 
 /**
- * Metric base class that store all metrics recorded during this request.
+ * Everything measured during this request, by kind.
  *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
  *
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class Metric {
@@ -28,6 +28,9 @@ class Metric {
 	/** @var Metric\TimingMetric[] */
 	public static $timings = array();
 
+	/** @var Metric\ErrorMetric[] */
+	public static $errors = array();
+
 	/**
 	 * Drop everything recorded so far.
 	 *
@@ -41,5 +44,6 @@ class Metric {
 		static::$queries = array();
 		static::$files = array();
 		static::$timings = array();
+		static::$errors = array();
 	}
 }

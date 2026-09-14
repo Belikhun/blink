@@ -7,23 +7,29 @@ use function Blink\convertSize;
 use function Blink\getRelativePath;
 
 /**
- * File Metric
+ * One file read or written.
  *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
  *
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class FileMetric extends MetricInstance {
 	public string $mode;
+
 	public string $type;
+
 	public string $file;
-	public int $size;
+
+	public int $size = -1;
 
 	public function __construct(string $mode, string $type, string $file) {
-		// Cache file is treated differently.
+		parent::__construct();
+
+		// A cache file's name is a hash nobody will recognize, so show only
+		// enough of it to tell two apart.
 		if (str_ends_with($file, ".cache")) {
 			$name = pathinfo($file, PATHINFO_FILENAME);
 			$file = "[cache] " . substr($name, 0, 8);
@@ -32,15 +38,28 @@ class FileMetric extends MetricInstance {
 		$this -> mode = $mode;
 		$this -> type = $type;
 		$this -> file = $file;
-		$this -> time = -1;
-		$this -> size = -1;
-		$this -> start = microtime(true);
+
 		Metric::$files[] = $this;
 	}
 
-	public function time(int $size) {
+	public function time(int $size): static {
 		$this -> size = $size;
 		$this -> time = microtime(true);
+		return $this;
+	}
+
+	public function save(): ?array {
+		$file = getRelativePath($this -> file);
+
+		return array(
+			"hash" => substr(md5($file), 0, 12),
+			"file" => $file,
+			"mode" => $this -> mode,
+			"type" => $this -> type,
+			"size" => $this -> size,
+			"delta_start" => $this -> deltaStart,
+			"duration" => $this -> getTime()
+		);
 	}
 
 	public function __toString(): string {

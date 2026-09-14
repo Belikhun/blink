@@ -7,7 +7,8 @@ use Blink\Console\Exception\CommandNotFound;
 use Blink\Console\Exception\InvalidInput;
 use Blink\Console\Input\Input;
 use Blink\Console\Output;
-use Blink\Exception\BaseException;
+use Blink\ErrorPage;
+use Blink\ErrorPage\TerminalRenderer;
 use Blink\Exception\InvalidDefinition;
 
 /**
@@ -186,19 +187,15 @@ class Console {
 				$output -> line("Usage: " . $class::spec() -> synopsis());
 
 			return static::EXIT_USAGE;
-		} catch (BaseException $e) {
-			$output -> error($e -> description);
-
-			if (!empty($e -> details))
-				$output -> line(strip_tags($e -> details));
-
-			return static::EXIT_FAILURE;
 		} catch (\Throwable $e) {
-			$output -> error($e -> getMessage());
-			$output -> comment(getRelativePath($e -> getFile()) . ":" . $e -> getLine());
-
-			if (\Blink::debuggingEnabled())
-				$output -> comment($e -> getTraceAsString());
+			// A command that fails gets the same report a failed request does,
+			// so `error:list` finds it and the id at the bottom leads to it.
+			try {
+				TerminalRenderer::print(ErrorPage::fromException($e) -> save());
+			} catch (\Throwable $reportError) {
+				$output -> error(get_class($e) . ": " . strip_tags($e -> getMessage()));
+				$output -> comment(getRelativePath($e -> getFile()) . ":" . $e -> getLine());
+			}
 
 			return static::EXIT_FAILURE;
 		}

@@ -3,7 +3,7 @@
 namespace Blink\Ticker\Orbit;
 
 use Blink\Console;
-use Blink\ErrorPage\Instance;
+use Blink\ErrorPage;
 use Blink\Lock;
 use Blink\Ticker;
 use Blink\Ticker\Task;
@@ -187,8 +187,7 @@ class Sweep {
 		$reportId = null;
 
 		try {
-			$instance = Instance::fromException($e);
-			$reportId = $instance -> id;
+			$reportId = ErrorPage::report($e);
 		} catch (\Throwable $reportError) {
 			error_log("[blink][ticker] could not file a report for {$entry -> name}: {$reportError}");
 		}

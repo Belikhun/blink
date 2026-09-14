@@ -1051,7 +1051,7 @@ class Query extends QueryConditionBuilder {
 	protected function executeRawStatement(string $sql, array $params = array(), int $from = 0, int $count = 0) {
 		global $DB;
 
-		$metric = new QueryMetric(static::statementMode($sql), $this -> metricTable());
+		$metric = new QueryMetric($sql, $params);
 
 		try {
 			$result = $DB -> execute($sql, $params, $from, $count);
@@ -1108,25 +1108,6 @@ class Query extends QueryConditionBuilder {
 	}
 
 	/**
-	 * The statement's leading keyword, which is what a metric records as its
-	 * mode.
-	 */
-	protected static function statementMode(string $sql): string {
-		return strtoupper((string) strtok(ltrim($sql), " \t\n\r"));
-	}
-
-	/**
-	 * The table name a metric is filed under.
-	 */
-	protected function metricTable(): string {
-		$table = $this -> table -> table;
-
-		return ($table instanceof Table)
-			? $table -> getName()
-			: "[subquery]";
-	}
-
-	/**
 	 * Fetch the first record and return it.
 	 *
 	 * @return ?G
@@ -1178,19 +1159,9 @@ class Query extends QueryConditionBuilder {
 			$fill = (object) $fill;
 
 		if (!$this -> isModelQuery()) {
-			// Query not related to model. We will perform raw insert into target table.
-			$metric = new QueryMetric(SQL_INSERT, $table);
-
-			try {
-				$id = $DB -> insert($table, $fill);
-			} catch (\Throwable $e) {
-				$metric -> errored = true;
-				$metric -> time(-1);
-				throw $e;
-			}
-
-			$metric -> time(1);
-			$fill -> id = $id;
+			// Not a model query, so a plain insert into the table will do.
+			// `$DB -> insert()` records the metric.
+			$fill -> id = $DB -> insert($table, $fill);
 			return $fill;
 		}
 

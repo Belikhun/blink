@@ -2,7 +2,7 @@
 
 namespace Blink\Lightrail;
 
-use Blink\ErrorPage\Instance;
+use Blink\ErrorPage;
 use Blink\Essence;
 use Blink\Ether;
 use Blink\Ether\Handler\HandlerInvocationContext;
@@ -215,7 +215,7 @@ class Dispatcher {
 			$location = getRelativePath($e -> getFile()) . ":" . $e -> getLine();
 
 			try {
-				$reportID = Instance::fromException($e) -> id;
+				$reportID = ErrorPage::report($e);
 			} catch (\Throwable $reportError) {
 				// The stack trace is lost, but the failure is still recorded.
 				// Losing the report must not turn into losing the dispatch.

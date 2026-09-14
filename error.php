@@ -1,27 +1,25 @@
 <?php
 /**
  * error.php
- * 
- * Genetic error page. Used when page haven't registered its own
- * error page.
- * 
+ *
+ * General error page. Used when the application has not registered its own.
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ *
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
-use Blink\BacktraceFrame;
-use Blink\ErrorPage\Instance;
+use Blink\ErrorPage;
+use Blink\ErrorPage\Frame;
 use Blink\ErrorPage\Renderer;
 use Blink\HtmlWriter;
 use Blink\URL;
 use function Blink\getRelativePath;
-use function Blink\renderSourceCode;
 
-/** @var \Blink\ErrorPage\Instance */
+/** @var ErrorPage */
 $instance = $_SESSION["LAST_ERROR"];
 
 list($statusText, $description, $details) = $instance -> info();
@@ -32,8 +30,8 @@ $status = $instance -> status;
 $sticker = new URL(getRelativePath(CORE_ROOT . "/public/stickers/" . $instance -> sticker()));
 $exception = $instance -> exception();
 $statusColor = match ($instance -> type()) {
-	Instance::ERROR_CLIENT => "yellow",
-	Instance::ERROR_SERVER => "red",
+	ErrorPage::ERROR_CLIENT => "yellow",
+	ErrorPage::ERROR_SERVER => "red",
 	default => "green"
 };
 
@@ -41,7 +39,7 @@ $class = (!empty($exception) && !empty($exception["class"]))
 	? $exception["class"]
 	: null;
 
-/** @var BacktraceFrame[] */
+/** @var Frame[] */
 $stacktrace = $instance -> stacktrace();
 $contexts = $instance -> contexts;
 http_response_code($status);
@@ -285,7 +283,7 @@ header("Access-Control-Allow-Private-Network: true");
 
 								echo HtmlWriter::endDIV();
 
-								echo renderSourceCode($trace -> getFullPath(), $trace -> line, 27);
+								echo $trace -> renderSourceCode(27);
 
 								echo HtmlWriter::endDIV();
 							}

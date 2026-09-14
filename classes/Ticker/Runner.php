@@ -3,7 +3,7 @@
 namespace Blink\Ticker;
 
 use Blink\Cache;
-use Blink\ErrorPage\Instance;
+use Blink\ErrorPage;
 use Blink\Essence;
 use Blink\Metric;
 use Blink\Model;
@@ -308,7 +308,7 @@ class Runner {
 	 */
 	protected function report(\Throwable $e): ?string {
 		try {
-			return Instance::fromException($e) -> id;
+			return ErrorPage::report($e);
 		} catch (\Throwable $reportError) {
 			error_log("[blink][ticker] could not file a report: {$reportError}");
 			return null;

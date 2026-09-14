@@ -29,6 +29,9 @@ class ContextRenderer {
 		$seq = isSequential($data);
 
 		foreach ($data as $name => $value) {
+			// A name may carry emphasis, and nothing else.
+			$name = strip_tags((string) $name, [ "b", "i", "strong", "code" ]);
+
 			$row = (!$seq)
 				? H::span([ "class" => "name", "title" => strip_tags($name) ], $name)
 				: "";
