@@ -2,7 +2,6 @@
 
 namespace Blink;
 
-use Blink\DB\Exception\TableNotFound;
 use Blink\Exception\BaseException;
 use Blink\Exception\FileInstanceNotFound;
 use Blink\Model\UserBase;
@@ -88,24 +87,13 @@ class File {
 				$record["id"] = $this -> id;
 				$DB -> update("files", $record);
 			} else {
-				try {
-					$this -> id = $DB -> insert("files", $record);
-				} catch (TableNotFound $e) {
-					// Try to init the table and try again.
-					static::initDB();
-					$this -> id = $DB -> insert("files", $record);
-				}
+				$this -> id = $DB -> insert("files", $record);
 			}
 		}
 	}
 
 	public function getStorePath() {
 		return self::$ROOT . "/{$this -> hash}";
-	}
-
-	protected static function initDB() {
-		global $DB;
-		$DB -> execute(fileGet(CORE_ROOT . "/db/tables/files.sql"));
 	}
 
 	/**
@@ -128,13 +116,7 @@ class File {
 			return self::processRecord(json_decode($content));
 		}
 
-		try {
-			$record = $DB -> record("files", array( "hash" => $hash ));
-		} catch (TableNotFound $e) {
-			// Try to init the table and try again.
-			static::initDB();
-			$record = $DB -> record("files", array( "hash" => $hash ));
-		}
+		$record = $DB -> record("files", array( "hash" => $hash ));
 
 		if (empty($record))
 			throw new FileInstanceNotFound($hash);
@@ -156,13 +138,7 @@ class File {
 		if (\CONFIG::$FILE_STORE !== FILE_STORE_DB)
 			throw new BaseException(DB_NOT_INITIALIZED, "File -> getByID() is not available in FS mode.", 500);
 
-		try {
-			$record = $DB -> record("files", array( "id" => $id ));
-		} catch (TableNotFound $e) {
-			// Try to init the table and try again.
-			static::initDB();
-			$record = $DB -> record("files", array( "id" => $id ));
-		}
+		$record = $DB -> record("files", array( "id" => $id ));
 
 		if (empty($record))
 			throw new FileInstanceNotFound($id);

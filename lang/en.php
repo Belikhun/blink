@@ -32,5 +32,8 @@ return array(
 		. "loaded. Check the class name, and that its file sits where the autoloader looks for it.",
 
 	"errorpage.notLoggedIn.title" => "You are not signed in",
-	"errorpage.notLoggedIn.content" => "This page needs an authenticated session. Sign in and try again."
+	"errorpage.notLoggedIn.content" => "This page needs an authenticated session. Sign in and try again.",
+
+	"terra.notUpgraded" => "The database schema is behind: {applied} of {total} layers have been raised.",
+	"terra.notUpgraded.details" => "Run <code>php core/blink terra:apply</code>, or wait for the process already applying them to finish."
 );

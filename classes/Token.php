@@ -7,130 +7,94 @@ use Blink\Exception\TokenExpired;
 use CONFIG;
 
 /**
- * Represent an API token.
- * 
+ * An API access token.
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ *
+ * @extends		Model<Token>
+ *
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
-class Token {
-	/** @var int */
-	public $id;
-	
-	/** @var string */
-	public $token;
+class Token extends Model {
+	public static string $table = "tokens";
 
-	/** @var int */
-	public $created;
-	
-	/** @var int */
-	public $expire;
+	public static $fillables = array(
+		"id",
+		"token",
+		"username",
+		"created",
+		"expire"
+	);
 
-	/** @var string */
-	public $username;
+	public int $id;
 
-	public function __construct(
-		int $id,
-		string $token,
-		int $created,
-		int $expire,
-		string $username
-	) {
-		$this -> id = $id;
-		$this -> token = $token;
-		$this -> created = $created;
-		$this -> expire = $expire;
-		$this -> username = $username;
-	}
+	public string $token;
 
-	public function validate() {
+	public string $username;
+
+	public int $created;
+
+	public int $expire;
+
+	public function validate(): bool {
 		return ($this -> expire >= time());
 	}
 
-	public function renew() {
-		global $DB;
-
+	/**
+	 * Push the expiry out by a full lifetime, from now.
+	 */
+	public function renew(): static {
 		$this -> created = time();
 		$this -> expire = $this -> created + CONFIG::$TOKEN_LIFETIME;
+		$this -> save();
 
-		$DB -> update("tokens", $this);
+		return $this;
 	}
 
-	public static function getToken(string $token) {
-		global $DB;
-		$record = $DB -> record("tokens", array( "token" => $token ));
+	/**
+	 * Resolve a token string, rejecting one that is unknown or expired.
+	 *
+	 * @throws	InvalidToken
+	 * @throws	TokenExpired
+	 */
+	public static function getToken(string $token): static {
+		$instance = static::where("token", $token) -> first();
 
-		if (empty($record))
+		if (empty($instance))
 			throw new InvalidToken();
 
-		$token = static::processRecord($record);
-
-		if (!$token -> validate())
+		if (!$instance -> validate())
 			throw new TokenExpired();
 
-		return $token;
+		return $instance;
 	}
 
 	/**
-	 * Get usable token. Will always return a valid token.
-	 * 
-	 * @param	string	$username
-	 * @return	Token
+	 * A usable token for a user, renewed or created as needed.
 	 */
-	public static function get(string $username) {
-		global $DB;
-		$record = $DB -> record("tokens", array( "username" => $username ));
+	public static function forUser(string $username): static {
+		$instance = static::where("username", $username) -> first();
 
-		if (empty($record))
+		if (empty($instance))
 			return static::createToken($username);
 
-		$token = static::processRecord($record);
+		if (!$instance -> validate())
+			$instance -> renew();
 
-		if (!$token -> validate())
-			$token -> renew();
-
-		return $token;
+		return $instance;
 	}
 
-	/**
-	 * Create a new token for the specified user.
-	 * 
-	 * @param	string	$username
-	 * @return	Token
-	 */
-	public static function createToken(string $username) {
-		global $DB;
-		
-		$token = bin2hex(random_bytes(64));
+	public static function createToken(string $username): static {
 		$created = time();
-		$expire = $created + CONFIG::$TOKEN_LIFETIME;
 
-		$id = $DB -> insert("tokens", array(
-			"token" => $token,
+		return static::create(array(
+			"token" => bin2hex(random_bytes(64)),
+			"username" => $username,
 			"created" => $created,
-			"expire" => $expire,
-			"username" => $username
-		));
-
-		return new static($id, $token, $created, $expire, $username);
-	}
-
-	/**
-	 * Process token record from database.
-	 * 
-	 * @param	object	$record
-	 * @return	Token
-	 */
-	public static function processRecord($record) {
-		return new static(
-			$record -> id,
-			$record -> token,
-			$record -> created,
-			$record -> expire,
-			$record -> username
-		);
+			"expire" => $created + CONFIG::$TOKEN_LIFETIME
+		)) -> save();
 	}
 }

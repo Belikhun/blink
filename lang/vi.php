@@ -32,5 +32,8 @@ return array(
 		. "không nạp được. Kiểm tra tên class và vị trí tệp của nó.",
 
 	"errorpage.notLoggedIn.title" => "Bạn chưa đăng nhập",
-	"errorpage.notLoggedIn.content" => "Trang này yêu cầu một phiên đã xác thực. Hãy đăng nhập và thử lại."
+	"errorpage.notLoggedIn.content" => "Trang này yêu cầu một phiên đã xác thực. Hãy đăng nhập và thử lại.",
+
+	"terra.notUpgraded" => "Cấu trúc cơ sở dữ liệu chưa được cập nhật: mới áp dụng {applied} trên {total} lớp.",
+	"terra.notUpgraded.details" => "Chạy <code>php core/blink terra:apply</code>, hoặc đợi tiến trình đang áp dụng chúng hoàn tất."
 );

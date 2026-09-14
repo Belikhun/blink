@@ -7,6 +7,7 @@ use Blink\Metric\TimingMetric;
 use Blink\Http\Router;
 use Blink\Server;
 use Blink\StopClock;
+use Blink\Terra;
 
 $BLINK_START = microtime(true);
 
@@ -255,6 +256,12 @@ else
 	Server::setup();
 
 Database::initialize();
+
+// Before modules attach, since a module is entitled to assume the schema its
+// own layers describe is already in place.
+new TimingMetric("terra", function () {
+	Terra::autoApply();
+});
 
 new TimingMetric("modules", function () {
 	Blink::loadModules();
