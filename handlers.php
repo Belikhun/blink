@@ -140,8 +140,20 @@ function ShutdownHandler() {
 		\Blink::registerCoreSingletons();
 	});
 
+	// Handlers that asked to run once the response was out. Before the module
+	// teardown, since they may still need what a module wired up.
+	step("lightrail.shutdown", function () {
+		\Blink\Lightrail::coordinator() -> flushShutdownDispatches();
+	});
+
 	step("modules.detach", function () {
 		\Blink::detachModules();
+	});
+
+	// Last of the writes: the trail buffered during the request, including
+	// anything the steps above added to it.
+	step("lightrail.trail", function () {
+		\Blink\Essence::make(\Blink\Lightrail\Service\Recorder::class) -> flush();
 	});
 
 	step("autoload.save", function () {
@@ -196,8 +208,20 @@ function CliShutdownHandler() {
 		\Blink::registerCoreSingletons();
 	});
 
+	// Handlers that asked to run once the response was out. Before the module
+	// teardown, since they may still need what a module wired up.
+	step("lightrail.shutdown", function () {
+		\Blink\Lightrail::coordinator() -> flushShutdownDispatches();
+	});
+
 	step("modules.detach", function () {
 		\Blink::detachModules();
+	});
+
+	// Last of the writes: the trail buffered during the request, including
+	// anything the steps above added to it.
+	step("lightrail.trail", function () {
+		\Blink\Essence::make(\Blink\Lightrail\Service\Recorder::class) -> flush();
 	});
 
 	step("autoload.save", function () {

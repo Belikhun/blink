@@ -489,7 +489,23 @@ class Model implements JsonSerializable {
 		}
 
 		$this -> onSaved();
+
+		// Collected before the snapshot is refreshed: afterwards the baseline
+		// equals the current values and the delta would come out empty.
+		$changes = $insert
+			? $this -> collectInitialValues()
+			: $this -> collectChanges();
+
 		$this -> takeSnapshot();
+
+		$this -> emitModelEvent($insert ? Event\ModelCreated::class : Event\ModelUpdated::class, extra: array(
+			"changes" => $changes
+		));
+
+		$this -> emitModelEvent(Event\ModelSaved::class, extra: array(
+			"changes" => $changes,
+			"insert" => $insert
+		));
 
 		return $this;
 	}
@@ -527,6 +543,7 @@ class Model implements JsonSerializable {
 
 		$name = static::class . " [" . $this -> {static::$primaryKey} . "]";
 		$primaryValue = $this -> {static::$primaryKey};
+		$instanceID = $this -> getPrimaryValue();
 		$child = $reporter ?-> newChild();
 		$reporter ?-> report(
 			0,
@@ -540,7 +557,7 @@ class Model implements JsonSerializable {
 		self::$deletionDepth++;
 
 		try {
-			DB::transaction(function () use ($DB, $name, $child, $reporter, $primaryValue) {
+			DB::transaction(function () use ($DB, $name, $child, $reporter, $primaryValue, $instanceID) {
 				// Let the model prepare for deletion first, this might be deleting related
 				// row with this instance.
 				$this -> beforeDelete($child);
@@ -570,6 +587,13 @@ class Model implements JsonSerializable {
 
 				$this -> onInstanceDeleted();
 				$this -> onDeleted($child);
+
+				// Inside the transaction, so a handler's own writes roll back
+				// with the deletion if a later step fails. The id has to be
+				// passed in: the instance no longer carries one.
+				$this -> emitModelEvent(Event\ModelDeleted::class, $instanceID, array(
+					"changes" => $this -> collectFinalValues()
+				));
 			});
 		} catch (\Throwable $e) {
 			$this -> instanceDeleting = false;
@@ -694,6 +718,31 @@ class Model implements JsonSerializable {
 	 * @return void
 	 */
 	protected function onInstanceDeleted() {}
+
+	/**
+	 * Announce that something happened to this row.
+	 *
+	 * Silent while a deletion is unwinding related rows, which
+	 * `$canHandleModelEvents` marks: those writes belong to the teardown, not
+	 * to anything a handler should react to separately.
+	 *
+	 * @param	class-string<Event\ModelEvent>	$eventClass
+	 * @param	?int							$instanceID		The row's id, when the model no longer carries one.
+	 */
+	protected function emitModelEvent(string $eventClass, ?int $instanceID = null, array $extra = array()): void {
+		if (!static::$canHandleModelEvents && $eventClass !== Event\ModelDeleted::class)
+			return;
+
+		$event = $eventClass::fromModel($this, $instanceID);
+
+		if (!$event)
+			return;
+
+		if (!empty($extra))
+			$event -> context = array_merge($event -> context, $extra);
+
+		Lightrail::emitEvent($event);
+	}
 
 	/**
 	 * The fillable fields this save changed, as

@@ -547,12 +547,20 @@ function stringify($subject) {
 			$class = new \ReflectionClass($subject[0]);
 			$info = $class -> getMethod($subject[1]);
 			$output = $class -> getName() . ($info -> isStatic() ? "::" : " -> ") . $info -> getName();
+		} else if (is_string($subject) && str_contains($subject, "::")) {
+			// A `Class::method` string is a method, and asking
+			// `ReflectionFunction` about one only reports that no function by
+			// that name exists.
+			$info = new \ReflectionMethod($subject);
+			$output = $info -> class . ($info -> isStatic() ? "::" : " -> ") . $info -> getName();
 		} else {
 			$info = new \ReflectionFunction($subject);
 			$output = $info -> getName();
 		}
 
-		$output .= " (" . getRelativePath($info -> getFileName()) . ":" . $info -> getStartLine() . ")";
+		// A built-in has no file to point at.
+		if ($info -> getFileName() !== false)
+			$output .= " (" . getRelativePath($info -> getFileName()) . ":" . $info -> getStartLine() . ")";
 	} else if (is_object($subject)) {
 		$output = get_class($subject);
 

@@ -10,6 +10,7 @@ use Blink\Http\Router\Middleware\ApplyCorsHeaders;
 use Blink\Http\Router\Middleware\AuthenticateUser;
 use Blink\Http\Router\Middleware\SetupSessionEnvironment;
 use Blink\Module;
+use Blink\Ticker\Orbit;
 
 /**
  * Blink's own module. Always the first one booted.
@@ -48,6 +49,15 @@ class CoreModule extends Module {
 		Router::$processingFile = null;
 	}
 
+	public function orbits(Orbit $orbit): void {
+		// Sweeps up batch buffers whose flush never arrived, which a runner
+		// that died mid-task or a task that exhausted its retries can leave.
+		$orbit -> command("lightrail:flush --stale")
+			-> everyHour()
+			-> alone()
+			-> name("lightrail.flush-stale");
+	}
+
 	public function commands(): array {
 		return array(
 			Command\ListCommand::class,
@@ -70,6 +80,12 @@ class CoreModule extends Module {
 			Command\TickerForget::class,
 			Command\TickerClear::class,
 			Command\TickerRestart::class,
+
+			Command\LightrailListeners::class,
+			Command\LightrailDispatch::class,
+			Command\LightrailRetry::class,
+			Command\LightrailFlush::class,
+			Command\LightrailPurge::class,
 
 			Command\CacheClear::class,
 			Command\RouteList::class,

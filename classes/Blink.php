@@ -14,6 +14,11 @@ use Blink\Essence;
 use Blink\Ether\Registry\MiddlewareRegistry;
 use Blink\Ether\Registry\MiddlewareRegistryCache;
 use Blink\Exception\CodingError;
+use Blink\Lightrail\Dispatcher;
+use Blink\Lightrail\EventCoordinator;
+use Blink\Lightrail\Registry\ListenerRegistry;
+use Blink\Lightrail\Registry\RegistryCache;
+use Blink\Lightrail\Service\Recorder;
 use Blink\Exception\InvalidDefinition;
 use Blink\Exception\ModuleNotFound;
 use Blink\Model\UserBase;
@@ -84,6 +89,12 @@ final class Blink {
 	public static function registerCoreSingletons(): void {
 		Essence::singletonIf(MiddlewareRegistryCache::class);
 		Essence::singletonIf(MiddlewareRegistry::class);
+
+		Essence::singletonIf(RegistryCache::class);
+		Essence::singletonIf(ListenerRegistry::class);
+		Essence::singletonIf(Recorder::class);
+		Essence::singletonIf(Dispatcher::class);
+		Essence::singletonIf(EventCoordinator::class);
 	}
 
 	/**

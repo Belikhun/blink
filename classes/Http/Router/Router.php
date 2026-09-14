@@ -325,7 +325,12 @@ class Router {
 			$request = $requestContext -> request;
 
 			if (!$isOptionRequest) {
-				if (is_callable($data)) {
+				// Only a closure counts as a response to be produced later.
+				// `is_callable()` alone would not do: it answers true for the
+				// name of any PHP function, so a handler returning the string
+				// "reset" or "count" would have that function called instead
+				// of the word being sent. An array is data, and gets encoded.
+				if ($data instanceof \Closure) {
 					// Get the actual response data from callable.
 					$data = $data();
 				}
