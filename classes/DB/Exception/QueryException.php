@@ -15,7 +15,13 @@ class QueryException extends DatabaseException {
 			$message,
 			array(
 				"code" => $code,
-				"state" => $state
+				"state" => $state,
+
+				// The driver's own wording, kept apart from the description a
+				// user sees so the driver can match on it later. Telling a
+				// unique violation from any other constraint failure is the
+				// one case that needs it.
+				"message" => $message
 			),
 			sql: $sql,
 			params: $params

@@ -31,10 +31,73 @@ abstract class Database {
 	public $connected = false;
 
 	/**
+	 * How deep the current transaction nest is. Only the outermost level
+	 * actually opens and closes a transaction.
+	 *
+	 * @var int
+	 */
+	protected int $transactionDepth = 0;
+
+	/**
 	 * Return variable type from `gettype()` to
 	 * current sql driver.
 	 */
 	abstract public function getType(string $type): string|int;
+
+	/**
+	 * The engine family this driver speaks, as Terra names its dialects.
+	 * Either `mysql` or `sqlite`.
+	 */
+	abstract public function family(): string;
+
+	/**
+	 * Execute a statement exactly as written.
+	 *
+	 * Unlike {@see Database::execute()} this reads nothing into the SQL: no
+	 * mode detection, no `LIMIT` injection, no rejected keywords. Schema
+	 * statements and engine pragmas need that, and so does anything the query
+	 * builder cannot express.
+	 *
+	 * @param	string				$sql
+	 * @param	array				$params
+	 * @return	object[]|int		Rows for a statement that returns a result
+	 * 								set, affected row count otherwise.
+	 */
+	abstract public function raw(string $sql, array $params = array()): array|int;
+
+	/**
+	 * Drop the connection and open a new one.
+	 *
+	 * A long-running process outlives the server's idle timeout, and the only
+	 * way back from that is a fresh connection.
+	 */
+	abstract public function reconnect(): void;
+
+	/**
+	 * Whether the error came from a unique index rejecting a row. This is what
+	 * makes an optimistic insert safe to treat as "someone else got there
+	 * first" rather than as a failure.
+	 */
+	abstract public function isUniqueViolation(\Throwable $e): bool;
+
+	/**
+	 * Whether the error means the connection is gone rather than the statement
+	 * being wrong.
+	 */
+	abstract public function isConnectionLost(\Throwable $e): bool;
+
+	/**
+	 * Every table name in the current database.
+	 *
+	 * @return	string[]
+	 */
+	abstract public function tables(): array;
+
+	abstract protected function startTransaction(): void;
+
+	abstract protected function commitTransaction(): void;
+
+	abstract protected function rollbackTransaction(): void;
 
 	/**
 	 * Create a new connection to database.
@@ -120,18 +183,126 @@ abstract class Database {
 	 * Return detailed columns information from the given table name. This information is cached.
 	 *
 	 * @param	string					$table
-	 * @param	bool					$cache
+	 * @param	bool					$cache	Read from the cache. Pass false right after a
+	 * 											schema change, which the cache cannot notice.
 	 * @return	\Blink\DB\ColumnInfo[]	Column array, mapped by column name.
 	 */
 	public function getColumns(string $table, bool $cache = true) {
-		$cache = Cache::instance("database.columns.{$table}");
+		$store = Cache::instance("database.columns.{$table}");
 
-		if ($cache -> fetch() && $cache -> validate())
-			return $cache -> content();
+		if ($cache && $store -> fetch() && $store -> validate())
+			return $store -> content();
 
 		$data = $this -> fetchColumns($table);
-		$cache -> setContent($data) -> save();
+		$store -> setContent($data) -> save();
 		return $data;
+	}
+
+	/**
+	 * Discard the cached column list for a table, or for every table.
+	 *
+	 * Terra calls this after raising a layer: the columns on disk have moved
+	 * and nothing else tells the cache so.
+	 */
+	public function forgetColumns(string $table = null): void {
+		if (!empty($table)) {
+			Cache::remove("database.columns.{$table}");
+			return;
+		}
+
+		foreach ($this -> tables() as $name)
+			Cache::remove("database.columns.{$name}");
+	}
+
+	/**
+	 * Open a transaction, or join the one already open.
+	 *
+	 * Nesting is counted rather than nested for real: only the outermost pair
+	 * of calls reaches the engine, since neither driver blink ships supports
+	 * savepoints uniformly.
+	 */
+	public function beginTransaction(): void {
+		if ($this -> transactionDepth === 0)
+			$this -> startTransaction();
+
+		$this -> transactionDepth++;
+	}
+
+	public function commit(): void {
+		if ($this -> transactionDepth === 0)
+			throw new CodingError("\$DB -> commit(): no transaction is open.");
+
+		$this -> transactionDepth--;
+
+		if ($this -> transactionDepth === 0)
+			$this -> commitTransaction();
+	}
+
+	/**
+	 * Roll back the whole transaction, however deep the nest is. A failure at
+	 * any level voids every level above it, so unwinding one at a time would
+	 * only let the outer levels commit work that is already void.
+	 */
+	public function rollback(): void {
+		if ($this -> transactionDepth === 0)
+			return;
+
+		$this -> transactionDepth = 0;
+		$this -> rollbackTransaction();
+	}
+
+	public function inTransaction(): bool {
+		return $this -> transactionDepth > 0;
+	}
+
+	/**
+	 * Insert many records in as few statements as possible.
+	 *
+	 * Every record has to carry the same columns: the statement is built once
+	 * per chunk from the first record's keys.
+	 *
+	 * @param	string		$table
+	 * @param	array		$records	Arrays or objects, all with the same keys.
+	 * @param	int			$chunk		Records per statement.
+	 * @return	int			Records inserted.
+	 */
+	public function insertMany(string $table, array $records, int $chunk = 100): int {
+		if (empty($records))
+			return 0;
+
+		$records = array_values($records);
+		$columns = array_keys((array) $records[0]);
+
+		if (empty($columns))
+			throw new CodingError("\$DB -> insertMany(): the first record has no columns.");
+
+		$fields = implode(", ", array_map(fn ($name) => "`{$name}`", $columns));
+		$placeholders = "(" . implode(", ", array_fill(0, count($columns), "?")) . ")";
+		$inserted = 0;
+
+		foreach (array_chunk($records, max($chunk, 1)) as $batch) {
+			$params = array();
+
+			foreach ($batch as $record) {
+				$record = (array) $record;
+
+				foreach ($columns as $name) {
+					if (!array_key_exists($name, $record))
+						throw new CodingError("\$DB -> insertMany(): record is missing the <code>{$name}</code> column.");
+
+					$params[] = $record[$name];
+				}
+			}
+
+			$metric = new QueryMetric(SQL_INSERT, $table);
+			$sql = "INSERT INTO `{$table}` ({$fields}) VALUES " . implode(", ", array_fill(0, count($batch), $placeholders));
+
+			$this -> raw($sql, $params);
+			$inserted += count($batch);
+			$metric -> time(count($batch));
+		}
+
+		return $inserted;
 	}
 
 	/**
@@ -361,7 +532,7 @@ abstract class Database {
 		$sql = "UPDATE {$table} SET $sets WHERE {$table}.{$primary} = ?";
 
 		// Record Metric
-		$metric = new QueryMetric("INSERT", $table);
+		$metric = new QueryMetric(SQL_UPDATE, $table);
 
 		$affected = $this -> execute($sql, $values);
 		$metric -> time($affected);
@@ -423,9 +594,11 @@ abstract class Database {
 	public function delete(string $table, array $conditions = array()) {
 		if (empty($conditions)) {
 			// Record Metric
-			$metric = new QueryMetric("TRUNCATE", $table);
+			$metric = new QueryMetric(SQL_TRUNCATE, $table);
 
-			$affected = $this -> execute("TRUNCATE TABLE {" . $table . "}");
+			// `DELETE FROM` rather than `TRUNCATE`, which SQLite has no
+			// statement for at all.
+			$affected = $this -> execute("DELETE FROM `{$table}`");
 			$metric -> time($affected);
 			return $affected;
 		}
@@ -438,7 +611,7 @@ abstract class Database {
 		$sql = "DELETE FROM `$table` $select";
 
 		// Record Metric
-		$metric = new QueryMetric("TRUNCATE", $table);
+		$metric = new QueryMetric(SQL_DELETE, $table);
 
 		$affected = $this -> execute($sql, $params);
 		$metric -> time($affected);

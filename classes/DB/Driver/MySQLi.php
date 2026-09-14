@@ -23,6 +23,18 @@ class MySQLi extends Database {
 
 	public \mysqli $mysqli;
 
+	/**
+	 * Options the connection was opened with, kept so {@see MySQLi::reconnect()}
+	 * can open the same one again.
+	 *
+	 * @var array
+	 */
+	protected array $options = array();
+
+	public function family(): string {
+		return "mysql";
+	}
+
 	public function getType(string $type): string {
 		return array(
 			"string" => "s",
@@ -38,6 +50,8 @@ class MySQLi extends Database {
 		if ($this -> connected)
 			return;
 
+		$this -> options = $options;
+
 		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 		$this -> mysqli = new \mysqli(
 			$options["host"],
@@ -48,6 +62,118 @@ class MySQLi extends Database {
 
 		$this -> mysqli -> set_charset("utf8mb4");
 		$this -> connected = true;
+	}
+
+	public function reconnect(): void {
+		if (empty($this -> options))
+			throw new CodingError("\$DB -> reconnect(): the connection was never opened.");
+
+		try {
+			$this -> mysqli -> close();
+		} catch (\Throwable) {
+			// Already gone, which is the usual reason for reconnecting.
+		}
+
+		$this -> connected = false;
+		$this -> transactionDepth = 0;
+		$this -> connect($this -> options);
+	}
+
+	public function raw(string $sql, array $params = array()): array|int {
+		$sql = trim($sql);
+
+		try {
+			if (empty($params)) {
+				// Straight to query(), since prepare() rejects a good part of
+				// the DDL Terra emits.
+				$result = $this -> mysqli -> query($sql);
+			} else {
+				list($normalizedSql, $normalizedParams) = $this -> normalizeParams($sql, $params);
+
+				$types = "";
+				foreach ($normalizedParams as $value)
+					$types .= $this -> getType(gettype($value));
+
+				$stmt = $this -> mysqli -> prepare($normalizedSql);
+
+				if ($stmt === false) {
+					throw new QueryException(
+						$this -> mysqli -> errno,
+						$this -> mysqli -> error,
+						state: $this -> mysqli -> sqlstate,
+						sql: $sql,
+						params: $params
+					);
+				}
+
+				if (!empty($normalizedParams))
+					$stmt -> bind_param($types, ...$normalizedParams);
+
+				$stmt -> execute();
+				$result = $stmt -> get_result();
+			}
+		} catch (\mysqli_sql_exception $e) {
+			throw new QueryException(
+				$e -> getCode(),
+				$e -> getMessage(),
+				state: $e -> getSqlState(),
+				sql: $sql,
+				params: $params
+			);
+		}
+
+		if ($result instanceof \mysqli_result) {
+			$rows = array();
+
+			while ($row = $result -> fetch_array(MYSQLI_ASSOC))
+				$rows[] = (object) $row;
+
+			$result -> free();
+			return $rows;
+		}
+
+		return $this -> mysqli -> affected_rows;
+	}
+
+	public function isUniqueViolation(\Throwable $e): bool {
+		return in_array(static::driverCode($e), array( 1062, 1169, 1586 ), true);
+	}
+
+	public function isConnectionLost(\Throwable $e): bool {
+		// 2006 server gone away, 2013 lost connection mid-query, 4031 the
+		// server closed an idle connection.
+		return in_array(static::driverCode($e), array( 2006, 2013, 4031 ), true);
+	}
+
+	public function tables(): array {
+		$rows = $this -> raw(
+			"SELECT table_name AS name FROM information_schema.TABLES
+				WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'"
+		);
+
+		return array_map(fn ($row) => $row -> name, $rows);
+	}
+
+	protected function startTransaction(): void {
+		$this -> mysqli -> begin_transaction();
+	}
+
+	protected function commitTransaction(): void {
+		$this -> mysqli -> commit();
+	}
+
+	protected function rollbackTransaction(): void {
+		$this -> mysqli -> rollback();
+	}
+
+	/**
+	 * Dig the engine's own error number out of whatever wrapper it arrived in.
+	 */
+	protected static function driverCode(\Throwable $e): ?int {
+		if ($e instanceof QueryException)
+			return isset($e -> data["code"]) ? (int) $e -> data["code"] : null;
+
+		return (int) $e -> getCode();
 	}
 
 	/**
@@ -195,10 +321,13 @@ class MySQLi extends Database {
 	}
 
 	public function fetchColumns(string $table): array {
+		// The schema filter matters: `information_schema` spans every database
+		// on the server, so without it a table of the same name elsewhere
+		// contributes its columns too.
 		$sql = "SELECT table_name, column_name, ordinal_position, column_default, is_nullable,
 					data_type
 				FROM information_schema.COLUMNS
-				WHERE table_name = :name";
+				WHERE table_schema = DATABASE() AND table_name = :name";
 
 		$results = $this -> execute($sql, array(
 			"name" => $table
@@ -210,14 +339,14 @@ class MySQLi extends Database {
 			$column = new ColumnInfo($result -> table_name, $result -> column_name);
 			$column -> position = intval($result -> ordinal_position);
 			$column -> default = $result -> column_default;
-			$column -> nullable = boolval($result -> is_nullable);
-			$column -> type = match ($result -> data_type) {
-				"varchar" => ColumnType::VARCHAR,
-				"mediumtext" => ColumnType::TEXT,
-				"text" => ColumnType::TEXT,
-				"int" => ColumnType::INT,
-				"float" => ColumnType::FLOAT,
-				"datetime" => ColumnType::DATETIME,
+			// `is_nullable` is the string "YES" or "NO", and both are truthy.
+			$column -> nullable = (strtoupper((string) $result -> is_nullable) === "YES");
+			$column -> type = match (strtolower($result -> data_type)) {
+				"char", "varchar" => ColumnType::VARCHAR,
+				"tinytext", "text", "mediumtext", "longtext", "json" => ColumnType::TEXT,
+				"tinyint", "smallint", "mediumint", "int", "bigint" => ColumnType::INT,
+				"float", "double", "decimal" => ColumnType::FLOAT,
+				"date", "datetime", "timestamp" => ColumnType::DATETIME,
 				default => ColumnType::UNKNOWN
 			};
 
