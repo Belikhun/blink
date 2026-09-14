@@ -135,11 +135,11 @@ abstract class Database {
 	}
 
 	/**
-     * Returns the SQL WHERE conditions.
+	 * Returns the SQL WHERE conditions.
 	 *
-     * @param	array	$conditions		The conditions to build the where clause.
-     * @return	array	An array list containing sql 'where' part and 'params'.
-     */
+	 * @param	array	$conditions		The conditions to build the where clause.
+	 * @return	array	An array list containing sql 'where' part and 'params'.
+	 */
 	public static function whereClause(array $conditions) {
 		$conditions = is_null($conditions)
 			? array()
@@ -280,16 +280,16 @@ abstract class Database {
 	}
 
 	/**
-     * Insert a record into a table and return the "id" field if required.
-     *
-     * Some conversions and safety checks are carried out. Lobs are supported.
-     * If the return ID isn't required, then this just reports success as true/false.
-     * $data is an object containing needed data
+	 * Insert a record into a table and return the "id" field if required.
 	 *
-     * @param	string			$table		The database table to be inserted into
-     * @param	object|array	$object		A data object with values for one or more fields in the record
-     * @return	int				new id
-     */
+	 * Some conversions and safety checks are carried out. Lobs are supported.
+	 * If the return ID isn't required, then this just reports success as true/false.
+	 * $data is an object containing needed data
+	 *
+	 * @param	string			$table		The database table to be inserted into
+	 * @param	object|array	$object		A data object with values for one or more fields in the record
+	 * @return	int				new id
+	 */
 	public function insert(string $table, array|object $object) {
 		$object = (array) $object;
 		$fields = array();
@@ -326,9 +326,9 @@ abstract class Database {
 	 * Update an record from database.
 	 *
 	 * @param	string			$table		The database table to be inserted into
-     * @param	object|array	$object		A data object with values for one or more fields in the record
-     * @param	string			$primary	Primary key name
-     * @return	bool
+	 * @param	object|array	$object		A data object with values for one or more fields in the record
+	 * @param	string			$primary	Primary key name
+	 * @return	bool
 	 */
 	public function update(string $table, array|object $object, string $primary = "id") {
 		$object = (array) $object;
@@ -403,14 +403,14 @@ abstract class Database {
 		$count = (int) $count -> {"COUNT('x')"};
 
 		if ($count < 0)
-            throw new CodingError("\$DB -> count() expects the first field to contain non-negative number from COUNT(), \"$count\" found instead.");
+			throw new CodingError("\$DB -> count() expects the first field to contain non-negative number from COUNT(), \"$count\" found instead.");
 
 		return (int) $count;
 	}
 
 	/**
 	 * Delete the records from a table where all the given conditions met.
-     * If conditions not specified, table is truncated.
+	 * If conditions not specified, table is truncated.
 	 *
 	 * @param	string		$table		The table to select from.
 	 * @param	array		$conditions	"field" => "value" with AND in between,

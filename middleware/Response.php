@@ -18,12 +18,12 @@ use function Blink\stringify;
  */
 class Response {
 	/**
-     * List of middleware that will run on every response.
+	 * List of middleware that will run on every response.
 	 * 
 	 * This is ran after matched route completed running.
-     *
-     * @var array<int, class-string|string>
-     */
+	 *
+	 * @var array<int, class-string|string>
+	 */
 	protected static $middleware = array(
 		// Define your response middleware here.
 	);

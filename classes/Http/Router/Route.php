@@ -61,10 +61,10 @@ class Route {
 	/**
 	 * Construct a new Route object
 	 *
-     * @param  array			$verbs
-     * @param  string			$uri
-     * @param  callable|array	$action
-     * @param  int				$priority
+	 * @param  array			$verbs
+	 * @param  string			$uri
+	 * @param  callable|array	$action
+	 * @param  int				$priority
 	 */
 	public function __construct(array $verbs, string $uri, Callable|array $action, int $priority = 0) {
 		$this -> verbs = $verbs;

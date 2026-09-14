@@ -18,12 +18,12 @@ use function Blink\stringify;
  */
 class Request {
 	/**
-     * List of middleware that will run on every request.
+	 * List of middleware that will run on every request.
 	 * 
 	 * This is ran before routing happend.
-     *
-     * @var array<int, class-string|string>
-     */
+	 *
+	 * @var array<int, class-string|string>
+	 */
 	protected static array $middleware = array(
 		// Define your request middleware here.
 	);

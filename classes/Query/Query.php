@@ -62,10 +62,10 @@ class Query extends QueryConditionBuilder {
 	/**
 	 * Object class name.
 	 *
-     * @var	string
-     * @internal
-     * @psalm-var class-string<G>
-     */
+	 * @var	string
+	 * @internal
+	 * @psalm-var class-string<G>
+	 */
 	protected string $class;
 
 	/**

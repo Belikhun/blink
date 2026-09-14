@@ -28,7 +28,7 @@ class RedirectResponse extends Response {
 
 		if (Blink::debuggingEnabled()) {
 			$origin = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            $redirectBy .= " (" . getRelativePath($origin["file"]) . ":" . $origin["line"] . ")";
+			$redirectBy .= " (" . getRelativePath($origin["file"]) . ":" . $origin["line"] . ")";
 		}
 
 		$this -> status(303)
