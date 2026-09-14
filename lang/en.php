@@ -47,6 +47,26 @@ return array(
 		. "Create a class extending <code>Blink\\Model\\UserBase</code> and register it with "
 		. "<code>Blink::useUserClass()</code> from a module's <code>define()</code>.",
 
+	"trace.level.debug" => "Debug",
+	"trace.level.info" => "Info",
+	"trace.level.notice" => "Notice",
+	"trace.level.warning" => "Warning",
+	"trace.level.error" => "Error",
+	"trace.level.critical" => "Critical",
+	"trace.level.alert" => "Alert",
+	"trace.level.emergency" => "Emergency",
+
+	"trace.mode.view" => "View",
+	"trace.mode.create" => "Create",
+	"trace.mode.update" => "Update",
+	"trace.mode.delete" => "Delete",
+	"trace.mode.report" => "Report",
+
+	"trace.actor.system" => "the system",
+	"trace.model.created" => "{model} #{id} was created by {actor}.",
+	"trace.model.updated" => "{model} #{id} was updated by {actor}, {changeCount} field(s) changed.",
+	"trace.model.deleted" => "{model} #{id} was deleted by {actor}.",
+
 	"time.now" => "just now",
 	"time.ago" => "{value} {unit} ago",
 	"time.in" => "in {value} {unit}",

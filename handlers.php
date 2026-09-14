@@ -167,6 +167,11 @@ function shutdownSteps(): void {
 		\Blink\Essence::make(\Blink\Lightrail\Service\Recorder::class) -> flush();
 	});
 
+	// The audit entries the request queued, in one insert.
+	step("trace.flush", function () {
+		\Blink\Essence::make(\Blink\Trace\Writer::class) -> flush();
+	});
+
 	step("autoload.save", function () {
 		\Blink\Autoload\save();
 	});

@@ -19,6 +19,9 @@ use Blink\Lightrail\EventCoordinator;
 use Blink\Lightrail\Registry\ListenerRegistry;
 use Blink\Lightrail\Registry\RegistryCache;
 use Blink\Lightrail\Service\Recorder;
+use Blink\Trace\LevelRegistry;
+use Blink\Trace\ModeRegistry;
+use Blink\Trace\Writer as TraceWriter;
 use Blink\Exception\InvalidDefinition;
 use Blink\Exception\ModuleNotFound;
 use Blink\Model\UserBase;
@@ -95,6 +98,9 @@ final class Blink {
 		Essence::singletonIf(Recorder::class);
 		Essence::singletonIf(Dispatcher::class);
 		Essence::singletonIf(EventCoordinator::class);
+		Essence::singletonIf(LevelRegistry::class);
+		Essence::singletonIf(ModeRegistry::class);
+		Essence::singletonIf(TraceWriter::class);
 	}
 
 	/**

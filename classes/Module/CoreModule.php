@@ -4,6 +4,7 @@ namespace Blink\Module;
 
 use Blink\Console\Command;
 use Blink\ErrorPage;
+use Blink\Observer\ModelAuditObserver;
 use Blink\Ether;
 use Blink\Http\Router;
 use Blink\Http\Router\Middleware\ApplyCorsHeaders;
@@ -56,6 +57,18 @@ class CoreModule extends Module {
 			-> everyHour()
 			-> alone()
 			-> name("lightrail.flush-stale");
+
+		// Audit entries past the retention window, in the small hours.
+		$orbit -> command("trace:purge --force")
+			-> everyDay("03:30")
+			-> alone()
+			-> name("trace.purge");
+	}
+
+	public function observers(): array {
+		return array(
+			ModelAuditObserver::class
+		);
 	}
 
 	public function commands(): array {
@@ -92,6 +105,8 @@ class CoreModule extends Module {
 
 			Command\ErrorList::class,
 			Command\ErrorPurge::class,
+			Command\TraceList::class,
+			Command\TracePurge::class,
 
 			Command\LockList::class,
 			Command\LockRelease::class

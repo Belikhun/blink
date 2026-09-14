@@ -10,6 +10,7 @@ use Blink\Model;
 use Blink\Ticker;
 use Blink\Ticker\Exception\TaskUnserializable;
 use Blink\Ticker\Store\QueuedTask;
+use Blink\Trace\Writer as TraceWriter;
 
 /**
  * Drains a queue, one task at a time.
@@ -181,6 +182,14 @@ class Runner {
 	 * Drop everything the last task accumulated.
 	 */
 	protected function reset(): void {
+		// The task's audit entries go out now rather than when the runner
+		// eventually exits, which may be days from now.
+		try {
+			Essence::make(TraceWriter::class) -> flush();
+		} catch (\Throwable $e) {
+			error_log("[blink][ticker] could not flush the audit log: {$e}");
+		}
+
 		Model::flushInstances(true);
 		Metric::reset();
 		Essence::clearConstructorStack();

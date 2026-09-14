@@ -191,6 +191,22 @@ class CoreConfig {
 
 
 	//* ===========================================================
+	//*  Trace
+	//* ===========================================================
+
+	/**
+	 * Days an audit entry is kept before `trace:purge` removes it. Zero keeps
+	 * every entry forever.
+	 */
+	public static int		$TRACE_RETENTION_DAYS = 365;
+
+	/**
+	 * Entries `trace:purge` deletes per statement.
+	 */
+	public static int		$TRACE_PURGE_BATCH = 5000;
+
+
+	//* ===========================================================
 	//*  Console
 	//* ===========================================================
 

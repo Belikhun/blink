@@ -30,12 +30,46 @@ class RegistryCache {
 		return Essence::make(static::class);
 	}
 
+	protected static ?string $observersDigest = null;
+
 	/**
-	 * A snapshot written for another blink, application or module list
-	 * describes observers that may no longer exist.
+	 * A snapshot written for another blink, application, module list or set
+	 * of observer files describes handlers that may no longer exist. The file
+	 * times are what let an added or edited observer take effect without a
+	 * cache clear.
 	 */
 	public function getVersion(): string {
-		return \Blink::cacheVersion();
+		return \Blink::cacheVersion() . ":" . static::observersDigest();
+	}
+
+	/**
+	 * One digest for the observer classes every module declares and when their
+	 * files last changed. Computed once per process, so a registry stored late
+	 * in a request agrees with the one loaded early.
+	 */
+	protected static function observersDigest(): string {
+		if (static::$observersDigest !== null)
+			return static::$observersDigest;
+
+		$parts = array();
+
+		foreach (\Blink::modules() as $module) {
+			foreach ($module -> observers() as $observer) {
+				$stamp = 0;
+
+				try {
+					$file = (new \ReflectionClass($observer)) -> getFileName();
+					$stamp = ($file !== false) ? (int) @filemtime($file) : 0;
+				} catch (\ReflectionException $e) {
+					// No class, no file to stamp. The build reports it.
+				}
+
+				$parts[] = "{$observer}@{$stamp}";
+			}
+		}
+
+		sort($parts);
+		return static::$observersDigest = sha1(implode("|", $parts));
 	}
 
 	/**
