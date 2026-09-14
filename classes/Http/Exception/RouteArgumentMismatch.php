@@ -17,17 +17,17 @@ use Blink\Http\Router\Route;
  */
 class RouteArgumentMismatch extends BaseException {
 	/**
-     * The Route object associated with the exception.
+	 * The Route object associated with the exception.
 	 *
-     * @var Route
-     */
-    public $route;
+	 * @var Route
+	 */
+	public $route;
 
-    /**
-     * The error message associated with the exception.
-     * @var string
-     */
-    public $message;
+	/**
+	 * The error message associated with the exception.
+	 * @var string
+	 */
+	public $message;
 
 	public function __construct(Route $route, $message) {
 		$this -> route = $route;

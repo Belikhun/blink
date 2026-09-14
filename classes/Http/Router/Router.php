@@ -77,9 +77,9 @@ class Router {
 	* @param  string			$uri
 	* @param  string|callable	$action
 	*/
-    public static function POST($uri, $action, $priority = 0) {
+	public static function POST($uri, $action, $priority = 0) {
 		return static::match("POST", $uri, $action, $priority);
-    }
+	}
 
 	/**
 	* Register a new PATCH route with the router.
@@ -87,9 +87,9 @@ class Router {
 	* @param  string			$uri
 	* @param  string|callable	$action
 	*/
-    public static function PATCH($uri, $action, $priority = 0) {
+	public static function PATCH($uri, $action, $priority = 0) {
 		return static::match("PATCH", $uri, $action, $priority);
-    }
+	}
 
 	/**
 	* Register a new DELETE route with the router.
@@ -97,9 +97,9 @@ class Router {
 	* @param  string			$uri
 	* @param  string|callable	$action
 	*/
-    public static function DELETE($uri, $action, $priority = 0) {
+	public static function DELETE($uri, $action, $priority = 0) {
 		return static::match("DELETE", $uri, $action, $priority);
-    }
+	}
 
 	/**
 	* Register a new route with the router that
@@ -108,9 +108,9 @@ class Router {
 	* @param  string			$uri
 	* @param  string|callable	$action
 	*/
-    public static function ANY($uri, $action, $priority = 0) {
+	public static function ANY($uri, $action, $priority = 0) {
 		return static::match(static::$verbs, $uri, $action, $priority);
-    }
+	}
 
 	/**
 	* Register a new route.

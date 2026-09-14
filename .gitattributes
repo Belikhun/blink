@@ -1,0 +1,57 @@
+# Blink is authored on Windows: every file is stored LF in the repository and
+# checked out CRLF, regardless of core.autocrlf.
+# Exceptions below are files a Linux runtime parses byte-for-byte, or binaries.
+* text=auto eol=crlf
+
+# Interpreter-sensitive: a CR on the shebang line breaks execution.
+blink text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+*.bats text eol=lf
+*.pl text eol=lf
+*.py text eol=lf
+*.rb text eol=lf
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+Makefile text eol=lf
+*.mk text eol=lf
+.env* text eol=lf
+*.pem text eol=lf
+*.crt text eol=lf
+*.key text eol=lf
+
+# Binaries: never convert, never diff.
+*.xls binary
+*.xlsx binary
+*.doc binary
+*.docx binary
+*.ppt binary
+*.pptx binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.bmp binary
+*.ico binary
+*.webp binary
+*.svgz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.mp3 binary
+*.mp4 binary
+*.webm binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.bz2 binary
+*.7z binary
+
+*.js.map -diff
+*-min.js -diff
+*.min.js -diff

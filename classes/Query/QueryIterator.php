@@ -36,35 +36,35 @@ class QueryIterator implements Iterator {
 	 * @return	QT
 	 */
 	public function current(): mixed {
-        $record = $this -> iterator -> current();
+		$record = $this -> iterator -> current();
 
 		return (!empty($this -> class))
 			? $this -> class::processRecord($record)
 			: $record;
-    }
+	}
 
 	#[\ReturnTypeWillChange]
 	public function key() {
 		if (empty($this -> iterator))
 			return null;
 
-        return $this -> iterator -> key();
-    }
+		return $this -> iterator -> key();
+	}
 
 	public function next(): void {
-        $this -> iterator -> next();
-    }
+		$this -> iterator -> next();
+	}
 
 	public function valid(): bool {
 		if (empty($this -> iterator))
 			return false;
 
-        return $this -> iterator -> valid();
-    }
+		return $this -> iterator -> valid();
+	}
 
 	public function close(): void {
-        $this -> iterator -> close();
-    }
+		$this -> iterator -> close();
+	}
 
 	/**
 	 * Rewind is not supported!
@@ -72,10 +72,10 @@ class QueryIterator implements Iterator {
 	 * @return void
 	 */
 	public function rewind(): void {
-        return;
-    }
+		return;
+	}
 
 	public function __destruct() {
-        $this -> close();
-    }
+		$this -> close();
+	}
 }

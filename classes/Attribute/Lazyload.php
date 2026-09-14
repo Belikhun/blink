@@ -26,10 +26,10 @@ namespace Blink\Attribute;
  */
 #[\Attribute]
 class Lazyload {
-    /**
-     * Construct a new Lazyload Attribute.
-     * 
-     * @param   string  $name   Name of the original property name.
-     */
-    public function __construct(string $name) {}
+	/**
+	 * Construct a new Lazyload Attribute.
+	 * 
+	 * @param   string  $name   Name of the original property name.
+	 */
+	public function __construct(string $name) {}
 }

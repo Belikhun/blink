@@ -559,7 +559,7 @@ class Model implements JsonSerializable {
 		return $this;
 	}
 
-    /**
+	/**
 	 * Event function that will be called when a new instance
 	 * of this is fully loaded.
 	 *
@@ -1009,10 +1009,10 @@ class Model implements JsonSerializable {
 		$instance -> isPopulatingData = false;
 		$instance -> takeSnapshot();
 
-        // Invoke the onLoaded event.
-        $r = new ReflectionMethod($instance, "onLoaded");
-        $r -> setAccessible(true);
-        $r -> invoke($instance);
+		// Invoke the onLoaded event.
+		$r = new ReflectionMethod($instance, "onLoaded");
+		$r -> setAccessible(true);
+		$r -> invoke($instance);
 
 		return $instance;
 	}
@@ -1218,7 +1218,7 @@ class Model implements JsonSerializable {
 	 * @param	int		$depth		Maximum depth we will return model instances. -1 to disable depth restriction.
 	 * @return	array
 	 */
-    #[ReturnTypeWillChange]
+	#[ReturnTypeWillChange]
 	public function jsonSerialize(int $depth = -1) {
 		$out = array();
 

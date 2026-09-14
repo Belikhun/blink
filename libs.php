@@ -110,7 +110,7 @@ function slugify($text) {
 	RULES;
 
 	$text = \Transliterator::createFromRules($rules)
-    	-> transliterate($text);
+		-> transliterate($text);
 
 	return $text;
 }
@@ -157,52 +157,52 @@ function relativeTime(int $timestamp, int $to = null) {
  * @return	mixed	with proper utf-8 encoding
  */
 function cleanUTF8($value) {
-    if (is_null($value) || $value === "")
-        return $value;
+	if (is_null($value) || $value === "")
+		return $value;
 
-    if (is_string($value)) {
-        if ((string)(int) $value === $value)
-            return $value;
+	if (is_string($value)) {
+		if ((string)(int) $value === $value)
+			return $value;
 
-        // No null bytes expected in our data, so let's remove it.
-        $value = str_replace("\0", "", $value);
+		// No null bytes expected in our data, so let's remove it.
+		$value = str_replace("\0", "", $value);
 
-        static $buggyiconv = null;
-        if ($buggyiconv === null) {
-            $buggyiconv = (!function_exists("iconv") or @iconv("UTF-8", "UTF-8//IGNORE", "100".chr(130)."€") !== "100€");
-        }
+		static $buggyiconv = null;
+		if ($buggyiconv === null) {
+			$buggyiconv = (!function_exists("iconv") or @iconv("UTF-8", "UTF-8//IGNORE", "100".chr(130)."€") !== "100€");
+		}
 
-        if ($buggyiconv) {
-            if (function_exists("mb_convert_encoding")) {
-                $subst = mb_substitute_character();
-                mb_substitute_character("none");
-                $result = mb_convert_encoding($value, "utf-8", "utf-8");
-                mb_substitute_character($subst);
-            } else {
-                $result = $value;
-            }
+		if ($buggyiconv) {
+			if (function_exists("mb_convert_encoding")) {
+				$subst = mb_substitute_character();
+				mb_substitute_character("none");
+				$result = mb_convert_encoding($value, "utf-8", "utf-8");
+				mb_substitute_character($subst);
+			} else {
+				$result = $value;
+			}
 
-        } else {
-            $result = @iconv("UTF-8", "UTF-8//IGNORE", $value);
-        }
+		} else {
+			$result = @iconv("UTF-8", "UTF-8//IGNORE", $value);
+		}
 
-        return $result;
-    }
+		return $result;
+	}
 
 	if (is_array($value)) {
-        foreach ($value as $k => $v)
-            $value[$k] = cleanUTF8($v);
+		foreach ($value as $k => $v)
+			$value[$k] = cleanUTF8($v);
 
-        return $value;
-    }
+		return $value;
+	}
 
 	if (is_object($value)) {
-        $value = clone($value);
-        foreach ($value as $k => $v)
-            $value -> $k = cleanUTF8($v);
+		$value = clone($value);
+		foreach ($value as $k => $v)
+			$value -> $k = cleanUTF8($v);
 
-        return $value;
-    }
+		return $value;
+	}
 
 	// This is some other type, no utf-8 here.
 	return $value;
@@ -382,11 +382,11 @@ function view(string $name, array $context = array()) {
  */
 function getParam(string $name, $type = TYPE_TEXT, $default = null) {
 	if (isset($_POST[$name]))
-        $param = $_POST[$name];
-    else if (isset($_GET[$name]))
-        $param = $_GET[$name];
-    else
-        return $default;
+		$param = $_POST[$name];
+	else if (isset($_GET[$name]))
+		$param = $_GET[$name];
+	else
+		return $default;
 
 	return cleanParam($param, $type);
 }
@@ -609,18 +609,18 @@ class FileWithPriority {
 	}
 
 	public function __serialize() {
-        return array(
+		return array(
 			$this -> path,
 			$this -> priority
 		);
-    }
+	}
 
-    public function __unserialize(array $data) {
-        list(
+	public function __unserialize(array $data) {
+		list(
 			$this -> path,
 			$this -> priority
 		) = $data;
-    }
+	}
 }
 
 /**
