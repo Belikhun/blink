@@ -53,11 +53,17 @@ class MySQLi extends Database {
 		$this -> options = $options;
 
 		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+		// A zero port means "whatever the driver defaults to", which is what
+		// `ini_get("mysqli.default_port")` already answers.
+		$port = (int) ($options["port"] ?? 0);
+
 		$this -> mysqli = new \mysqli(
 			$options["host"],
 			$options["username"],
 			$options["password"],
-			$options["database"]
+			$options["database"],
+			$port > 0 ? $port : null
 		);
 
 		$this -> mysqli -> set_charset("utf8mb4");
@@ -324,10 +330,15 @@ class MySQLi extends Database {
 		// The schema filter matters: `information_schema` spans every database
 		// on the server, so without it a table of the same name elsewhere
 		// contributes its columns too.
-		$sql = "SELECT table_name, column_name, ordinal_position, column_default, is_nullable,
-					data_type
+		//
+		// Every column is aliased because the case `information_schema` hands
+		// back varies between server versions, and an alias is the one thing
+		// that pins it.
+		$sql = "SELECT table_name AS `table`, column_name AS `column`, ordinal_position AS `position`,
+					column_default AS `default`, is_nullable AS `nullable`, data_type AS `type`
 				FROM information_schema.COLUMNS
-				WHERE table_schema = DATABASE() AND table_name = :name";
+				WHERE table_schema = DATABASE() AND table_name = :name
+				ORDER BY ordinal_position";
 
 		$results = $this -> execute($sql, array(
 			"name" => $table
@@ -336,12 +347,12 @@ class MySQLi extends Database {
 		$columns = array();
 
 		foreach ($results as $result) {
-			$column = new ColumnInfo($result -> table_name, $result -> column_name);
-			$column -> position = intval($result -> ordinal_position);
-			$column -> default = $result -> column_default;
-			// `is_nullable` is the string "YES" or "NO", and both are truthy.
-			$column -> nullable = (strtoupper((string) $result -> is_nullable) === "YES");
-			$column -> type = match (strtolower($result -> data_type)) {
+			$column = new ColumnInfo($result -> table, $result -> column);
+			$column -> position = intval($result -> position);
+			$column -> default = $result -> default;
+			// `nullable` is the string "YES" or "NO", and both are truthy.
+			$column -> nullable = (strtoupper((string) $result -> nullable) === "YES");
+			$column -> type = match (strtolower($result -> type)) {
 				"char", "varchar" => ColumnType::VARCHAR,
 				"tinytext", "text", "mediumtext", "longtext", "json" => ColumnType::TEXT,
 				"tinyint", "smallint", "mediumint", "int", "bigint" => ColumnType::INT,

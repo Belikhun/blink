@@ -46,6 +46,13 @@ class CoreConfig {
 
 	public static string	$DB_DRIVER = "MySQLi";
 	public static string	$DB_HOST = "127.0.0.1";
+
+	/**
+	 * Port the database listens on. Zero leaves it to the driver, which is
+	 * what a default installation wants.
+	 */
+	public static int		$DB_PORT = 0;
+
 	public static string	$DB_USER = "";
 	public static string	$DB_PASS = "";
 	public static string	$DB_NAME = "";
