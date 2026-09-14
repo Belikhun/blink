@@ -3,7 +3,7 @@
 namespace Blink\DB\Driver;
 
 use Blink\DB\ColumnInfo;
-use Blink\DB\ColumnType;
+use Blink\DB\Enum\ColumnType;
 use Blink\DB\Database;
 use Blink\DB\Exception\QueryException;
 use Blink\Exception\BaseException;

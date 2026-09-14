@@ -1,5 +1,6 @@
 <?php
 
+use Blink\DB\Database;
 use Blink\Environment;
 use Blink\Localization;
 use Blink\Metric\TimingMetric;
@@ -16,8 +17,8 @@ ini_set("short_open_tag", true);
 /**
  * setup.php
  *
- * Web core setup file for initializing components,
- * session and handle current request's routing.
+ * Blink's bootstrap. Brings the framework up for a web request or a console
+ * command, then hands the request to the router.
  *
  * @author		Belikhun
  * @since		1.0.0
@@ -32,11 +33,26 @@ ini_set("short_open_tag", true);
 date_default_timezone_set("UTC");
 
 /**
+ * Whether blink is running from the console rather than answering a request.
+ *
+ * The console entry point defines it before getting here; anything else is
+ * detected from the SAPI.
+ *
+ * @var	bool
+ */
+if (!defined("BLINK_IS_CLI"))
+	define("BLINK_IS_CLI", (PHP_SAPI === "cli" || PHP_SAPI === "phpdbg"));
+
+/**
  * Server's base path.
+ *
+ * The console entry point resolves and defines it before getting here, since
+ * the working directory of a command says nothing about which site it targets.
  *
  * @var	string
  */
-define("BASE_PATH", str_replace("\\", "/", getcwd()));
+if (!defined("BASE_PATH"))
+	define("BASE_PATH", str_replace("\\", "/", getcwd()));
 
 /**
  * Server's application root folder. Alias to {@see BASE_PATH}
@@ -90,57 +106,50 @@ define("CORE_ROOT", str_replace("\\", "/", pathinfo(__FILE__, PATHINFO_DIRNAME))
  */
 global $PATH;
 
-/**
- * Current requested path
- * @var string
- */
-$PATH = $_GET["path"];
-unset($_GET["path"]);
+if (!BLINK_IS_CLI) {
+	$PATH = $_GET["path"];
+	unset($_GET["path"]);
 
-// Little hack for nginx server
-if (isset($_GET["params"])) {
-	$PATH .= "?". $_GET["params"];
-	unset($_GET["params"]);
+	// Little hack for nginx server
+	if (isset($_GET["params"])) {
+		$PATH .= "?". $_GET["params"];
+		unset($_GET["params"]);
+	}
+
+	$URL = parse_url($PATH);
+	$PATH = $URL["path"];
+
+	if (!empty($URL["query"])) {
+		$GET = [];
+		parse_str($URL["query"], $GET);
+		$_GET = array_merge($_GET, $GET);
+	}
+
+	// Special rules for index page
+	if ($PATH === "/index" || $PATH === "/index.php")
+		$PATH = "/";
 }
-
-$URL = parse_url($PATH);
-$PATH = $URL["path"];
-
-if (!empty($URL["query"])) {
-	$GET = [];
-	parse_str($URL["query"], $GET);
-	$_GET = array_merge($_GET, $GET);
-}
-
-// Special rules for index page
-if ($PATH === "/index" || $PATH === "/index.php")
-	$PATH = "/";
 
 
 
 //* ===========================================================
 //*  Initialize Config Store and Autoload
 //* -----------------------------------------------------------
-//*  Try to load config defined in application, fallback to
-//*  core default config if none exist.
-//*
-//*  This also setup class autoload.
+//*  Load the application's config, then bring up the library
+//*  functions, error handlers and class autoloading.
 //* ===========================================================
 
 require_once CORE_ROOT . "/consts.php";
 require_once CORE_ROOT . "/config.php";
 
-if (!file_exists(BASE_PATH . "/.htaccess")) {
+if (!BLINK_IS_CLI && !file_exists(BASE_PATH . "/.htaccess")) {
 	copy(CORE_ROOT . "/files/root.htaccess", BASE_PATH . "/.htaccess");
 	header("Location: /", true);
 	die();
 }
 
-if (!file_exists(BASE_PATH . "/config.define.php")) {
-	require_once CORE_ROOT . "/defaults/Config.php";
-} else {
+if (file_exists(BASE_PATH . "/config.define.php"))
 	require_once BASE_PATH . "/config.define.php";
-}
 
 if (!file_exists(BASE_PATH . "/config.php")) {
 	if (file_exists(BASE_PATH . "/config.default.php")) {
@@ -198,9 +207,11 @@ require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";
 require_once CORE_ROOT . "/autoload.php";
 
-// We have registered our handlers, dispose of all garbage output from now.
-// This is to prevent headers from being sent early.
-ob_start();
+if (!BLINK_IS_CLI) {
+	// We have registered our handlers, dispose of all garbage output from now.
+	// This is to prevent headers from being sent early.
+	ob_start();
+}
 
 /**
  * Clock for tracking runtime since request started.
@@ -213,9 +224,6 @@ if (!isset($RUNTIME)) {
 	$RUNTIME = new StopClock();
 	$RUNTIME -> start = $BLINK_START;
 }
-
-if (!class_exists(User::class))
-	require_once CORE_ROOT . "/defaults/User.php";
 
 $runtimeInitTiming = new TimingMetric("php init");
 $runtimeInitTiming -> start = $_SERVER["REQUEST_TIME_FLOAT"];
@@ -230,35 +238,32 @@ new TimingMetric("localization", function () {
 	Localization::setup();
 });
 
-$configTiming = new TimingMetric("config");
-
-// Initialize config store.
-if (file_exists(BASE_PATH . "/config.store.php")) {
-	\Config\Store::$CONFIG_PATH = DATA_ROOT . "/config.json";
-	require_once BASE_PATH . "/config.store.php";
-	\Config\Store::init();
-}
-
-$configTiming -> time();
-
-// Initialize DB.
-require_once CORE_ROOT . "/classes/DB/Database.php";
-
-
-//* ===========================================================
-//*  Additional Page Setup
-//* -----------------------------------------------------------
-//*  Just initialize current session and run additional setup
-//*  process defined in application.
-//* ===========================================================
-
 new TimingMetric("env", function () {
 	// Initialize environment variables
 	Environment::load(\CONFIG::$ENV);
 });
 
-// We can now proceed to parse current Server info.
-Server::setup();
+
+//* ===========================================================
+//*  Additional Page Setup
+//* -----------------------------------------------------------
+//*  Parse the server environment, connect the database and let
+//*  every module wire itself up.
+//* ===========================================================
+
+if (BLINK_IS_CLI)
+	Server::setupCli();
+else
+	Server::setup();
+
+Database::initialize();
+
+new TimingMetric("modules", function () {
+	Blink::loadModules();
+});
+
+if (BLINK_IS_CLI)
+	return;
 
 new TimingMetric("session", function() {
 	// Initialize session
@@ -291,18 +296,6 @@ new TimingMetric("session", function() {
 	}
 });
 
-if (file_exists(BASE_PATH . "/setup.php")) {
-	new TimingMetric("page setup", function () {
-		// Include page setup file.
-		require_once BASE_PATH . "/setup.php";
-	});
-}
-
-// Add default endpoint for error page.
-Router::$processingFile = "blink:core";
-Router::GET("/error/{id}", [ \Blink\ErrorPage\Instance::class, "handle" ], -1);
-Router::GET("/error", [ \Blink\ErrorPage\Instance::class, "index" ], -1);
-Router::$processingFile = null;
 
 //* ===========================================================
 //*  Handle Routing
@@ -311,21 +304,9 @@ Router::$processingFile = null;
 //*  on current request path and method.
 //* ===========================================================
 
-// Include routes definition before start routing.
-$routesPath = CONFIG::$ROUTES_ROOT;
-$routesTiming = new TimingMetric("route init");
-
-foreach (glob("$routesPath/*.php") as $filename) {
-	// Isolate scope
-	(function ($currentFileLocation) {
-		Router::$processingFile = pathinfo($currentFileLocation, PATHINFO_FILENAME);
-		require_once $currentFileLocation;
-	})($filename);
-
-	Router::$processingFile = null;
-}
-
-$routesTiming -> time();
+new TimingMetric("route init", function () {
+	Router::loadRoutesFrom(CONFIG::$ROUTES_ROOT);
+});
 
 // Handle current request path
 Router::route($PATH, Server::$METHOD);

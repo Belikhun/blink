@@ -442,66 +442,52 @@ abstract class Database {
 
 		$affected = $this -> execute($sql, $params);
 		$metric -> time($affected);
-			return $affected;
+		return $affected;
 	}
-}
-
-/**
- * Function to initialize the global `$DB`
- * variable.
- */
-function initializeDB() {
-	$dbTiming = new TimingMetric("database");
 
 	/**
-	 * Global Database Instance. Initialized based on type of
-	 * SQL driver specified in config.
+	 * Connect the global `$DB` instance to the driver named in config.
 	 *
-	 * @var	\Blink\DB\Database	$DB
+	 * Called once during bootstrap. Calling it again is free, so a console
+	 * command that needs a connection earlier than usual can ask for one.
 	 */
-	global $DB;
+	public static function initialize(): void {
+		/**
+		 * Global Database Instance. Initialized based on type of
+		 * SQL driver specified in config.
+		 *
+		 * @var	\Blink\DB\Database	$DB
+		 */
+		global $DB;
 
-	// $DB is initialized, we don't need to do anything.
-	if (!empty($DB))
-		return;
+		if (!empty($DB))
+			return;
 
-	$DB_DRIVER_PATH = CORE_ROOT . "/classes/DB/Driver/" . CONFIG::$DB_DRIVER . ".php";
+		$driver = CONFIG::$DB_DRIVER;
+		$path = CORE_ROOT . "/classes/DB/Driver/{$driver}.php";
 
-	if (file_exists($DB_DRIVER_PATH)) {
-		require_once $DB_DRIVER_PATH;
-		$className = "Blink\\DB\\Driver\\" . CONFIG::$DB_DRIVER;
+		if (!file_exists($path))
+			throw new SQLDriverNotFound($driver);
+
+		$timing = new TimingMetric("database");
+		require_once $path;
+		$className = "Blink\\DB\\Driver\\{$driver}";
 
 		if (!class_exists($className) || !in_array(Database::class, class_parents($className)))
-			throw new InvalidSQLDriver(CONFIG::$DB_DRIVER);
+			throw new InvalidSQLDriver($driver);
 
 		$DB = new $className();
 
-		switch (CONFIG::$DB_DRIVER) {
-			case "SQLite3": {
-				$DB -> connect(array(
-					"path" => CONFIG::$DB_PATH
-				));
-
-				break;
-			}
-
-			default: {
-				// We default the config arguments to standard info
-				// like mysqli.
-				$DB -> connect(array(
-					"host" => CONFIG::$DB_HOST,
-					"username" => CONFIG::$DB_USER,
-					"password" => CONFIG::$DB_PASS,
-					"database" => CONFIG::$DB_NAME
-				));
-
-				break;
-			}
-		}
+		$DB -> connect(($driver === "SQLite3")
+			? array( "path" => CONFIG::$DB_PATH )
+			: array(
+				"host" => CONFIG::$DB_HOST,
+				"username" => CONFIG::$DB_USER,
+				"password" => CONFIG::$DB_PASS,
+				"database" => CONFIG::$DB_NAME
+			));
 
 		DB::$instance = $DB;
-		$dbTiming -> time();
-	} else {
-		throw new SQLDriverNotFound(CONFIG::$DB_DRIVER);
+		$timing -> time();
 	}
 }

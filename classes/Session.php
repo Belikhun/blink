@@ -3,6 +3,7 @@
 namespace Blink;
 
 use Blink\Exception\NotLoggedIn;
+use Blink\Model\UserBase;
 
 /**
  * Represent current active session.
@@ -37,7 +38,7 @@ class Session {
 	/**
 	 * Current logged-in user.
 	 * 
-	 * @var \User
+	 * @var ?UserBase
 	 */
 	public static $user = null;
 
@@ -103,7 +104,8 @@ class Session {
 		$token = Token::getToken($token);
 
 		static::$username = $token -> username;
-		static::$user = \User::getByUsername($token -> username);
+		$userClass = \Blink::userClass();
+		static::$user = $userClass::getByUsername($token -> username);
 		static::$logoutToken = null;
 		static::$method = static::METHOD_TOKEN;
 		static::$token = $token;
@@ -112,10 +114,10 @@ class Session {
 	/**
 	 * Create access token for this user.
 	 * 
-	 * @param	\User	$user
+	 * @param	UserBase	$user
 	 * @return	Token
 	 */
-	public static function createToken(\User $user) {
+	public static function createToken(UserBase $user) {
 		static::$username = $user -> username;
 		static::$user = $user;
 		static::$logoutToken = null;
@@ -127,7 +129,7 @@ class Session {
 		return $token;
 	}
 
-	public static function completeLogin(\User $user) {
+	public static function completeLogin(UserBase $user) {
 		$_SESSION["username"] = $user -> username;
 		$_SESSION["user"] = $user;
 		$_SESSION["logoutToken"] = bin2hex(random_bytes(12));

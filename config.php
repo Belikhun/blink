@@ -77,10 +77,15 @@ class CoreConfig {
 		"App\\" => BASE_PATH . "/classes"
 	);
 
+	/**
+	 * Directories the autoloader falls back to scanning when path resolution
+	 * through `$AUTOLOAD` finds nothing. It catches the two shapes a path
+	 * cannot describe: a file holding more than one class, and a class in the
+	 * global namespace.
+	 *
+	 * @var string[]
+	 */
 	public static array		$INCLUDES = array(
-		CORE_ROOT . "/includes",
-		CORE_ROOT . "/classes",
-		CORE_ROOT . "/middleware",
 		BASE_PATH . "/includes",
 		BASE_PATH . "/classes"
 	);

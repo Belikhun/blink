@@ -5,6 +5,7 @@ namespace Blink;
 use Blink\DB\Exception\TableNotFound;
 use Blink\Exception\BaseException;
 use Blink\Exception\FileInstanceNotFound;
+use Blink\Model\UserBase;
 
 /**
  * File store interface.
@@ -31,7 +32,7 @@ class File {
 
 	public int $size;
 
-	public ?\User $author;
+	public ?UserBase $author;
 
 	public int $created;
 
@@ -43,7 +44,7 @@ class File {
 		string $extension = null,
 		string $mimetype = null,
 		int $size = null,
-		?\User $author = null,
+		?UserBase $author = null,
 		int $created = 0
 	) {
 		$this -> id = $id;
@@ -184,7 +185,7 @@ class File {
 			$record -> mimetype,
 			$record -> size,
 			!empty($record -> author)
-				? \User::getByID($record -> author)
+				? (\Blink::userClass())::getByID($record -> author)
 				: null,
 			$record -> created
 		);

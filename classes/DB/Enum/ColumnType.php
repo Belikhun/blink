@@ -1,6 +1,6 @@
 <?php
 
-namespace Blink\DB;
+namespace Blink\DB\Enum;
 
 /**
  * Class contain database column details.

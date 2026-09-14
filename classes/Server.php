@@ -122,9 +122,32 @@ class Server {
 
 		/**
 		 * Host name, based on user's request.
-		 * 
+		 *
 		 * @var	string
 		 */
+		define("HOST", static::$HOST);
+	}
+
+	/**
+	 * Fill the same fields in for a console command.
+	 *
+	 * A command has no request to describe, but plenty of code reads these
+	 * without caring where it runs, so they get values that are true rather
+	 * than left uninitialized.
+	 */
+	public static function setupCli() {
+		static::$PROTOCOL = "CLI";
+		static::$METHOD = "CLI";
+		static::$SOFTWARE = "PHP " . phpversion();
+		static::$REQUEST_START = $_SERVER["REQUEST_TIME_FLOAT"] ?? microtime(true);
+		static::$CLIENT_IP = "127.0.0.1";
+		static::$SCHEME = "http";
+
+		$host = env("HOST");
+		static::$HOST = !empty($host)
+			? (new URL($host)) -> getHost()
+			: "localhost";
+
 		define("HOST", static::$HOST);
 	}
 }

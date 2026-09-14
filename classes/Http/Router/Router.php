@@ -20,6 +20,7 @@ use Blink\Http\Exception\RouteNotFound;
 use Blink\Http\Response\JsonResponse;
 use Blink\Http\Router\Attribute\HttpMethod;
 use Blink\Http\Router\Route;
+use function Blink\requestHeaders;
 use function Blink\stringify;
 
 /**
@@ -210,6 +211,30 @@ class Router {
 	}
 
 	/**
+	 * Load every route definition file in a directory, in alphabetical order.
+	 *
+	 * Each file runs in a function of its own so a variable one leaves behind
+	 * cannot reach the next.
+	 */
+	public static function loadRoutesFrom(string $directory) {
+		$files = glob(rtrim(str_replace("\\", "/", $directory), "/") . "/*.php");
+
+		if (empty($files))
+			return;
+
+		sort($files);
+
+		foreach ($files as $file) {
+			(function ($path) {
+				static::$processingFile = pathinfo($path, PATHINFO_FILENAME);
+				require_once $path;
+			})($file);
+
+			static::$processingFile = null;
+		}
+	}
+
+	/**
 	 * Try to authenticate user and setup environment to be ready to handle
 	 * incoming request.
 	 *
@@ -273,7 +298,7 @@ class Router {
 
 		$request = new Request(
 			$method, $path, $args,
-			$_GET, $_POST, getallheaders(),
+			$_GET, $_POST, requestHeaders(),
 			$_COOKIE, $_FILES);
 
 		$authenticatedByHeader = static::authenticateUser($request);

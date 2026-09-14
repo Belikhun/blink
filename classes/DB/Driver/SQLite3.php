@@ -147,6 +147,11 @@ class SQLite3 extends Database {
 	 * Initialize Database
 	 */
 	public function init() {
+		// SQLite will not create the directory holding the database file, and
+		// a fresh site has nothing there yet.
+		if (!file_exists($this -> path))
+			mkdir($this -> path, recursive: true);
+
 		$this -> instance = new \SQLite3($this -> filePath());
 		$this -> instance -> enableExceptions(true);
 

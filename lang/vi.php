@@ -1,15 +1,36 @@
 <?php
 /**
  * Language strings for vietnamese.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ *
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 
 return array(
+	"errorpage.openFile" => "Mở File",
 
+	"errorpage.classNotDefined.title" => "Class không tồn tại",
+	"errorpage.classNotDefined.content" => "Tệp <b>{file}</b> đã được nạp, nhưng không định nghĩa class <b>{class}</b>. "
+		. "Kiểm tra lại chính tả hoặc thêm class này nếu bạn chưa định nghĩa nó.",
+
+	"errorpage.classNotFound.title" => "Không tìm thấy class",
+	"errorpage.classNotFound.content" => "Không nạp được class <b>{class}</b>. Autoload đã thử các đường dẫn sau:",
+
+	"errorpage.routeNotFound.title" => "Đường dẫn không tồn tại",
+	"errorpage.routeNotFound.content" => "Có vẻ như đường dẫn này không còn tồn tại trên máy chủ. "
+		. "Liên hệ quản trị viên nếu bạn thấy đây là lỗi.",
+
+	"errorpage.invalidDefinition.title" => "Định nghĩa class không hợp lệ",
+	"errorpage.invalidDefinition.content" => "Class <b>{class}</b> của bạn phải kế thừa <b>{from}</b>.",
+
+	"errorpage.moduleNotFound.title" => "Không tìm thấy module",
+	"errorpage.moduleNotFound.content" => "<b>{module}</b> được khai báo trong <code>CONFIG::\$MODULES</code> nhưng "
+		. "không nạp được. Kiểm tra tên class và vị trí tệp của nó.",
+
+	"errorpage.notLoggedIn.title" => "Bạn chưa đăng nhập",
+	"errorpage.notLoggedIn.content" => "Trang này yêu cầu một phiên đã xác thực. Hãy đăng nhập và thử lại."
 );

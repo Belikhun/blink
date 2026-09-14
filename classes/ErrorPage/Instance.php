@@ -15,6 +15,8 @@ use function Blink\fileGet;
 use function Blink\filePut;
 use function Blink\getClientIP;
 use function Blink\getHeader;
+use function Blink\getRelativePath;
+use function Blink\requestHeaders;
 use function Blink\renderErrorPage;
 use function Blink\stringify;
 
@@ -32,6 +34,20 @@ class Instance {
 	const ERROR_CLIENT = "client";
 	const ERROR_SERVER = "server";
 	const ERROR_OTHER = "other";
+
+	/**
+	 * Sources of error page advice, registered by the application.
+	 *
+	 * @var callable[]
+	 */
+	protected static array $tipProviders = array();
+
+	/**
+	 * Sources of extra context groups, registered by the application.
+	 *
+	 * @var callable[]
+	 */
+	protected static array $contextProviders = array();
 
 	public string $id;
 
@@ -160,23 +176,135 @@ class Instance {
 		if (!empty($this -> tipTitle))
 			return [ $this -> tipTitle, $this -> tipContent ];
 
-		if (!$this -> hasException() || !class_exists("Handlers"))
+		if (!$this -> hasException())
 			return [ null, null ];
 
 		/** @var array */
 		$exception = $this -> data["exception"];
 
-		if (!defined("DISABLE_HANDLERS")) {
-			try {
-				if (!empty($exception["class"]))
-					list($this -> tipTitle, $this -> tipContent) = \Handlers::errorPageHint($exception["class"], $exception["data"]);
-			} catch (\Throwable $e) {
-				define("DISABLE_HANDLERS", true);
-				throw $e;
+		if (empty($exception["class"]))
+			return [ null, null ];
+
+		list($this -> tipTitle, $this -> tipContent) = static::hint(
+			$exception["class"],
+			$exception["data"]
+		);
+
+		return [ $this -> tipTitle, $this -> tipContent ];
+	}
+
+	/**
+	 * Advice on what to do about an exception, as `[title, content]`. The
+	 * content is rendered as HTML.
+	 *
+	 * @param	string			$class
+	 * @param	?array|?object	$data	The exception's data, as
+	 * 									{@see \Blink\Exception\BaseException::$data} carries it.
+	 * @return	array
+	 */
+	protected static function hint(string $class, $data = null): array {
+		global $AUTOLOAD_MISSES;
+
+		$title = null;
+		$content = "";
+
+		switch ($class) {
+			case \Blink\Exception\ClassNotDefined::class: {
+				$title = __("errorpage.classNotDefined.title");
+				$content = __("errorpage.classNotDefined.content", array(
+					"class" => $data["class"],
+					"file" => getRelativePath($data["file"])
+				));
+
+				$content .= Renderer::button(
+					__("errorpage.openFile"),
+					link: "vscode://file/" . urlencode($data["file"]),
+					icon: "file-pen"
+				);
+				break;
+			}
+
+			case \Blink\Exception\ClassNotFound::class: {
+				$tried = $AUTOLOAD_MISSES[$data["class"] ?? ""] ?? array();
+
+				$title = __("errorpage.classNotFound.title");
+				$content = __("errorpage.classNotFound.content", array(
+					"class" => $data["class"] ?? "?"
+				));
+
+				if (!empty($tried)) {
+					$content .= "<ul><li><code>"
+						. implode("</code></li><li><code>", array_map("\\Blink\\getRelativePath", $tried))
+						. "</code></li></ul>";
+				}
+				break;
+			}
+
+			case \Blink\Http\Exception\RouteNotFound::class: {
+				$title = __("errorpage.routeNotFound.title");
+				$content = __("errorpage.routeNotFound.content");
+				break;
+			}
+
+			case \Blink\Exception\InvalidDefinition::class: {
+				$title = __("errorpage.invalidDefinition.title");
+				$content = __("errorpage.invalidDefinition.content", array(
+					"class" => $data["class"],
+					"from" => $data["from"]
+				));
+
+				if (!empty($data["file"])) {
+					$content .= Renderer::button(
+						__("errorpage.openFile"),
+						link: "vscode://file/" . urlencode($data["file"]),
+						icon: "file-pen"
+					);
+				}
+				break;
+			}
+
+			case \Blink\Exception\ModuleNotFound::class: {
+				$title = __("errorpage.moduleNotFound.title");
+				$content = __("errorpage.moduleNotFound.content", array(
+					"module" => $data["module"]
+				));
+				break;
+			}
+
+			case \Blink\Exception\NotLoggedIn::class: {
+				$title = __("errorpage.notLoggedIn.title");
+				$content = __("errorpage.notLoggedIn.content");
+				break;
 			}
 		}
 
-		return [ $this -> tipTitle, $this -> tipContent ];
+		// Registered last so an application can speak to an exception blink
+		// already has a built-in answer for.
+		foreach (static::$tipProviders as $provider) {
+			$tip = $provider($class, $data);
+
+			if (!empty($tip[0]))
+				list($title, $content) = $tip;
+		}
+
+		return array( $title, $content );
+	}
+
+	/**
+	 * Register a source of error page advice. The callable takes the exception
+	 * class and its data, and returns `[title, content]` or nothing.
+	 */
+	public static function addTipProvider(callable $provider) {
+		static::$tipProviders[] = $provider;
+	}
+
+	/**
+	 * Register a source of extra context groups, shown at the bottom of the
+	 * page. The callable takes the instance and returns
+	 * {@see ContextGroup}[].
+	 */
+	public static function addContextProvider(callable $provider) {
+		static::$contextProviders[] = $provider;
 	}
 
 	public function exception() {
@@ -253,7 +381,7 @@ class Instance {
 	}
 
 	public static function create(array $data = null): Instance {
-		global $PATH, $AUTOLOADED, $RUNTIME;
+		global $PATH, $AUTOLOADED, $AUTOLOAD_MISSES, $RUNTIME;
 
 		$instance = new static(bin2hex(random_bytes(10)));
 		$instance -> data = $data;
@@ -288,7 +416,7 @@ class Instance {
 		$paramsContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$request -> add($paramsContext);
 
-		$headerContext = new ContextItem("headers", "Headers", getallheaders(), "arrow-right-left");
+		$headerContext = new ContextItem("headers", "Headers", requestHeaders(), "arrow-right-left");
 		$headerContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$request -> add($headerContext);
 
@@ -338,15 +466,25 @@ class Instance {
 		$sessionContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($sessionContext);
 
-		$autoload = array();
-		foreach ($AUTOLOADED as $item) {
-			$name = !empty($item["namespace"])
-				? $item["namespace"] . "\\"
-				: "";
+		$modules = array();
+		foreach (\Blink::modules() as $class => $module)
+			$modules[$class] = get_class($module);
 
-			$name .= "<b>" . $item["class"] . "</b>";
-			$autoload[$name] = $item["path"];
+		if (!empty(\Blink::$failedModule)) {
+			$failed = \Blink::$failedModule;
+			$modules["<b>Failed</b>"] = "{$failed['class']} -> {$failed['phase']}()";
 		}
+
+		$modulesContext = new ContextItem("modules", "Modules", $modules, "cube");
+		$modulesContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($modulesContext);
+
+		$autoload = array();
+		foreach ($AUTOLOADED as $class => $path)
+			$autoload["<b>{$class}</b>"] = getRelativePath($path);
+
+		foreach ($AUTOLOAD_MISSES as $class => $tried)
+			$autoload["<b>{$class}</b>"] = "[not found] " . implode(", ", array_map("\\Blink\\getRelativePath", $tried));
 
 		$autoloadContext = new ContextItem("autoload", "Autoload", $autoload, "truck-ramp-box");
 		$autoloadContext -> setRenderer([ ContextRenderer::class, "list" ]);
@@ -427,17 +565,11 @@ class Instance {
 		$instance -> contexts[] = $app;
 		$instance -> contexts[] = $metrics;
 
-		if (!defined("DISABLE_HANDLERS")) {
-			try {
-				if (!empty($exception["class"])) {
-					$instance -> contexts = array_merge(
-						$instance -> contexts,
-						\Handlers::errorContexts($instance));
-				}
-			} catch (\Throwable $e) {
-				define("DISABLE_HANDLERS", true);
-				throw $e;
-			}
+		foreach (static::$contextProviders as $provider) {
+			$instance -> contexts = array_merge(
+				$instance -> contexts,
+				$provider($instance)
+			);
 		}
 
 		filePut(static::path($instance -> id), serialize($instance));

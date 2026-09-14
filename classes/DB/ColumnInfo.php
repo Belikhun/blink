@@ -2,6 +2,8 @@
 
 namespace Blink\DB;
 
+use Blink\DB\Enum\ColumnType;
+
 /**
  * Class contain database column details.
  * 

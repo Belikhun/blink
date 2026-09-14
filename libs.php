@@ -39,16 +39,34 @@ use Throwable;
 
 require_once "consts.php";
 
-if (!function_exists("getallheaders")) {
-	function getallheaders() {
-		$headers = [];
+/**
+ * Return the current request's headers, mapped by canonical header name.
+ *
+ * `getallheaders()` only exists under a handful of SAPIs, and the `$_SERVER`
+ * reconstruction below is the one that always works, so blink never calls the
+ * native function.
+ *
+ * @return	array<string, string>
+ */
+function requestHeaders(): array {
+	$headers = array();
 
-		foreach ($_SERVER as $name => $value)
-			if (substr($name, 0, 5) == "HTTP_")
-				$headers[str_replace(" ", "-", ucwords(strtolower(str_replace("_", " ", substr($name, 5)))))] = $value;
+	foreach ($_SERVER as $name => $value) {
+		if (!str_starts_with($name, "HTTP_"))
+			continue;
 
-		return $headers;
+		$name = ucwords(strtolower(str_replace("_", " ", substr($name, 5))));
+		$headers[str_replace(" ", "-", $name)] = $value;
 	}
+
+	// Neither carries the HTTP_ prefix, and a request body cannot be read
+	// without them.
+	foreach (array( "CONTENT_TYPE" => "Content-Type", "CONTENT_LENGTH" => "Content-Length" ) as $key => $header) {
+		if (isset($_SERVER[$key]))
+			$headers[$header] = $_SERVER[$key];
+	}
+
+	return $headers;
 }
 
 class StopClock {
@@ -421,7 +439,7 @@ function requiredParam(string $name, $type = TYPE_TEXT) {
 function getHeader(string $name, $type = TYPE_TEXT, $default = null) {
 	$param = null;
 
-	foreach (getallheaders() as $key => $value) {
+	foreach (requestHeaders() as $key => $value) {
 		if (strcasecmp($name, $key) === 0) {
 			$param = $value;
 			break;
