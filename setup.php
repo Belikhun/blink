@@ -173,6 +173,29 @@ if (!in_array(CoreConfig::class, class_parents(\CONFIG::class, false))) {
 
 date_default_timezone_set(CONFIG::$TIMEZONE);
 
+if (BLINK_IS_CLI) {
+	// A command is not a request: nothing is waiting on a response, and a
+	// worker or a schema apply can legitimately run for hours.
+	set_time_limit(0);
+	ignore_user_abort(true);
+
+	// Raised only when the configured ceiling is higher than the current one,
+	// so a deliberately generous php.ini is never narrowed by this.
+	$currentLimit = trim((string) ini_get("memory_limit"));
+
+	if ($currentLimit !== "-1") {
+		$bytes = fn (string $value) => (int) $value * match (strtolower(substr($value, -1))) {
+			"g" => 1024 ** 3,
+			"m" => 1024 ** 2,
+			"k" => 1024,
+			default => 1
+		};
+
+		if ($bytes($currentLimit) < $bytes(CONFIG::$CLI_MEMORY_LIMIT))
+			ini_set("memory_limit", CONFIG::$CLI_MEMORY_LIMIT);
+	}
+}
+
 // Initialise paths in config
 $configRef = new ReflectionClass(CONFIG::class);
 $configProps = $configRef -> getProperties(ReflectionProperty::IS_STATIC);
@@ -259,9 +282,15 @@ Database::initialize();
 
 // Before modules attach, since a module is entitled to assume the schema its
 // own layers describe is already in place.
-new TimingMetric("terra", function () {
-	Terra::autoApply();
-});
+//
+// Web only: a console command has an operator in front of it who can run
+// `terra:apply` and read what it says, and applying the schema out from under
+// `terra:status` would leave it with nothing to report.
+if (!BLINK_IS_CLI) {
+	new TimingMetric("terra", function () {
+		Terra::autoApply();
+	});
+}
 
 new TimingMetric("modules", function () {
 	Blink::loadModules();

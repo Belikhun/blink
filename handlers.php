@@ -33,6 +33,9 @@ function ErrorHandler(int $code, string $text, string $file, int $line) {
 	$error -> file = $file;
 	$error -> line = $line;
 
+	if (BLINK_IS_CLI)
+		CliExceptionHandler($error);
+
 	stop($error -> code, $error -> description, 500, $error);
 }
 
@@ -146,6 +149,69 @@ function ShutdownHandler() {
 	});
 }
 
-set_exception_handler("Blink\\Handlers\\ExceptionHandler");
-set_error_handler("Blink\\Handlers\\ErrorHandler", E_ALL);
-register_shutdown_function("Blink\\Handlers\\ShutdownHandler");
+/**
+ * Report a failure to a terminal, where the HTML error page would only be
+ * thousands of lines of markup scrolling past.
+ */
+function printToTerminal(\Throwable $e): void {
+	$stream = defined("STDERR") ? STDERR : fopen("php://stderr", "w");
+	$description = ($e instanceof BaseException)
+		? $e -> description
+		: $e -> getMessage();
+
+	fwrite($stream, PHP_EOL . $e::class . ": " . strip_tags($description) . PHP_EOL);
+	fwrite($stream, "  at " . \Blink\getRelativePath($e -> getFile()) . ":" . $e -> getLine() . PHP_EOL);
+
+	if ($e instanceof BaseException && !empty($e -> details))
+		fwrite($stream, "  " . strip_tags($e -> details) . PHP_EOL);
+
+	if (\Blink::debuggingEnabled())
+		fwrite($stream, PHP_EOL . $e -> getTraceAsString() . PHP_EOL);
+}
+
+function CliExceptionHandler(\Throwable $e) {
+	printToTerminal($e);
+	exit(\Blink\Console::EXIT_FAILURE);
+}
+
+function CliShutdownHandler() {
+	if (!defined("BLINK_SHUTTING_DOWN"))
+		define("BLINK_SHUTTING_DOWN", true);
+
+	$error = error_get_last();
+
+	if (isFatal($error)) {
+		$fatal = new FatalError($error["type"], $error["message"]);
+		$fatal -> file = $error["file"];
+		$fatal -> line = $error["line"];
+
+		printToTerminal($fatal);
+	}
+
+	step("essence.clear", function () {
+		\Blink\Essence::clearConstructorStack();
+	});
+
+	step("essence.core", function () {
+		\Blink::registerCoreSingletons();
+	});
+
+	step("modules.detach", function () {
+		\Blink::detachModules();
+	});
+
+	step("autoload.save", function () {
+		\Blink\Autoload\save();
+	});
+}
+
+if (BLINK_IS_CLI) {
+	// The error page is HTML rendered into a response nobody is reading here.
+	set_exception_handler("Blink\\Handlers\\CliExceptionHandler");
+	set_error_handler("Blink\\Handlers\\ErrorHandler", E_ALL);
+	register_shutdown_function("Blink\\Handlers\\CliShutdownHandler");
+} else {
+	set_exception_handler("Blink\\Handlers\\ExceptionHandler");
+	set_error_handler("Blink\\Handlers\\ErrorHandler", E_ALL);
+	register_shutdown_function("Blink\\Handlers\\ShutdownHandler");
+}

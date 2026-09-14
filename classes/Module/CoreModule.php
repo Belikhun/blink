@@ -2,6 +2,7 @@
 
 namespace Blink\Module;
 
+use Blink\Console\Command;
 use Blink\ErrorPage\Instance;
 use Blink\Ether;
 use Blink\Http\Router;
@@ -45,5 +46,29 @@ class CoreModule extends Module {
 		Router::GET("/error", [ Instance::class, "index" ], -1);
 
 		Router::$processingFile = null;
+	}
+
+	public function commands(): array {
+		return array(
+			Command\ListCommand::class,
+			Command\HelpCommand::class,
+			Command\AboutCommand::class,
+
+			Command\TerraApply::class,
+			Command\TerraStatus::class,
+			Command\TerraRevert::class,
+			Command\TerraReset::class,
+			Command\TerraRebuild::class,
+			Command\TerraMake::class,
+
+			Command\CacheClear::class,
+			Command\RouteList::class,
+
+			Command\ErrorList::class,
+			Command\ErrorPurge::class,
+
+			Command\LockList::class,
+			Command\LockRelease::class
+		);
 	}
 }

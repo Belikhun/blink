@@ -34,6 +34,24 @@ return array(
 	"errorpage.notLoggedIn.title" => "You are not signed in",
 	"errorpage.notLoggedIn.content" => "This page needs an authenticated session. Sign in and try again.",
 
+	"time.now" => "just now",
+	"time.ago" => "{value} {unit} ago",
+	"time.in" => "in {value} {unit}",
+	"time.day.next" => "tomorrow",
+	"time.day.last" => "yesterday",
+	"time.year.next" => "next year",
+	"time.year.last" => "last year",
+	"time.unit.year" => "years",
+	"time.unit.year.one" => "year",
+	"time.unit.day" => "days",
+	"time.unit.day.one" => "day",
+	"time.unit.hour" => "hours",
+	"time.unit.hour.one" => "hour",
+	"time.unit.minute" => "minutes",
+	"time.unit.minute.one" => "minute",
+	"time.unit.second" => "seconds",
+	"time.unit.second.one" => "second",
+
 	"terra.notUpgraded" => "The database schema is behind: {applied} of {total} layers have been raised.",
 	"terra.notUpgraded.details" => "Run <code>php core/blink terra:apply</code>, or wait for the process already applying them to finish."
 );

@@ -133,39 +133,49 @@ function slugify($text) {
 	return $text;
 }
 
+/**
+ * Describe how far a timestamp is from now, in words.
+ *
+ * @param	int		$timestamp	The moment to describe.
+ * @param	?int	$to			What to measure against. Defaults to now.
+ * @return	string
+ */
 function relativeTime(int $timestamp, int $to = null) {
 	if (empty($to))
 		$to = time();
 
-	$string = "";
+	if ($timestamp === $to)
+		return __("time.now");
 
-	if ($timestamp === $to) {
-		$string = "mới đây";
-	} else {
-		$units = array( "năm" => 31536000, "ngày" => 86400, "giờ" => 3600, "phút" => 60, "giây" => 1 );
-		$delta = abs($timestamp - $to);
-		$future = $timestamp > $to;
+	$units = array( "year" => 31536000, "day" => 86400, "hour" => 3600, "minute" => 60, "second" => 1 );
+	$delta = abs($timestamp - $to);
+	$future = $timestamp > $to;
 
-		$unit = "";
-		$value = "";
+	$unit = "second";
+	$value = $delta;
 
-		foreach ($units as $unit => $value) {
-			$value = $delta / $value;
+	foreach ($units as $name => $seconds) {
+		$unit = $name;
+		$value = $delta / $seconds;
 
-			if ($value > 1)
-				break;
-		}
-
-		if ($unit === "ngày" && $value === 1) {
-			$string = ($future) ? "ngày mai" : "hôm qua";
-		} else if ($unit === "năm" && $value === 1) {
-			$string = ($future) ? "năm sau" : "năm ngoái";
-		} else {
-			$string = ((int) $value) . " $unit " . ($future ? "sau" : "trước");
-		}
+		if ($value >= 1)
+			break;
 	}
 
-	return $string;
+	$value = (int) $value;
+
+	// A single day or year each side of now reads better named than counted.
+	if ($value === 1 && ($unit === "day" || $unit === "year"))
+		return __("time.{$unit}." . ($future ? "next" : "last"));
+
+	// English needs the singular; the languages that do not simply map both
+	// keys to the same string.
+	$unitKey = "time.unit.{$unit}" . ($value === 1 ? ".one" : "");
+
+	return __("time." . ($future ? "in" : "ago"), array(
+		"value" => $value,
+		"unit" => __($unitKey)
+	));
 }
 
 /**

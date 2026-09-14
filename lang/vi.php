@@ -34,6 +34,24 @@ return array(
 	"errorpage.notLoggedIn.title" => "Bạn chưa đăng nhập",
 	"errorpage.notLoggedIn.content" => "Trang này yêu cầu một phiên đã xác thực. Hãy đăng nhập và thử lại.",
 
+	"time.now" => "mới đây",
+	"time.ago" => "{value} {unit} trước",
+	"time.in" => "{value} {unit} sau",
+	"time.day.next" => "ngày mai",
+	"time.day.last" => "hôm qua",
+	"time.year.next" => "năm sau",
+	"time.year.last" => "năm ngoái",
+	"time.unit.year" => "năm",
+	"time.unit.year.one" => "năm",
+	"time.unit.day" => "ngày",
+	"time.unit.day.one" => "ngày",
+	"time.unit.hour" => "giờ",
+	"time.unit.hour.one" => "giờ",
+	"time.unit.minute" => "phút",
+	"time.unit.minute.one" => "phút",
+	"time.unit.second" => "giây",
+	"time.unit.second.one" => "giây",
+
 	"terra.notUpgraded" => "Cấu trúc cơ sở dữ liệu chưa được cập nhật: mới áp dụng {applied} trên {total} lớp.",
 	"terra.notUpgraded.details" => "Chạy <code>php core/blink terra:apply</code>, hoặc đợi tiến trình đang áp dụng chúng hoàn tất."
 );

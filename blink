@@ -1,0 +1,74 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Blink's console entry point.
+ *
+ * Run it from anywhere:
+ *
+ * ```
+ * php core/blink list
+ * php core/blink terra:apply --force
+ * php core/blink --root=/var/www/site ticker:run
+ * ```
+ *
+ * @author		Belikhun
+ * @since		2.0.0
+ * @license		https://tldrlegal.com/license/mit-license MIT
+ *
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
+ * See LICENSE in the project root for license information.
+ */
+
+if (PHP_SAPI !== "cli" && PHP_SAPI !== "phpdbg") {
+	http_response_code(403);
+	fwrite(STDERR, "blink: the console can only be run from a terminal." . PHP_EOL);
+	exit(1);
+}
+
+define("BLINK_IS_CLI", true);
+
+/**
+ * Work out which site the command is meant for.
+ *
+ * A console command carries no request to say where it belongs, so the site
+ * has to be named some other way. In order of how explicit they are: the
+ * `--root` option, the `BLINK_ROOT` environment variable, the working
+ * directory when it looks like a site, and finally the directory holding
+ * blink, since blink normally sits inside the site it serves.
+ *
+ * @param	string[]	$argv
+ * @return	string
+ */
+function blinkResolveRoot(array $argv): string {
+	foreach ($argv as $token) {
+		if (str_starts_with($token, "--root="))
+			return rtrim(str_replace("\\", "/", substr($token, 7)), "/");
+	}
+
+	$env = getenv("BLINK_ROOT");
+
+	if (!empty($env))
+		return rtrim(str_replace("\\", "/", $env), "/");
+
+	$cwd = str_replace("\\", "/", (string) getcwd());
+
+	if (file_exists("{$cwd}/config.define.php"))
+		return $cwd;
+
+	return str_replace("\\", "/", dirname(__DIR__));
+}
+
+define("BASE_PATH", blinkResolveRoot($argv));
+
+if (!file_exists(BASE_PATH . "/config.define.php")) {
+	fwrite(STDERR, "blink: no site found at " . BASE_PATH . PHP_EOL);
+	fwrite(STDERR, "       point it somewhere with --root=<path> or BLINK_ROOT." . PHP_EOL);
+	exit(2);
+}
+
+require_once __DIR__ . "/setup.php";
+
+// `--root` was for this file, and a command has no idea what it means.
+$argv = array_values(array_filter($argv, fn ($token) => !str_starts_with($token, "--root=")));
+
+exit(\Blink\Console::run($argv));
