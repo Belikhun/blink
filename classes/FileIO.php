@@ -56,9 +56,12 @@ class FileIO {
 			$e = error_get_last();
 			throw new BaseException(
 				8,
-				"FileIO -> fos(): [". $e["type"] ."]: "
-					. $e["message"] . " tại "
-					. $e["file"] . " dòng ". $e["line"],
+				__("fileio.openFailed", array(
+					"type" => $e["type"] ?? "?",
+					"message" => $e["message"] ?? "?",
+					"file" => $e["file"] ?? "?",
+					"line" => $e["line"] ?? "?"
+				)),
 				500,
 				$e
 			);
@@ -91,8 +94,10 @@ class FileIO {
 				if ($tries >= $this -> maxTry) {
 					throw new BaseException(
 						46,
-						"FileIO -> read(): Read Timeout: Không có quyền đọc file "
-							. basename($this -> path) ." sau $tries lần thử",
+						__("fileio.readTimeout", array(
+							"file" => basename($this -> path),
+							"tries" => $tries
+						)),
 						500,
 						array( "path" => $this -> path )
 					);

@@ -84,6 +84,13 @@ return array(
 	"time.unit.minute.one" => "phút",
 	"time.unit.second" => "giây",
 	"time.unit.second.one" => "giây",
+	"time.unit.week" => "tuần",
+	"time.unit.week.one" => "tuần",
+	"time.unit.month" => "tháng",
+	"time.unit.month.one" => "tháng",
+
+	"fileio.openFailed" => "FileIO -> fos(): [{type}] {message} tại {file} dòng {line}",
+	"fileio.readTimeout" => "FileIO -> read(): không có quyền đọc {file} sau {tries} lần thử",
 
 	"terra.notUpgraded" => "Cấu trúc cơ sở dữ liệu chưa được cập nhật: mới áp dụng {applied} trên {total} lớp.",
 	"terra.notUpgraded.details" => "Chạy <code>php core/blink terra:apply</code>, hoặc đợi tiến trình đang áp dụng chúng hoàn tất."

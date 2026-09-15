@@ -110,7 +110,7 @@ final class Blink {
 	 * them. A module can therefore wire against a binding made by a module
 	 * declared after it, which is the whole point of keeping the two apart.
 	 */
-	public static function loadModules(): void {
+	public static function loadModules(?callable $beforeAttach = null): void {
 		$classes = array_merge(array( CoreModule::class ), \CONFIG::$MODULES);
 		$modules = array();
 
@@ -133,6 +133,12 @@ final class Blink {
 		static::runPhase("define", function (Module $module) {
 			$module -> define();
 		});
+
+		// Between the two phases: after every module has declared its layers
+		// through `define()`, and before any of them assumes in `attach()`
+		// that the schema those layers describe is in place.
+		if ($beforeAttach !== null)
+			$beforeAttach();
 
 		// Through Essence so a module can type-hint the services it wires
 		// against, rather than resolving each one by hand.

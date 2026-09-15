@@ -52,7 +52,7 @@ class RouteMetric extends MetricInstance {
 		return array(
 			"uri" => $this -> route -> uri,
 			"method" => $this -> request ?-> method,
-			"action" => stringify($this -> route -> action),
+			"action" => stringify($this -> route -> action, includePath: false),
 			"status" => $this -> status,
 			"delta_start" => $this -> deltaStart,
 			"duration" => $this -> getTime()

@@ -84,6 +84,13 @@ return array(
 	"time.unit.minute.one" => "minute",
 	"time.unit.second" => "seconds",
 	"time.unit.second.one" => "second",
+	"time.unit.week" => "weeks",
+	"time.unit.week.one" => "week",
+	"time.unit.month" => "months",
+	"time.unit.month.one" => "month",
+
+	"fileio.openFailed" => "FileIO -> fos(): [{type}] {message} at {file} line {line}",
+	"fileio.readTimeout" => "FileIO -> read(): {file} is still not readable after {tries} attempt(s)",
 
 	"terra.notUpgraded" => "The database schema is behind: {applied} of {total} layers have been raised.",
 	"terra.notUpgraded.details" => "Run <code>php core/blink terra:apply</code>, or wait for the process already applying them to finish."

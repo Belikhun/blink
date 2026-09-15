@@ -535,7 +535,7 @@ function getClientIP(): string {
  * @param	mixed		$subject
  * @return	string
  */
-function stringify($subject) {
+function stringify($subject, bool $includePath = true) {
 	$output = "";
 
 	if (is_callable($subject, true)) {
@@ -555,7 +555,7 @@ function stringify($subject) {
 		}
 
 		// A built-in has no file to point at.
-		if ($info -> getFileName() !== false)
+		if ($includePath && $info -> getFileName() !== false)
 			$output .= " (" . getRelativePath($info -> getFileName()) . ":" . $info -> getStartLine() . ")";
 	} else if (is_object($subject)) {
 		$output = get_class($subject);
@@ -607,6 +607,11 @@ function convertSize(int $bytes) {
  * @return	string		Readable time
  */
 function convertTime(float $time) {
+	// Nothing below would pick a unit for zero, and "0.00" with no unit reads
+	// as an error.
+	if ($time == 0)
+		return "0s";
+
 	$units = array(
 		"µs" => 0.000001,
 		"ms" => 0.001,
@@ -788,21 +793,226 @@ function fileGet(string $path, $default = null, bool $throw = false): string|nul
 }
 
 /**
- * Fast file put content with metric recording.
+ * Write a file in one move.
+ *
+ * The content goes to a temporary file beside the target and is renamed over
+ * it, so a reader never sees a half-written file and a crash mid-write leaves
+ * the old one intact. The parent directory is created when missing.
  *
  * @param	string		$path		Path to file
  * @param	string		$content	File content
  * @return	int|null				Bytes written or null if write failed.
  */
-function filePut(string $path, $content): int|null {
+function filePut(string $path, $content, bool $recursive = true): int|null {
 	$metric = null;
+	$folder = pathinfo($path, PATHINFO_DIRNAME);
 
 	if (class_exists(FileMetric::class))
 		$metric = new FileMetric("w", "text", $path);
 
-	$bytes = file_put_contents($path, $content);
+	if (!file_exists($folder))
+		@mkdir($folder, 0777, $recursive);
+
+	$temp = @tempnam($folder, ".blink-");
+	$bytes = false;
+
+	if ($temp !== false) {
+		$bytes = @file_put_contents($temp, $content);
+
+		if ($bytes !== false && @rename($temp, $path)) {
+			@chmod($path, \CONFIG::$FILE_PERMISSIONS);
+
+			// A PHP file rewritten under opcache would otherwise keep serving
+			// the old bytes until the next revalidation.
+			if (function_exists("opcache_invalidate"))
+				@opcache_invalidate($path, true);
+		} else {
+			// Staging failed. A direct write is worse than atomic, and far
+			// better than dropping the content.
+			@unlink($temp);
+			$bytes = file_put_contents($path, $content);
+		}
+	} else {
+		$bytes = file_put_contents($path, $content);
+	}
+
 	$metric ?-> time(($bytes === false) ? -1 : $bytes);
 	return ($bytes === false) ? null : $bytes;
+}
+
+/**
+ * Read a number of lines from a file: the first `$lines` when positive, the
+ * last `abs($lines)` when negative. Reading from the end walks the file
+ * backwards in chunks, so the tail of a large log costs only the tail.
+ *
+ * @return	string[]	Lines without their line endings.
+ */
+function fileRead(string $path, int $lines, int $bufferSize = 4096): array {
+	$metric = null;
+
+	if (!is_readable($path))
+		throw new FileReadError($path);
+
+	if ($lines === 0)
+		return array();
+
+	$handle = @fopen($path, "r");
+
+	if (class_exists(FileMetric::class))
+		$metric = new FileMetric("r", "text", $path);
+
+	if (!$handle) {
+		$metric ?-> time(-1);
+		throw new FileReadError($path);
+	}
+
+	$output = array();
+	$size = 0;
+
+	try {
+		if ($lines < 0) {
+			$wanted = abs($lines);
+
+			fseek($handle, 0, SEEK_END);
+			$position = ftell($handle);
+			$buffer = "";
+			$found = 0;
+
+			// One more newline than lines wanted, so the first wanted line is
+			// known to be complete.
+			while ($position > 0 && $found < $wanted + 1) {
+				$seek = min($position, $bufferSize);
+				$position -= $seek;
+				fseek($handle, $position, SEEK_SET);
+
+				$buffer = fread($handle, $seek) . $buffer;
+				$found = substr_count($buffer, "\n");
+			}
+
+			$size = mb_strlen($buffer, "utf-8");
+			$output = array_slice(explode("\n", rtrim($buffer, "\r\n")), -$wanted);
+			$output = array_map(fn ($line) => rtrim($line, "\r"), $output);
+		} else {
+			while (count($output) < $lines && ($line = fgets($handle)) !== false) {
+				$size += mb_strlen($line, "utf-8");
+				$output[] = rtrim($line, "\r\n");
+			}
+		}
+	} finally {
+		fclose($handle);
+	}
+
+	$metric ?-> time(!empty($output) ? $size : -1);
+	return $output;
+}
+
+/**
+ * Delete a directory and everything in it. A plain file is deleted as well.
+ *
+ * @return	bool	Whether nothing is left at the path.
+ */
+function deleteDir(string $path): bool {
+	if (is_link($path) || is_file($path))
+		return @unlink($path);
+
+	if (!is_dir($path))
+		return true;
+
+	$entries = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+		RecursiveIteratorIterator::CHILD_FIRST
+	);
+
+	foreach ($entries as $entry) {
+		$entryPath = $entry -> getPathname();
+
+		if ($entry -> isDir() && !$entry -> isLink())
+			@rmdir($entryPath);
+		else
+			@unlink($entryPath);
+	}
+
+	return @rmdir($path);
+}
+
+/**
+ * Whether every word of a search appears somewhere in the searched values.
+ * Case does not matter, and the words may match in any order.
+ *
+ * @param	string[]	$values		What is being searched.
+ * @param	string		$search		What was typed.
+ */
+function satisfySearch(array $values, string $search): bool {
+	$haystack = strtolower(implode(" ", $values));
+
+	foreach (preg_split('/\s+/', strtolower(trim($search))) ?: array() as $token) {
+		if ($token !== "" && !str_contains($haystack, $token))
+			return false;
+	}
+
+	return true;
+}
+
+/**
+ * The time units a duration can be expressed in, each in seconds. A month is
+ * the average month and a year the average year, so a round trip through
+ * {@see processTimeUnit()} stays consistent rather than calendar-exact.
+ *
+ * @return	array<string, int>
+ */
+function getTimeUnits(): array {
+	return array(
+		"seconds" => 1,
+		"minutes" => 60,
+		"hours" => 3600,
+		"days" => 86400,
+		"weeks" => 604800,
+		"months" => 2629800,
+		"years" => 31557600
+	);
+}
+
+/**
+ * A value in a unit, as seconds.
+ */
+function processTimeUnit(int $value, string $unit): int {
+	$units = getTimeUnits();
+
+	if (!isset($units[$unit]))
+		throw new InvalidValue($unit, "time unit");
+
+	return $value * $units[$unit];
+}
+
+/**
+ * A duration in seconds as "3 hours" or "2 days": the largest unit that
+ * divides it evenly, or seconds when none does.
+ *
+ * @param	?string	$unit	Force a unit, named as in {@see getTimeUnits()}.
+ */
+function displayTimeUnit(int $value, ?string $unit = null): string {
+	$units = array_reverse(getTimeUnits());
+
+	if ($unit === null) {
+		foreach ($units as $name => $seconds) {
+			if ($value % $seconds === 0) {
+				$unit = $name;
+				break;
+			}
+		}
+
+		$unit = $unit ?? "seconds";
+	} else if (!isset($units[$unit])) {
+		throw new InvalidValue($unit, "time unit");
+	}
+
+	$amount = $value / $units[$unit];
+	$amount = (floor($amount) == $amount) ? (int) $amount : round($amount, 2);
+
+	// The lang keys are singular: `time.unit.hour` and `time.unit.hour.one`.
+	$key = "time.unit." . rtrim($unit, "s");
+
+	return $amount . " " . __($amount == 1 ? "{$key}.one" : $key);
 }
 
 /**

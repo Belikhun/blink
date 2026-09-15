@@ -280,20 +280,19 @@ else
 
 Database::initialize();
 
-// Before modules attach, since a module is entitled to assume the schema its
-// own layers describe is already in place.
+// The schema is brought up to date between the module phases: after every
+// module has declared its layers in `define()`, and before any of them
+// assumes in `attach()` that the tables those layers describe exist.
 //
 // Web only: a console command has an operator in front of it who can run
 // `terra:apply` and read what it says, and applying the schema out from under
 // `terra:status` would leave it with nothing to report.
-if (!BLINK_IS_CLI) {
-	new TimingMetric("terra", function () {
-		Terra::autoApply();
-	});
-}
-
 new TimingMetric("modules", function () {
-	Blink::loadModules();
+	Blink::loadModules(BLINK_IS_CLI ? null : function () {
+		new TimingMetric("terra", function () {
+			Terra::autoApply();
+		});
+	});
 });
 
 if (BLINK_IS_CLI)
