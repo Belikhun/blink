@@ -79,6 +79,22 @@ function prefixes(): array {
 /**
  * File paths a class could live in, in the order they are tried.
  *
+ * Two shapes, and the second is what lets a class own a directory:
+ *
+ * ```
+ * Blink\Model             classes/Model.php
+ * Blink\Model             classes/Model/Model.php
+ * ```
+ *
+ * A class with parts of its own takes the second, so it sits among them
+ * rather than beside the folder holding them. `Blink\Ticker` lives in
+ * `Ticker/Ticker.php` next to `Ticker/Task/Task.php` and `Ticker/Runner.php`,
+ * and the namespace is `Blink\Ticker` either way: the repeated directory name
+ * is absorbed, not added.
+ *
+ * Which shape a class uses is its own business, and moving between them needs
+ * nothing but the move. Blink keeps everything with a directory in the second.
+ *
  * @return string[]
  */
 function candidates(string $class): array {
@@ -95,10 +111,6 @@ function candidates(string $class): array {
 		$short = basename($relative);
 
 		$paths[] = "{$directory}/{$relative}.php";
-
-		// A class whose file sits in a folder of its own name, which is how
-		// blink groups a subsystem with its parts: `Blink\Http\Router` lives
-		// in `Http/Router/Router.php` next to the routes it owns.
 		$paths[] = "{$directory}/{$relative}/{$short}.php";
 	}
 

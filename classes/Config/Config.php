@@ -188,40 +188,53 @@ final class Config {
 	}
 
 	/**
-	 * Problems worth reporting before they become failures at runtime.
+	 * Something that will fail at runtime.
+	 */
+	const PROBLEM = "problem";
+
+	/**
+	 * Something worth a look that may well be deliberate.
+	 */
+	const NOTE = "note";
+
+	/**
+	 * Report what is wrong, and what is only worth mentioning.
 	 *
-	 * @return	array<int, array{key: string, problem: string}>
+	 * The two are kept apart because only one of them means the site is
+	 * misconfigured. A directory blink cannot write to will fail the first
+	 * time something needs it. An empty secret may simply be one this
+	 * deployment has no use for, and nothing here can tell the difference.
+	 *
+	 * @return	array<int, array{key: string, severity: string, message: string}>
 	 */
 	public static function check(): array {
-		$problems = array();
+		$found = array();
 
 		foreach (static::settings() as $key => $setting) {
 			if ($setting -> path) {
 				$directory = (string) $setting -> value();
 
 				if ($directory === "") {
-					$problems[] = array( "key" => $key, "problem" => "names no directory" );
+					$found[] = array( "key" => $key, "severity" => static::PROBLEM, "message" => "names no directory" );
 					continue;
 				}
 
 				if (!file_exists($directory)) {
-					$problems[] = array( "key" => $key, "problem" => "directory does not exist and could not be created: {$directory}" );
+					$found[] = array( "key" => $key, "severity" => static::PROBLEM, "message" => "directory does not exist and could not be created: {$directory}" );
 					continue;
 				}
 
 				if (!is_writable($directory))
-					$problems[] = array( "key" => $key, "problem" => "directory is not writable: {$directory}" );
+					$found[] = array( "key" => $key, "severity" => static::PROBLEM, "message" => "directory is not writable: {$directory}" );
 
 				continue;
 			}
 
-			// A secret left at its empty default is either unused or a
-			// deployment that forgot to set it, and only the site knows which.
 			if ($setting -> secret && $setting -> value() === "" && $setting -> env !== null)
-				$problems[] = array( "key" => $key, "problem" => "is empty; set {$setting -> env} if it is needed" );
+				$found[] = array( "key" => $key, "severity" => static::NOTE, "message" => "is empty; set {$setting -> env} if this deployment needs it" );
 		}
 
-		return $problems;
+		return $found;
 	}
 
 	/**
