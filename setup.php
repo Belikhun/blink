@@ -171,59 +171,6 @@ if (!in_array(CoreConfig::class, class_parents(\CONFIG::class, false))) {
 	die();
 }
 
-date_default_timezone_set(CONFIG::$TIMEZONE);
-
-if (BLINK_IS_CLI) {
-	// A command is not a request: nothing is waiting on a response, and a
-	// worker or a schema apply can legitimately run for hours.
-	set_time_limit(0);
-	ignore_user_abort(true);
-
-	// Raised only when the configured ceiling is higher than the current one,
-	// so a deliberately generous php.ini is never narrowed by this.
-	$currentLimit = trim((string) ini_get("memory_limit"));
-
-	if ($currentLimit !== "-1") {
-		$bytes = fn (string $value) => (int) $value * match (strtolower(substr($value, -1))) {
-			"g" => 1024 ** 3,
-			"m" => 1024 ** 2,
-			"k" => 1024,
-			default => 1
-		};
-
-		if ($bytes($currentLimit) < $bytes(CONFIG::$CLI_MEMORY_LIMIT))
-			ini_set("memory_limit", CONFIG::$CLI_MEMORY_LIMIT);
-	}
-}
-
-// Initialise paths in config
-$configRef = new ReflectionClass(CONFIG::class);
-$configProps = $configRef -> getProperties(ReflectionProperty::IS_STATIC);
-foreach ($configProps as $prop) {
-	$attrs = $prop -> getAttributes();
-
-	if (empty($attrs))
-		continue;
-
-	foreach ($attrs as $attr) {
-		if ($attr -> getName() === ConfigPathProperty::class) {
-			$value = $prop -> getValue();
-
-			if (!file_exists($value))
-				mkdir($value, recursive: true);
-		}
-	}
-}
-
-if (!file_exists(DATA_ROOT . "/.htaccess"))
-	copy(CORE_ROOT . "/files/data.htaccess", DATA_ROOT . "/.htaccess");
-
-if (!file_exists(BASE_PATH . "/.gitignore"))
-	copy(CORE_ROOT . "/files/root.gitignore", BASE_PATH . "/.gitignore");
-
-if (!file_exists(BASE_PATH . "/.editorconfig"))
-	copy(CORE_ROOT . "/files/root.editorconfig", BASE_PATH . "/.editorconfig");
-
 // We can safely include our main library now.
 require_once CORE_ROOT . "/libs.php";
 require_once CORE_ROOT . "/handlers.php";
@@ -255,14 +202,59 @@ $setupTiming = new TimingMetric("setup");
 $setupTiming -> start = $BLINK_START;
 $setupTiming -> time();
 
+// Read the environment, then register the settings that draw from it. Both
+// happen before anything reads a setting, so a value the environment supplies
+// is in place the first time it matters.
+new TimingMetric("config", function () {
+	// Which env file to read cannot itself come from that file, so the name
+	// is taken from the process environment or the declared default.
+	Environment::load(getenv("APP_ENV") ?: \CONFIG::$ENV);
+
+	// Never imported: PHP matches a class alias without regard to case, so
+	// `use Blink\Config` would make every `CONFIG::` in this file resolve to
+	// the registry instead of the application's settings.
+	\Blink\Config::register(\CONFIG::class);
+});
+
+date_default_timezone_set(CONFIG::$TIMEZONE);
+
+if (BLINK_IS_CLI) {
+	// A command is not a request: nothing is waiting on a response, and a
+	// worker or a schema apply can legitimately run for hours.
+	set_time_limit(0);
+	ignore_user_abort(true);
+
+	// Raised only when the configured ceiling is higher than the current one,
+	// so a deliberately generous php.ini is never narrowed by this.
+	$currentLimit = trim((string) ini_get("memory_limit"));
+
+	if ($currentLimit !== "-1") {
+		$bytes = fn (string $value) => (int) $value * match (strtolower(substr($value, -1))) {
+			"g" => 1024 ** 3,
+			"m" => 1024 ** 2,
+			"k" => 1024,
+			default => 1
+		};
+
+		if ($bytes($currentLimit) < $bytes(CONFIG::$CLI_MEMORY_LIMIT))
+			ini_set("memory_limit", CONFIG::$CLI_MEMORY_LIMIT);
+	}
+}
+
+// Registering the sections above created every directory a path setting
+// names, `DATA_ROOT` among them, so these have somewhere to land.
+if (!file_exists(DATA_ROOT . "/.htaccess"))
+	copy(CORE_ROOT . "/files/data.htaccess", DATA_ROOT . "/.htaccess");
+
+if (!file_exists(BASE_PATH . "/.gitignore"))
+	copy(CORE_ROOT . "/files/root.gitignore", BASE_PATH . "/.gitignore");
+
+if (!file_exists(BASE_PATH . "/.editorconfig"))
+	copy(CORE_ROOT . "/files/root.editorconfig", BASE_PATH . "/.editorconfig");
+
 // Initialize localization and language store.
 new TimingMetric("localization", function () {
 	Localization::setup();
-});
-
-new TimingMetric("env", function () {
-	// Initialize environment variables
-	Environment::load(\CONFIG::$ENV);
 });
 
 

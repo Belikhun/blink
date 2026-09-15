@@ -4,19 +4,19 @@ namespace Blink\Http\Response;
 
 /**
  * Serve a file, but with Content-Range support.
- * 
+ *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
- * 
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ *
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 class PartedFileResponse extends FileResponse {
 	public function process(): string {
-		$fs = @fopen($this -> path, "rb");
+		$fs = $this -> handle();
 
-		$size   = filesize($this -> path);
+		$size   = $this -> length;
 		$length = $size;           // Content length
 		$start  = 0;               // Start byte
 		$end    = $size - 1;       // End byte

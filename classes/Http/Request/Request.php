@@ -3,6 +3,7 @@
 namespace Blink\Http;
 
 use Blink\Exception\MissingParam;
+use Blink\Exception\RequestFileMissing;
 use Blink\Http\Router\Route;
 use Blink\Http\UploadedFile;
 use function Blink\cleanParam;
@@ -71,8 +72,23 @@ class Request {
 	public function file(string $name) {
 		if (isset($this -> files[$name]))
 			return $this -> files[$name];
-		
+
 		return null;
+	}
+
+	/**
+	 * Return an uploaded file from the current request, refusing to continue
+	 * without it.
+	 *
+	 * @throws	RequestFileMissing
+	 */
+	public function requiredFile(string $name): UploadedFile {
+		$file = $this -> file($name);
+
+		if ($file === null)
+			throw new RequestFileMissing($name);
+
+		return $file;
 	}
 
 	public function arg(string $name, $type = TYPE_TEXT, $default = null) {

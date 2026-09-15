@@ -626,9 +626,13 @@ class ErrorPage {
 			}
 		}
 
-		$appEnvsContext = new ContextItem("environments", "Environments", Environment::$values, "leaf");
+		$appEnvsContext = new ContextItem("environments", "Environments", Environment::masked(), "leaf");
 		$appEnvsContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($appEnvsContext);
+
+		$configContext = new ContextItem("config", "Config", Config::display(), "sliders");
+		$configContext -> setRenderer([ ContextRenderer::class, "list" ]);
+		$app -> add($configContext);
 
 		$appConstsContext = new ContextItem("consts", "Constants", array(
 			"BASE_PATH" => BASE_PATH,

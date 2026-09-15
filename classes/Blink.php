@@ -130,6 +130,17 @@ final class Blink {
 
 		static::$modules = $modules;
 
+		// Before `define()`, so a module can read its own settings from the
+		// first line of it, and so a setting the environment supplies is in
+		// place before anything acts on it.
+		// `Blink\Config` is written out in full because PHP matches a class
+		// alias without regard to case, and importing it would turn every
+		// `\CONFIG::` in this file into the registry.
+		static::runPhase("config", function (Module $module) {
+			foreach ($module -> config() as $class)
+				\Blink\Config::register($class);
+		});
+
 		static::runPhase("define", function (Module $module) {
 			$module -> define();
 		});

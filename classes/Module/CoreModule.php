@@ -103,8 +103,12 @@ class CoreModule extends Module {
 			Command\CacheClear::class,
 			Command\RouteList::class,
 
+			Command\ConfigList::class,
+			Command\ConfigCheck::class,
 			Command\ErrorList::class,
 			Command\ErrorPurge::class,
+			Command\FileList::class,
+			Command\FilePrune::class,
 			Command\TraceList::class,
 			Command\TracePurge::class,
 

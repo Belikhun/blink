@@ -11,8 +11,6 @@
  */
 
 // Constants
-define("FILE_STORE_FS", "fs");
-define("FILE_STORE_DB", "db");
 
 // Known mimes
 define("MIME_TYPES", array(
@@ -135,7 +133,6 @@ define("INVALID_VALUE", 205);
 define("INVALID_FILE", 206);
 define("INVALID_HASH", 207);
 define("MAX_LENGTH_EXCEEDED", 208);
-define("INVALID_URL", 209);
 define("FILE_INSTANCE_NOT_FOUND", 209);
 define("FILE_READ_ERROR", 210);
 define("FILE_WRITE_ERROR", 211);
@@ -143,10 +140,10 @@ define("ROUTE_CALLBACK_INVALID_PARAM", 212);
 define("ROUTE_INVALID_RESPONSE", 213);
 define("HEADER_SENT", 214);
 define("TEMPLATE_ILLEGAL_CALL", 215);
-define("CONFIG_GROUP_DEFINED", 216);
-define("CONFIG_ITEM_DEFINED", 217);
-define("CONFIG_NO_ACTIVE_GROUP", 218);
-define("CONFIG_ITEM_NOT_FOUND", 219);
+define("CONFIG_SETTING_NOT_FOUND", 216);
+define("CONFIG_INVALID_VALUE", 217);
+define("CONFIG_INVALID_SECTION", 218);
+define("INVALID_URL", 219);
 define("FIELD_DATA_ERROR", 221);
 define("INSTANCE_EXISTS", 222);
 define("USER_NOT_IN_GROUP", 223);
@@ -156,7 +153,9 @@ define("UNSUPPORTED_AUTH_SCHEME", 226);
 define("ROUTER_AUTH_ERROR", 228);
 define("FILE_LOCK_ERROR", 229);
 define("LOCK_ALREADY_ACQUIRED", 230);
+define("FILE_STORE_NOT_FOUND", 231);
 define("ETHER_INVALID_MIDDLEWARE", 232);
+define("FILE_CONTENT_MISSING", 233);
 
 define("ACCESS_DENIED", 300);
 define("LOGGED_IN", 301);

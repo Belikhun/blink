@@ -2,40 +2,77 @@
 
 namespace Blink\Query;
 
+use ArrayIterator;
 use Iterator;
+use Traversable;
 
 /**
- * Class for iterating through a recordset returned from `Query -> iterator()`.
+ * Walks the records a query returned, turning each one into a model on the way
+ * past when the query came from a model.
  *
- *! **⚠ IMPORTANT:** Remember to call `QueryIterator -> close()` after using it.
+ * The records are fetched before iteration begins, so this reads better than
+ * {@see Query::all()} rather than costing less: nothing here is a cursor into
+ * the database. It is still the right thing to loop over when the processing
+ * matters more than the fetch, since only one model instance is built at a
+ * time rather than one for every row at once.
  *
  * @template	QT
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
+ *
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
+ * See LICENSE in the project root for license information.
  */
 class QueryIterator implements Iterator {
-
-	protected mixed $iterator = null;
+	protected ?Iterator $iterator = null;
 
 	/**
-	 * The target model class name to translate records into.
+	 * The model class records are turned into, when there is one.
 	 *
 	 * @var ?string
 	 */
 	public ?string $class = null;
 
-	public function __construct(mixed $iterator = null, ?string $class = null) {
-		$this -> iterator = $iterator;
+	/**
+	 * @param	array|Traversable|null	$records
+	 */
+	public function __construct(mixed $records = null, ?string $class = null) {
+		$this -> iterator = static::normalize($records);
 		$this -> class = $class;
 	}
 
 	/**
-	 * Return current record/
+	 * Take whatever the query produced and make an iterator of it.
 	 *
+	 * The drivers hand back a plain array, so that is the usual case, but
+	 * anything traversable works and a driver that grows a real cursor will
+	 * drop straight in.
+	 */
+	protected static function normalize(mixed $records): ?Iterator {
+		if ($records === null)
+			return null;
+
+		if ($records instanceof Iterator)
+			return $records;
+
+		if ($records instanceof Traversable)
+			return new ArrayIterator(iterator_to_array($records));
+
+		if (is_array($records))
+			return new ArrayIterator($records);
+
+		// A count from a write, or something else with no records in it.
+		return null;
+	}
+
+	/**
 	 * @return	QT
 	 */
 	public function current(): mixed {
+		if ($this -> iterator === null)
+			return null;
+
 		$record = $this -> iterator -> current();
 
 		return (!empty($this -> class))
@@ -45,34 +82,33 @@ class QueryIterator implements Iterator {
 
 	#[\ReturnTypeWillChange]
 	public function key() {
-		if (empty($this -> iterator))
-			return null;
-
-		return $this -> iterator -> key();
+		return $this -> iterator ?-> key();
 	}
 
 	public function next(): void {
-		$this -> iterator -> next();
+		$this -> iterator ?-> next();
 	}
 
 	public function valid(): bool {
-		if (empty($this -> iterator))
-			return false;
-
-		return $this -> iterator -> valid();
+		return $this -> iterator !== null && $this -> iterator -> valid();
 	}
 
-	public function close(): void {
-		$this -> iterator -> close();
+	public function rewind(): void {
+		$this -> iterator ?-> rewind();
 	}
 
 	/**
-	 * Rewind is not supported!
+	 * Release whatever is behind the iterator.
 	 *
-	 * @return void
+	 * Calling it is optional, and calling it twice is harmless. A backing
+	 * object with nothing to release is the normal case.
 	 */
-	public function rewind(): void {
-		return;
+	public function close(): void {
+		$iterator = $this -> iterator;
+		$this -> iterator = null;
+
+		if (is_object($iterator) && method_exists($iterator, "close"))
+			$iterator -> close();
 	}
 
 	public function __destruct() {

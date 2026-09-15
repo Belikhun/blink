@@ -5,7 +5,7 @@ use Blink\Terra\Schema;
 use Blink\Terra\Table;
 
 /**
- * Uploaded files.
+ * Stored files: one row per upload, one copy of the content.
  *
  * @author		Belikhun
  * @since		2.0.0
@@ -18,17 +18,25 @@ return new class extends Layer {
 	public function raise(): void {
 		Schema::create("files", function (Table $table) {
 			$table -> id();
-			$table -> string("hash", 64) -> unique();
+
+			// Indexed rather than unique: each upload keeps its own name and
+			// uploader, so several rows may point at the same content. The
+			// store holds one copy, and drops it when the last row goes.
+			// Long enough for sha512, should a site want it.
+			$table -> string("hash", 128) -> index();
+
 			$table -> string("filename", 255);
-			$table -> string("extension", 32);
-			$table -> string("mimetype", 191);
+			$table -> string("extension", 32) -> default("");
+			$table -> string("mimetype", 191) -> default("application/octet-stream");
 			$table -> bigInteger("size") -> unsigned() -> default(0);
 
 			// No foreign key: the users table belongs to the application, and
 			// blink does not know its name.
-			$table -> bigInteger("author") -> unsigned() -> nullable() -> index();
+			$table -> bigInteger("author_id") -> unsigned() -> nullable() -> index();
 
 			$table -> timestamp("created") -> default(0);
+
+			$table -> index("created");
 		});
 	}
 

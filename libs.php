@@ -470,6 +470,11 @@ function mime(string $file, string $charset = "utf-8", $default = "text/plain") 
 	$mime = null;
 	$extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
+	// A bare extension has nothing for `pathinfo()` to split on, so the whole
+	// string is the extension. Lets a caller holding only "png" ask.
+	if ($extension === "" && $file !== "" && !str_contains($file, "/") && !str_contains($file, "."))
+		$extension = strtolower($file);
+
 	if (!empty(MIME_TYPES[$extension])) {
 		$mime = MIME_TYPES[$extension];
 
@@ -526,7 +531,9 @@ function getRelativePath(string $fullPath, string $separator = "/", string $base
  * @return	string
  */
 function getClientIP(): string {
-	return Server::$CLIENT_IP;
+	// Readable before `Server::setup()` has run, so a failure early in the
+	// boot can still be written into a report.
+	return Server::$CLIENT_IP ?? "UNKNOWN";
 }
 
 /**

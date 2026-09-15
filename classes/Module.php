@@ -54,6 +54,19 @@ abstract class Module {
 	public function orbits(Orbit $orbit): void {}
 
 	/**
+	 * Config classes this module ships.
+	 *
+	 * Registered before any module is defined, so a setting is readable from
+	 * the first line of `define()` onwards. Each class is filled from the
+	 * environment and has its path settings created as it is registered.
+	 *
+	 * @return	class-string[]
+	 */
+	public function config(): array {
+		return array();
+	}
+
+	/**
 	 * Console commands this module ships.
 	 *
 	 * @return	class-string<\Blink\Console\Command>[]
