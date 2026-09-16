@@ -70,7 +70,10 @@ class PartialColumn implements Sequelizable {
 		if (!empty($this -> table) && $alias = $query -> getObjectByAlias($this -> table)) {
 			$this -> tableAlias = $this -> table;
 
-			if ($alias instanceof SubQuery) {
+			if ($alias instanceof SubQuery || $alias instanceof SelectSubQuery) {
+				// Both wrap a query the column belongs to. The two are
+				// separate classes because only one of them carries an alias,
+				// which makes no difference to validating a column against it.
 				$this -> validateColumn(query: $alias -> query);
 			} else if ($alias instanceof SelectTable) {
 				if ($alias -> table instanceof Query) {
@@ -164,8 +167,11 @@ class PartialColumn implements Sequelizable {
 				$this -> validate($query);
 			} catch (Exception $e) {
 				if ($this -> fallbackNativeValue) {
+					// `getName()`, not `original`: this column was built from
+					// the half after the dot, and the literal it stands in
+					// for is the whole `table.column` string the caller wrote.
 					if (empty($this -> returnNativeValue))
-						$this -> returnNativeValue = Expr::value($this -> original);
+						$this -> returnNativeValue = Expr::value($this -> getName());
 				} else {
 					throw $e;
 				}

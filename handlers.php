@@ -44,15 +44,29 @@ function translate(\Throwable $e): \Throwable {
 	return $e;
 }
 
+/**
+ * Turn a PHP error into an exception.
+ *
+ * Throwing rather than rendering is what lets a caller decide. A `@`-prefixed
+ * call, a `try` around something that is allowed to fail, a library that
+ * checks a return value: all of them are defeated by a handler that renders
+ * the error page and terminates, and blink relies on several of them itself.
+ *
+ * Anything nobody catches still reaches {@see ExceptionHandler()} and is
+ * reported exactly as before.
+ */
 function ErrorHandler(int $code, string $text, string $file, int $line) {
+	// How PHP signals `@`, and the error_reporting level generally. Returning
+	// false hands the error back to PHP's own handling, which for a
+	// suppressed one means ignoring it.
+	if (!(error_reporting() & $code))
+		return false;
+
 	$error = new RuntimeError(1000 + $code, $text);
 	$error -> file = $file;
 	$error -> line = $line;
 
-	if (BLINK_IS_CLI)
-		CliExceptionHandler($error);
-
-	ResponseAdapter::handleThrowable($error, $error -> code, $error -> description, 500);
+	throw $error;
 }
 
 function ExceptionHandler(\Throwable $e) {

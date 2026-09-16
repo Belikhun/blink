@@ -161,17 +161,7 @@ class EssenceBinding {
 			if (interface_exists($instance))
 				throw new EssenceInvalidConcrete($instance, $this -> abstract);
 
-			// Essence::call() caches every constructed instance so a cycle can be
-			// detected. A binding that is not a singleton has to drop that cache
-			// on both sides of the call, or the second make() hands back the first
-			// instance.
-			if (!$this -> isSingleton)
-				Essence::forgetSingleton($instance);
-
 			$instance = Essence::call([$instance, "__construct"]);
-
-			if (!$this -> isSingleton)
-				Essence::forgetSingleton($instance::class);
 		}
 
 		if (!is_a($instance, $this -> abstract)) {
@@ -186,5 +176,14 @@ class EssenceBinding {
 
 		$this -> instance = $instance;
 		return $this -> instance;
+	}
+
+	/**
+	 * Drop the instance this binding is holding, so the next {@see make()}
+	 * builds a fresh one. Only a singleton keeps one to begin with.
+	 */
+	public function forget(): static {
+		$this -> instance = null;
+		return $this;
 	}
 }

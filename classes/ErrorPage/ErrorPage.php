@@ -485,7 +485,7 @@ class ErrorPage {
 	}
 
 	protected static function build(?array $data = null): static {
-		global $AUTOLOADED, $AUTOLOAD_MISSES, $RUNTIME;
+		global $RUNTIME;
 
 		$debugging = \Blink::debuggingEnabled();
 
@@ -591,20 +591,9 @@ class ErrorPage {
 			$modules["<b>Failed</b>"] = "{$failed['class']} -> {$failed['phase']}()";
 		}
 
-		$modulesContext = new ContextItem("modules", "Modules", $modules, "cube");
+		$modulesContext = new ContextItem("modules", "Modules", $modules, "stack");
 		$modulesContext -> setRenderer([ ContextRenderer::class, "list" ]);
 		$app -> add($modulesContext);
-
-		$autoload = array();
-		foreach ($AUTOLOADED ?? array() as $class => $path)
-			$autoload["<b>{$class}</b>"] = getRelativePath($path);
-
-		foreach ($AUTOLOAD_MISSES ?? array() as $class => $tried)
-			$autoload["<b>{$class}</b>"] = "[not found] " . implode(", ", array_map("\\Blink\\getRelativePath", $tried));
-
-		$autoloadContext = new ContextItem("autoload", "Autoload", $autoload, "truck-ramp-box");
-		$autoloadContext -> setRenderer([ ContextRenderer::class, "list" ]);
-		$app -> add($autoloadContext);
 
 		if (!empty(Debug::$output)) {
 			$debugContext = new ContextItem("debug", "Debug Output", Debug::$output, "bug");

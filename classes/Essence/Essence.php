@@ -234,9 +234,10 @@ class Essence {
 					? get_class($callable[0])
 					: $callable[0];
 
-				if (!empty(static::$singletons[$constructorClass]))
-					return static::$singletons[$constructorClass];
-
+				// Deliberately not cached here. A cycle is detected from
+				// $constructorStack below; caching the instance as well would
+				// make every make() of an unbound class hand back the first
+				// one ever built, which is a singleton nobody asked for.
 				$cycleStart = array_search($constructorClass, static::$constructorStack, true);
 				if ($cycleStart !== false) {
 					$cycle = array_slice(static::$constructorStack, $cycleStart);
@@ -322,6 +323,22 @@ class Essence {
 							// The bound class is not directly instantiable. Fall through
 							// to the default value or an explicitly supplied argument.
 						}
+					} else if ($constructorClass !== null && !$isPrimitive && static::buildable($typeName)) {
+						// Building a class the container was asked to build:
+						// its constructor's own dependencies are part of that
+						// job, and a concrete one needs no binding to say what
+						// is already obvious from the type.
+						//
+						// Constructors only. Everywhere else the parameters
+						// come from the caller, and a handler taking an event
+						// or a route taking a model would otherwise be handed
+						// a blank instance instead of the one passed in.
+						try {
+							$callArgs[] = static::make($typeName, $context);
+							continue;
+						} catch (EssenceCallMissingParam|EssenceCallArgumentMismatch $e) {
+							// Its own constructor needs something we cannot supply.
+						}
 					} else if (static::bound("\${$name}", $context)) {
 						$callArgs[] = static::make("\${$name}", $context);
 						continue;
@@ -375,12 +392,8 @@ class Essence {
 				$unnamedParamIndex++;
 			}
 
-			if (is_array($callable) && $callable[1] === "__construct") {
-				$instance = new $callable[0](...$callArgs);
-				static::$singletons[$constructorClass] = $instance;
-
-				return $instance;
-			}
+			if (is_array($callable) && $callable[1] === "__construct")
+				return new $callable[0](...$callArgs);
 
 			return $callable(...$callArgs);
 		} catch (\TypeError $e) {
@@ -409,8 +422,40 @@ class Essence {
 		}
 	}
 
+	/**
+	 * Whether a type name is a class this container could construct.
+	 *
+	 * An interface or an abstract class is not: something has to be bound to
+	 * stand in for it.
+	 */
+	public static function buildable(string $class): bool {
+		if (!class_exists($class))
+			return false;
+
+		return !(new \ReflectionClass($class)) -> isAbstract();
+	}
+
+	/**
+	 * Drop a built instance, so the next resolve builds a fresh one.
+	 *
+	 * Reaches both places one can be held: the constructor cache, and the
+	 * binding that produced it. A binding is found by either side of it, so
+	 * forgetting the abstract or the concrete both work.
+	 */
 	public static function forgetSingleton(string $class): void {
 		unset(static::$singletons[$class]);
+
+		foreach (static::$bindings as $abstract => $contexts) {
+			foreach ($contexts as $binding) {
+				$concrete = $binding -> concrete;
+				$concreteName = is_object($concrete) && !($concrete instanceof \Closure)
+					? get_class($concrete)
+					: (is_string($concrete) ? $concrete : null);
+
+				if ($abstract === $class || $concreteName === $class)
+					$binding -> forget();
+			}
+		}
 	}
 
 	/**

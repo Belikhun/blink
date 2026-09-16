@@ -311,30 +311,43 @@ class Expr {
 			return new SequelizableList(static::processValues($value));
 
 		if (is_string($value)) {
-			$fallbackNativeValue = false;
+			// Whether the caller asked for a column or the shape of the
+			// string merely suggested one. A guess has to be able to change
+			// its mind: plenty of ordinary values read as `word.word`.
+			$guessed = false;
 
-			if (preg_match('/^[a-z0-9_]+\.[a-z0-9_]+$/', $value)) {
+			if (!$resolveAsColumn && preg_match('/^[a-z0-9_]+\.[a-z0-9_]+$/', $value)) {
 				$resolveAsColumn = true;
-				$fallbackNativeValue = true;
+				$guessed = true;
 			}
 
 			if ($resolveAsColumn) {
-				if (str_contains($value, ".")) {
-					[$table, $column] = explode(".", $value);
+				try {
+					if (str_contains($value, ".")) {
+						[$table, $column] = explode(".", $value, 2);
 
-					$resolvedColumn = Column::instance(
-						$table,
-						$column,
-						fallbackPartial: true
-					);
+						$resolvedColumn = Column::instance(
+							$table,
+							$column,
+							fallbackPartial: true
+						);
 
-					if ($resolvedColumn instanceof PartialColumn)
-						$resolvedColumn -> fallbackNativeValue = $fallbackNativeValue;
+						if ($resolvedColumn instanceof PartialColumn)
+							$resolvedColumn -> fallbackNativeValue = $guessed;
 
-					return $resolvedColumn;
+						return $resolvedColumn;
+					}
+
+					return new PartialColumn($value);
+				} catch (\Throwable $e) {
+					// A column the caller named has to exist. One this
+					// function guessed at does not: `1.5` is a number and
+					// `image.png` is a file name, neither is an address.
+					if (!$guessed)
+						throw $e;
+
+					return static::value($value);
 				}
-
-				return new PartialColumn($value);
 			}
 		}
 

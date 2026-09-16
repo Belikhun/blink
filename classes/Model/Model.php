@@ -467,8 +467,19 @@ class Model implements JsonSerializable {
 		if (property_exists($this, static::$createdKey) && $insert && empty($this -> {static::$createdKey}))
 			$this -> {static::$createdKey} = time();
 
-		if (property_exists($this, static::$updatedKey))
-			$this -> {static::$updatedKey} = time();
+		// The stamp moves only when something else did. Setting it on every
+		// save would make a save that touched nothing look like a change: it
+		// would write a row, and announce an update carrying nothing but the
+		// stamp that the save itself had just moved.
+		if (property_exists($this, static::$updatedKey)) {
+			$tracked = array_values(array_diff(
+				array_keys(static::$fillables),
+				array( static::$primaryKey, static::$updatedKey )
+			));
+
+			if ($insert || (!empty($tracked) && $this -> isDirty($tracked)))
+				$this -> {static::$updatedKey} = time();
+		}
 
 		$record = $this -> toRecord(!$insert, $insert);
 
@@ -498,9 +509,13 @@ class Model implements JsonSerializable {
 
 		$this -> takeSnapshot();
 
-		$this -> emitModelEvent($insert ? Event\ModelCreated::class : Event\ModelUpdated::class, extra: array(
-			"changes" => $changes
-		));
+		// An update that changed nothing is not one. `ModelSaved` below still
+		// fires, since the save did happen.
+		if ($insert || !empty($changes)) {
+			$this -> emitModelEvent($insert ? Event\ModelCreated::class : Event\ModelUpdated::class, extra: array(
+				"changes" => $changes
+			));
+		}
 
 		$this -> emitModelEvent(Event\ModelSaved::class, extra: array(
 			"changes" => $changes,
@@ -1100,6 +1115,24 @@ class Model implements JsonSerializable {
 	/**
 	 * Invalidate a lazyloaded field of this model instance.
 	 */
+	/**
+	 * The primary key of a related model, without loading it.
+	 *
+	 * A lazy relation holds its id until something reads the property, and
+	 * the loaded model afterwards. Either way the id is what a serialized
+	 * payload wants when it has run out of depth.
+	 *
+	 * @return	?int
+	 */
+	protected function relationID(string $name): ?int {
+		$value = $this -> get($name . "ID", true, true);
+
+		if ($value === null)
+			return null;
+
+		return is_numeric($value) ? (int) $value : null;
+	}
+
 	public function invalidateLazyloadProperty(string $key) {
 		$hasLazyloadMapping = isset(static::$lazyloadMap[static::class])
 			&& !empty(static::$lazyloadMap[static::class][$key]);
@@ -1316,9 +1349,15 @@ class Model implements JsonSerializable {
 						&& !empty(self::$lazyloads[static::class][$id])
 						&& array_key_exists($realName, self::$lazyloads[static::class][$id]);
 
-					return ($hasLazyloading)
-						? self::$lazyloads[static::class][$id][$realName]
-						: null;
+					if (!$hasLazyloading)
+						return null;
+
+					// Cast: the value is the raw column as the driver read it,
+					// and an id has to be an int here as it is everywhere
+					// else, or it stops comparing against one.
+					$stored = self::$lazyloads[static::class][$id][$realName];
+
+					return is_numeric($stored) ? (int) $stored : $stored;
 				} else if (!empty($this -> {$lazyloadMap})) {
 					if ($this -> {$lazyloadMap} instanceof Model)
 						return $this -> {$lazyloadMap} -> getPrimaryValue();
@@ -1440,7 +1479,10 @@ class Model implements JsonSerializable {
 
 					if ($this -> isModelProperty($prop)) {
 						if ($depth <= 1) {
-							$out[$objKey] = null;
+							// The id, not null: a shallow payload is meant to
+							// carry a reference that can be followed, and the
+							// id is known whether or not the relation loaded.
+							$out[$objKey] = $this -> relationID($objKey);
 							continue;
 						}
 
@@ -1472,7 +1514,7 @@ class Model implements JsonSerializable {
 		$ref = new ReflectionClass($this);
 
 		foreach (static::$fillables as $objKey => $dbKey) {
-			if ($depth >= 0) {
+			if ($depth > 0) {
 				$lazyloadMap = static::getLazyloadMapName($objKey);
 
 				if ($lazyloadMap) {
@@ -1480,7 +1522,7 @@ class Model implements JsonSerializable {
 
 					if ($this -> isModelProperty($prop)) {
 						if ($depth <= 1) {
-							unset($out[$objKey]);
+							$out[$objKey] = $this -> relationID($objKey);
 							continue;
 						}
 

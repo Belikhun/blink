@@ -211,3 +211,142 @@ function __(
 ): string {
 	return \Blink\Localization::string($identifier, $placeholders, $lang, $strict);
 }
+
+//* ===========================================================
+//*  Global helpers
+//* -----------------------------------------------------------
+//*  The helper library lives in `libs.php`, under the `Blink`
+//*  namespace, because everything else in that file does. These
+//*  few are the ones an application calls from its own route
+//*  files and classes, where an unqualified call would not find
+//*  a namespaced function, so they are declared out here as
+//*  well. Each is guarded, so an application that already has a
+//*  helper of the same name keeps it.
+//* ===========================================================
+
+if (!function_exists("view")) {
+	/**
+	 * Render a template into a response.
+	 *
+	 * @param	string	$name		Template name, relative to `CONFIG::$TEMPLATES_ROOT`.
+	 * @param	array	$context	Values the template can read.
+	 * @return	\Blink\Http\Response
+	 */
+	function view(string $name, array $context = array()) {
+		return \Blink\view($name, $context);
+	}
+}
+
+if (!function_exists("template")) {
+	/**
+	 * Render a template straight to the output.
+	 */
+	function template(string $name, array $context = array()) {
+		\Blink\template($name, $context);
+	}
+}
+
+if (!function_exists("env")) {
+	/**
+	 * Read an environment value, cleaned to the given type.
+	 *
+	 * @param	string	$key		Environment variable name.
+	 * @param	mixed	$default	Returned when the variable is not set.
+	 * @param	string	$type
+	 * @return	mixed
+	 */
+	function env(string $key, $default = null, string $type = TYPE_TEXT) {
+		return \Blink\env($key, $default, $type);
+	}
+}
+
+if (!function_exists("cleanParam")) {
+	/**
+	 * Clean a value into the given type.
+	 *
+	 * @param	mixed	$param
+	 * @param	string	$type
+	 * @return	mixed
+	 */
+	function cleanParam($param, $type) {
+		return \Blink\cleanParam($param, $type);
+	}
+}
+
+if (!function_exists("validate")) {
+	/**
+	 * Check a value is a valid example of the given type.
+	 *
+	 * @param	mixed	$value
+	 * @param	string	$type
+	 * @param	bool	$throw	Throw rather than returning false.
+	 * @return	bool
+	 */
+	function validate($value, $type, $throw = true) {
+		return \Blink\validate($value, $type, $throw);
+	}
+}
+
+if (!function_exists("getParam")) {
+	/**
+	 * Read a request parameter, or the given default.
+	 *
+	 * @param	string	$name
+	 * @param	string	$type
+	 * @param	mixed	$default
+	 * @return	mixed
+	 */
+	function getParam(string $name, $type = TYPE_TEXT, $default = null) {
+		return \Blink\getParam($name, $type, $default);
+	}
+}
+
+if (!function_exists("requiredParam")) {
+	/**
+	 * Read a request parameter that has to be there.
+	 *
+	 * @param	string	$name
+	 * @param	string	$type
+	 * @return	mixed
+	 * @throws	\Blink\Exception\MissingParam
+	 */
+	function requiredParam(string $name, $type = TYPE_TEXT) {
+		return \Blink\requiredParam($name, $type);
+	}
+}
+
+if (!function_exists("getHeader")) {
+	/**
+	 * Read a request header, or the given default.
+	 *
+	 * @param	string	$name
+	 * @param	string	$type
+	 * @param	mixed	$default
+	 * @return	mixed
+	 */
+	function getHeader(string $name, $type = TYPE_TEXT, $default = null) {
+		return \Blink\getHeader($name, $type, $default);
+	}
+}
+
+if (!function_exists("redirect")) {
+	/**
+	 * Send a redirect and stop.
+	 *
+	 * @param	string	$url
+	 */
+	function redirect($url) {
+		return \Blink\redirect($url);
+	}
+}
+
+if (!function_exists("expire")) {
+	/**
+	 * Set cache expiry headers on the response being built.
+	 *
+	 * @param	int		$time	Seconds.
+	 */
+	function expire(int $time) {
+		return \Blink\expire($time);
+	}
+}

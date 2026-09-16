@@ -57,6 +57,23 @@ class SQLite3 extends Database {
 		)[$type] ?: SQLITE3_TEXT;
 	}
 
+	/**
+	 * The type a value has to be bound as.
+	 *
+	 * Text is bound with `sqlite3_bind_text()`, which takes the string as a C
+	 * string and so stops at the first NUL byte. A string carrying one has to
+	 * go in as a blob or it is stored truncated, with nothing to say so. PHP
+	 * puts NUL bytes in ordinary strings more often than it looks:
+	 * `serialize()` mangles every protected and private property name with
+	 * them, which is what a queued Ticker task is made of.
+	 */
+	protected function bindType($value): int {
+		if (is_string($value) && str_contains($value, "\0"))
+			return SQLITE3_BLOB;
+
+		return $this -> getType(gettype($value));
+	}
+
 	protected function filePath() {
 		return $this -> path . "/" . $this -> file;
 	}
@@ -118,7 +135,7 @@ class SQLite3 extends Database {
 				$stmt = $this -> instance -> prepare($sql);
 
 				foreach (array_values($params) as $index => $value)
-					$stmt -> bindValue($index + 1, $value, $this -> getType(gettype($value)));
+					$stmt -> bindValue($index + 1, $value, $this -> bindType($value));
 
 				$result = $stmt -> execute();
 			}
@@ -270,8 +287,7 @@ class SQLite3 extends Database {
 
 		if (!empty($params)) {
 			foreach ($params as $index => $value) {
-				$type = $this -> getType(gettype($value));
-				$stmt -> bindValue($index + 1, $value, $type);
+				$stmt -> bindValue($index + 1, $value, $this -> bindType($value));
 			}
 		}
 

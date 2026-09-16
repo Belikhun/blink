@@ -4,10 +4,12 @@ namespace Blink\Query\Abstract;
 
 use Blink\Exception\CodingError;
 use Blink\Query;
+use Blink\Query\BareCondition;
 use Blink\Query\Condition;
 use Blink\Query\Expression\SubQuery;
 use Blink\Query\Expression\Expr;
 use Blink\Query\Expression\SequelizableList;
+use Blink\Query\Interface\Sequelizable;
 use Blink\Query\QueryBuilder;
 
 /**
@@ -66,6 +68,18 @@ abstract class QueryConditionBuilder {
 			if (!empty($child -> conditions))
 				$this -> conditions[] = $child;
 
+			return $this;
+		}
+
+		// A condition that is complete on its own: `Expr::isNull("paid_at")`
+		// compiles to `x IS NULL`, with nothing to compare it against. It
+		// goes in as it stands.
+		if (count($values) === 1 && $values[0] instanceof Sequelizable) {
+			$condition = new BareCondition($values[0]);
+			$condition -> flip = $flip;
+			$condition -> or = $or;
+
+			$this -> conditions[] = $condition;
 			return $this;
 		}
 

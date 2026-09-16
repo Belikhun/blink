@@ -38,7 +38,12 @@ class ContextRenderer {
 			
 			$attrs = array( "class" => [] );
 
-			if (is_bool($value) || in_array($value, [ "true", "false", "1", "0" ])) {
+			// Strictly, and without 1 and 0: a setting like `db_port` is an
+			// integer whose zero means "let the driver choose", and showing
+			// it as a tick and the word false says something else entirely.
+			// A real bool reaches here as itself, and `Config::display()`
+			// spells one as "true" or "false".
+			if (is_bool($value) || in_array($value, [ "true", "false" ], true)) {
 				$value = cleanParam($value, TYPE_BOOL);
 				$attrs["class"][] = "bool";
 				$attrs["class"][] = $value ? "true" : "false";
@@ -178,5 +183,31 @@ class ContextRenderer {
 
 	public static function string(string $content) {
 		return H::build("pre", [], htmlspecialchars($content));
+	}
+
+	/**
+	 * Render whatever it is given.
+	 *
+	 * The renderers above each take one shape, and a caller adding a context
+	 * item usually has a value rather than a shape in mind. This picks for
+	 * them: a list for anything with parts, the scalar renderer otherwise.
+	 */
+	public static function auto($data): string {
+		if (is_array($data))
+			return static::list($data);
+
+		if (is_object($data)) {
+			return method_exists($data, "__toString")
+				? static::string((string) $data)
+				: static::list(get_object_vars($data));
+		}
+
+		if ($data === null)
+			return static::string("[NULL]");
+
+		if (is_bool($data))
+			return static::list([ $data ]);
+
+		return static::string((string) $data);
 	}
 }

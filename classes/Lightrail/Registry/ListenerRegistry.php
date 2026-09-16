@@ -111,6 +111,15 @@ class ListenerRegistry {
 			$excludedMiddleware
 		);
 
+		// The key is a digest of what the handler is and how it runs, so an
+		// identical registration is indistinguishable from the first and
+		// would only make the handler run twice. Observer classes are
+		// deduplicated the same way.
+		foreach ($this -> handlers as $existing) {
+			if ($existing -> key === $descriptor -> key)
+				return $this;
+		}
+
 		$this -> handlers[] = $descriptor;
 		$this -> runtimeHandlers[] = $descriptor;
 
@@ -404,18 +413,37 @@ class ListenerRegistry {
 	}
 
 	protected function store(): void {
+		// Runtime listeners are left out. The cache is a record of what
+		// discovery found, and the next process discovers the same again;
+		// writing a hand-registered listener into it would have that process
+		// load a copy and add its own on top, so the handler would run twice
+		// on the second request, three times on the third, and the file would
+		// grow to match.
+		$runtime = array();
+
+		foreach ($this -> runtimeHandlers as $descriptor)
+			$runtime[spl_object_id($descriptor)] = true;
+
+		$discovered = fn (array $items) => array_values(array_filter(
+			$items,
+			fn (HandlerDescriptor $handler) => !isset($runtime[spl_object_id($handler)])
+		));
+
 		$byEvent = array();
 
 		foreach ($this -> handlersByEvent as $eventClass => $items) {
 			$byEvent[$eventClass] = array_map(
 				fn (HandlerDescriptor $handler) => $handler -> toArray(),
-				$items
+				$discovered($items)
 			);
 		}
 
 		$this -> cache -> store(
 			$this -> cache -> getVersion(),
-			array_map(fn (HandlerDescriptor $handler) => $handler -> toArray(), $this -> handlers),
+			array_map(
+				fn (HandlerDescriptor $handler) => $handler -> toArray(),
+				$discovered($this -> handlers)
+			),
 			$byEvent
 		);
 	}

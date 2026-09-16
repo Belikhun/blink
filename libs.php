@@ -266,16 +266,37 @@ function cleanParam($param, $type) {
 			if (is_bool($param))
 				return $param;
 
-			$p = strtolower($param);
+			$p = strtolower(trim((string) $param));
 
 			if ($p === "on" || $p === "yes" || $p === "true")
-				$param = true;
-			else if ($p === "off" || $p === "no" || $p === "false")
-				$param = false;
-			else
-				$param = empty($param);
+				return true;
 
-			return $param;
+			if ($p === "off" || $p === "no" || $p === "false")
+				return false;
+
+			// Everything else by truthiness: "1" and any other non-empty
+			// value are true, "0" and an absent value are false.
+			return !empty($p);
+
+		case TYPE_EMAIL:
+			$param = strtolower(trim(cleanUTF8($param)));
+			return (string) filter_var($param, FILTER_SANITIZE_EMAIL);
+
+		case TYPE_USERNAME:
+			// The character set `validate()` accepts for a username, so a
+			// value cleaned here passes the check afterwards.
+			return (string) preg_replace("/[^a-zA-Z0-9]/", "", cleanUTF8($param));
+
+		case TYPE_PHONE:
+			return (string) preg_replace("/[^0-9]/", "", cleanUTF8($param));
+
+		case TYPE_SERIALIZED:
+			$value = @unserialize((string) $param, array( "allowed_classes" => false ));
+
+			if ($value === false && rtrim((string) $param) !== "b:0;")
+				throw new BaseException(-1, "cleanParam(): value is not serialized data", 400);
+
+			return $value;
 
 		case TYPE_JSON:
 			return safeJSONParsing($param, "cleanParam");

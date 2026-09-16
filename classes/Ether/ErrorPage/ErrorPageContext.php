@@ -63,7 +63,12 @@ class ErrorPageContext {
 	 */
 	public function listItem(string $id, string $label, $value, string $icon = "info"): ContextItem {
 		$item = new ContextItem($id, $label, $value, $icon);
-		$item -> setRenderer([ ContextRenderer::class, "list" ]);
+
+		// Not `list` directly: it only takes an array, and a caller adding
+		// context has a value in hand rather than a shape. A string or a
+		// number would otherwise render as the TypeError from rejecting it.
+		$item -> setRenderer([ ContextRenderer::class, "auto" ]);
+
 		return $item;
 	}
 

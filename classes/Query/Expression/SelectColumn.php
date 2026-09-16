@@ -34,8 +34,13 @@ class SelectColumn implements SequelizableWithAlias {
 	public bool $over = false;
 
 	public function __construct(Column|Sequelizable $column, string $alias = null) {
+		// An expression has no name of its own, and a row has to be read
+		// under one. A caller who names it gets that name; one who does not
+		// gets a generated one rather than an error, since a select whose
+		// value is read positionally, a subquery used as a value most of all,
+		// never needs to know it.
 		if (!($column instanceof Column || $column instanceof PartialColumn) && empty($alias))
-			throw new CodingError("Column alias is required when selecting with function calls or using arithmetic operators (<code>{$column}</code>)");
+			$alias = "expr_" . substr(md5($column -> getID()), 0, 8);
 
 		$this -> id = $column -> getID();
 		$this -> column = $column;

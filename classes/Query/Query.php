@@ -504,9 +504,16 @@ class Query extends QueryConditionBuilder {
 			$this -> tables[$table -> getName()] = $join;
 
 		if ($table instanceof Query) {
+			// A SelectSubQuery takes its alias in the constructor and refuses
+			// to have it changed afterwards, so `setAlias()` cannot be used
+			// on one. Registering it is all that is left to do, and the join
+			// itself already carries the alias.
 			$subQuery = new SelectSubQuery($table, $alias);
 			$this -> subQueries[$alias] = $subQuery;
-			$this -> setAlias($subQuery, $alias);
+
+			$this -> aliases[$subQuery -> getID()] = $alias;
+			$this -> aliasesMap[$alias] = $subQuery;
+			$this -> tables[$alias] = $join;
 		} else {
 			if (!empty($alias))
 				$this -> setAlias($join, $alias);
@@ -753,6 +760,24 @@ class Query extends QueryConditionBuilder {
 		$this -> limitCount = $count;
 
 		return $this;
+	}
+
+	/**
+	 * The range a terminal operation should read.
+	 *
+	 * Those operations take their own `$from` and `$count`, and build their
+	 * SQL without a LIMIT so the driver applies the range instead. Without
+	 * this, a range set on the builder with {@see Query::limit()} would be
+	 * rendered by `toSQL()` and ignored by every one of them. Arguments win,
+	 * so a caller that names a range still gets it.
+	 *
+	 * @return	array{0: int, 1: int}
+	 */
+	protected function resolveRange(int $from = 0, int $count = 0): array {
+		if ($from !== 0 || $count !== 0)
+			return array( $from, $count );
+
+		return array( (int) ($this -> limitFrom ?? 0), (int) ($this -> limitCount ?? 0) );
 	}
 
 	/**
@@ -1284,6 +1309,7 @@ class Query extends QueryConditionBuilder {
 			if (empty($sql))
 				return array();
 
+			[$from, $count] = $this -> resolveRange($from, $count);
 			$records = $this -> executeRawStatement($sql, $params, $from, $count);
 
 			if (!$this -> isModelQuery())
@@ -1328,13 +1354,14 @@ class Query extends QueryConditionBuilder {
 
 		return $this -> executeOperation("values", QueryContext::KIND_READ, function (QueryContext $context) use ($column, $from, $count) {
 			$select = new SelectColumn($column, "value");
-			list($sql, $params) = $this -> makeSQLCall([$select], limit: false, distinct: true);
+			list($sql, $params) = $this -> makeSQLCall([$select], limit: false);
 			$context -> sql = $sql;
 			$context -> params = $params;
 
 			if (empty($sql))
 				return array();
 
+			[$from, $count] = $this -> resolveRange($from, $count);
 			$records = $this -> executeRawStatement($sql, $params, $from, $count);
 			return array_values(array_map(fn ($record) => $record -> value, $records));
 		});
@@ -1392,6 +1419,7 @@ class Query extends QueryConditionBuilder {
 			if (empty($sql))
 				return new QueryIterator();
 
+			[$from, $count] = $this -> resolveRange($from, $count);
 			$records = $this -> executeRawStatement($sql, $params, $from, $count);
 
 			return ($this -> isModelQuery())
