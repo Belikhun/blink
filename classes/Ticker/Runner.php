@@ -191,7 +191,7 @@ class Runner {
 		}
 
 		Model::flushInstances(true);
-		Metric::reset();
+		Metric::discard();
 		Essence::clearConstructorStack();
 
 		if (function_exists("gc_collect_cycles"))

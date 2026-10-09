@@ -19,7 +19,9 @@ use function Blink\getRelativePath;
  * See LICENSE in the project root for license information.
  */
 class TerraMake extends Command {
-	public static string $usage = "terra:make {name : Layer name, in snake_case} {--table= : Scaffold a create for this table}";
+	public static string $usage = "terra:make {name : Layer name, in snake_case}"
+		. " {--table= : Scaffold a create for this table}"
+		. " {--database= : Run the layer on this database instance rather than the default}";
 
 	public static string $description = "Create a new schema layer";
 
@@ -44,13 +46,13 @@ class TerraMake extends Command {
 		if (file_exists($path))
 			throw new InvalidInput("A layer already exists at " . getRelativePath($path) . ".");
 
-		filePut($path, $this -> stub($this -> option("table")));
+		filePut($path, $this -> stub($this -> option("table"), $this -> option("database")));
 
 		$this -> success("Created " . getRelativePath($path));
 		return Console::EXIT_OK;
 	}
 
-	protected function stub(?string $table): string {
+	protected function stub(?string $table, ?string $database = null): string {
 		$body = !empty($table)
 			? "\t\tSchema::create(\"{$table}\", function (Table \$table) {\n"
 				. "\t\t\t\$table -> id();\n"
@@ -69,7 +71,17 @@ class TerraMake extends Command {
 			"use Blink\\Terra\\Schema;",
 			"use Blink\\Terra\\Table;",
 			"",
-			"return new class extends Layer {",
+			"return new class extends Layer {"
+		);
+
+		if (!empty($database)) {
+			$lines[] = "\tpublic function database(): ?string {";
+			$lines[] = "\t\treturn \"{$database}\";";
+			$lines[] = "\t}";
+			$lines[] = "";
+		}
+
+		$lines = array_merge($lines, array(
 			"\tpublic function raise(): void {",
 			$body,
 			"\t}",
@@ -79,7 +91,7 @@ class TerraMake extends Command {
 			"\t}",
 			"};",
 			""
-		);
+		));
 
 		return implode("\r\n", $lines);
 	}

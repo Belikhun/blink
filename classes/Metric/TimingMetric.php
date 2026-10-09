@@ -21,7 +21,8 @@ class TimingMetric extends MetricInstance {
 		parent::__construct();
 
 		$this -> name = $name;
-		Metric::$timings[] = $this;
+		if (Metric::captures(Metric::TIMINGS))
+			Metric::$timings[] = $this;
 
 		if (!empty($handler)) {
 			$handler();

@@ -18,37 +18,43 @@ use function Blink\relativeTime;
  * See LICENSE in the project root for license information.
  */
 class TerraStatus extends Command {
-	public static string $usage = "terra:status {--pending : Only show what has not been raised}";
+	public static string $usage = "terra:status {--pending : Only show what has not been raised}"
+		. " {--database= : Only rows on this instance}";
 
 	public static string $description = "Show the state of every schema layer";
 
 	public function run() {
 		$rows = array();
 		$pendingOnly = (bool) $this -> option("pending");
+		$database = $this -> option("database") ?: null;
 
-		foreach (Terra::status() as $row) {
-			if ($pendingOnly && $row["applied"])
+		foreach (Terra::status($database) as $row) {
+			// Not raised yet, and still expected to be: a moved or missing
+			// row is a leftover rather than work ahead.
+			$ahead = !$row["applied"] && !in_array($row["state"], array( "moved", "missing" ), true);
+
+			if ($pendingOnly && !$ahead)
 				continue;
-
-			$state = $row["applied"] ? "applied" : "pending";
-
-			if ($row["missing"])
-				$state = "missing";
 
 			$rows[] = array(
 				$row["layer"],
-				$state,
+				$row["database"],
+				$row["state"],
 				$row["batch"] ?? "",
-				!empty($row["raised"]) ? relativeTime($row["raised"]) : ""
+				!empty($row["raised"]) ? relativeTime($row["raised"]) : "",
+				$row["note"] ?? ""
 			);
 		}
 
 		if (empty($rows)) {
 			$this -> info($pendingOnly ? "Nothing pending." : "No layers found.");
-			return Console::EXIT_OK;
+		} else {
+			$this -> table(array( "layer", "database", "state", "batch", "raised", "note" ), $rows);
 		}
 
-		$this -> table(array( "layer", "state", "batch", "raised" ), $rows);
+		foreach (Terra::unreachable() as $name => $reason)
+			$this -> error("Instance {$name} could not be reached: {$reason}");
+
 		return Console::EXIT_OK;
 	}
 }

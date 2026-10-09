@@ -12,6 +12,8 @@ use ReflectionAttribute;
 use ReturnTypeWillChange;
 use Blink\Attribute\Lazyload;
 use Blink\Attribute\SensitiveField;
+use Blink\DB\Database;
+use Blink\DB\Exception\DatabaseNotRegistered;
 use Blink\Exception\CodingError;
 use Blink\Exception\InvalidProperty;
 use Blink\Exception\ModelInstanceNotFound;
@@ -46,6 +48,15 @@ class Model implements JsonSerializable {
 	 * @var string
 	 */
 	public static string $table;
+
+	/**
+	 * Name of the database instance the table lives on. `null` is the
+	 * default. Any other name has to be registered: a model never quietly
+	 * reads the default's table in place of the one it names.
+	 *
+	 * @var ?string
+	 */
+	public static ?string $database = null;
 
 	/**
 	 * Permission name related to this model.
@@ -196,7 +207,19 @@ class Model implements JsonSerializable {
 	 * @return	Table
 	 */
 	public static function t(): Table {
-		return Table::instance(static::$table);
+		return Table::instance(static::$table, static::database());
+	}
+
+	/**
+	 * The instance this model reads from and writes to.
+	 *
+	 * @throws	\Blink\DB\Exception\DatabaseNotRegistered
+	 */
+	public static function database(): Database {
+		if (static::$database !== null && static::$database !== Database::DEFAULT && !Database::has(static::$database))
+			throw new DatabaseNotRegistered(static::$database, "Model <code>" . static::class . "</code> is stored on it.");
+
+		return Database::resolve(static::$database);
 	}
 
 	/**
@@ -210,9 +233,9 @@ class Model implements JsonSerializable {
 			return static::col(static::$primaryKey);
 
 		if ($name === "*")
-			return Column::instance(static::$table, "*");
+			return Column::instance(static::t(), "*");
 
-		return Column::instance(static::$table, static::mapDB($name));
+		return Column::instance(static::t(), static::mapDB($name));
 	}
 
 	/**
@@ -261,12 +284,10 @@ class Model implements JsonSerializable {
 	 * @return M[]
 	 */
 	public static function all() {
-		global $DB;
-
 		if (empty(static::$table))
 			throw new CodingError(self::class . "::query(): cannot call this function without target table defined! either define it in your class or use Blink\\DB::table()");
 
-		$records = array_values($DB -> records(static::$table));
+		$records = array_values(static::database() -> records(static::$table));
 		return static::processRecords($records);
 	}
 
@@ -456,8 +477,6 @@ class Model implements JsonSerializable {
 	 * @return M
 	 */
 	public function save() {
-		global $DB;
-
 		$this -> beforeSave();
 
 		$record = array();
@@ -485,7 +504,7 @@ class Model implements JsonSerializable {
 
 		if ($insert) {
 			// Record was newly created.
-			$id = $DB -> insert(static::$table, $record);
+			$id = static::database() -> insert(static::$table, $record);
 			$this -> {static::$primaryKey} = $id;
 			self::saveInstance($this -> {static::$primaryKey}, $this);
 
@@ -496,7 +515,7 @@ class Model implements JsonSerializable {
 
 			// Only update if we actually have data to update.
 			if (count(array_keys(get_object_vars($record))) > 1)
-				$DB -> update(static::$table, (Object) $record);
+				static::database() -> update(static::$table, (Object) $record);
 		}
 
 		$this -> onSaved();
@@ -547,8 +566,6 @@ class Model implements JsonSerializable {
 	 * @return 	M
 	 */
 	public function delete(?ProgressReporter $reporter = null) {
-		global $DB;
-
 		if (!$this -> isInserted() || $this -> instanceDeleting)
 			return $this;
 
@@ -572,7 +589,7 @@ class Model implements JsonSerializable {
 		self::$deletionDepth++;
 
 		try {
-			DB::transaction(function () use ($DB, $name, $child, $reporter, $primaryValue, $instanceID) {
+			static::database() -> transaction(function () use ($name, $child, $reporter, $primaryValue, $instanceID) {
 				// Let the model prepare for deletion first, this might be deleting related
 				// row with this instance.
 				$this -> beforeDelete($child);
@@ -583,7 +600,7 @@ class Model implements JsonSerializable {
 					"Deleting <code>{$name}</code> from database..."
 				);
 
-				$DB -> delete(
+				static::database() -> delete(
 					static::$table,
 					array( static::$primaryKey => $this -> saveField(static::$primaryKey) )
 				);
@@ -857,18 +874,49 @@ class Model implements JsonSerializable {
 	 * Drop every cached instance, of this model or of all of them.
 	 *
 	 * A web request ends and takes the cache with it. A long-running process
-	 * does not, and would otherwise hold every row it has ever touched.
+	 * does not, and would otherwise hold every row it has ever touched, so a
+	 * long row loop calls this between chunks. Instances the caller still
+	 * holds stay valid; they are just no longer returned by the cache, so a
+	 * later fetch of the same row produces a distinct object. The long-lived
+	 * instances a loop keeps using go in `$keep`, which preserves identity
+	 * for those.
 	 *
 	 * @param	bool	$all	Clear every model rather than just this one.
+	 * @param	Model[]	$keep	Instances to leave in place when clearing every model.
 	 */
-	public static function flushInstances(bool $all = false): void {
-		if ($all) {
-			self::$instances = array();
-			self::$lazyloads = array();
+	public static function flushInstances(bool $all = false, array $keep = array()): void {
+		if (!$all) {
+			unset(self::$instances[static::class]);
 			return;
 		}
 
-		unset(self::$instances[static::class]);
+		$instances = array();
+		$lazyloads = array();
+		$willProcess = array();
+
+		foreach ($keep as $instance) {
+			if (!($instance instanceof Model))
+				continue;
+
+			$class = get_class($instance);
+			$primary = $instance -> getPrimaryValue();
+			$id = $instance -> getInstanceID();
+
+			if ($primary !== null)
+				$instances[$class][$primary] = $instance;
+
+			// The relation ids a kept instance has not resolved yet live here
+			// rather than on the object, so they have to survive with it.
+			if (isset(self::$lazyloads[$class][$id]))
+				$lazyloads[$class][$id] = self::$lazyloads[$class][$id];
+
+			if (isset(self::$lazyloadWillProcess[$class][$id]))
+				$willProcess[$class][$id] = self::$lazyloadWillProcess[$class][$id];
+		}
+
+		self::$instances = $instances;
+		self::$lazyloads = $lazyloads;
+		self::$lazyloadWillProcess = $willProcess;
 	}
 
 	/**
@@ -1384,6 +1432,14 @@ class Model implements JsonSerializable {
 			&& !empty(self::$lazyloadWillProcess[static::class][$id])
 			&& isset(self::$lazyloadWillProcess[static::class][$id][$realName])
 			&& self::$lazyloadWillProcess[static::class][$id][$realName] === true;
+
+		// The flag can be consumed while the typed property stays
+		// uninitialized: the flag lives in static state keyed by instance, the
+		// value on the object. Reading the property then throws "must not be
+		// accessed before initialization", and the stored id is still known,
+		// so it is resolved now instead.
+		if (!$processLazyloadValue && $name !== $realName && !$this -> getReflection() -> getProperty($name) -> isInitialized($this))
+			$processLazyloadValue = true;
 
 		if ($processLazyloadValue) {
 			$hasLazyloading = !empty(self::$lazyloads[static::class])

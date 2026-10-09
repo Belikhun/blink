@@ -398,6 +398,17 @@ class ListenerRegistry {
 			if (!array_key_exists($key, $actual))
 				return false;
 
+			// A list means any of these. It is what lets one handler watch
+			// several models, `#[Context(["model" => [Order::class, Invoice::class]])]`,
+			// rather than being split into a method per model to satisfy the filter.
+			if (is_array($value) && array_is_list($value)) {
+				if (!in_array($actual[$key], $value, true))
+					return false;
+
+				continue;
+			}
+
+			// A keyed array is a nested context, matched as a subset.
 			if (is_array($value)) {
 				if (!is_array($actual[$key]) || !$this -> contextSubsetMatches($value, $actual[$key]))
 					return false;

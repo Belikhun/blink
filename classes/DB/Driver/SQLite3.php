@@ -80,7 +80,29 @@ class SQLite3 extends Database {
 
 	public function connect(array $options) {
 		$this -> path = $options["path"];
+		$this -> file = (string) ($options["file"] ?? $this -> file);
 		$this -> setup();
+	}
+
+	public function disconnect(): void {
+		if (!$this -> connected)
+			return;
+
+		try {
+			$this -> instance -> close();
+		} catch (\Throwable) {
+			// Already gone.
+		}
+
+		$this -> connected = false;
+		$this -> transactionDepth = 0;
+	}
+
+	public function describe(): array {
+		return array(
+			"driver" => "SQLite3",
+			"target" => str_replace("\\", "/", $this -> filePath())
+		);
 	}
 
 	public function setup() {

@@ -30,7 +30,8 @@ class RouteMetric extends MetricInstance {
 		parent::__construct();
 
 		$this -> route = $route;
-		\Blink\Metric::$routes[] = $this;
+		if (\Blink\Metric::captures(\Blink\Metric::ROUTES))
+			\Blink\Metric::$routes[] = $this;
 	}
 
 	public function time(

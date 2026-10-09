@@ -17,19 +17,23 @@ use Blink\Terra;
  * See LICENSE in the project root for license information.
  */
 class TerraRevert extends Command {
-	public static string $usage = "terra:revert {--step=1 : How many batches to drop} {--f|force : Skip the confirmation}";
+	public static string $usage = "terra:revert {--step=1 : How many batches to drop}"
+		. " {--database= : Only this instance's ledger}"
+		. " {--f|force : Skip the confirmation}";
 
 	public static string $description = "Drop the most recent schema layers";
 
 	public function run() {
 		$step = max((int) $this -> option("step"), 1);
+		$database = $this -> option("database") ?: null;
+		$where = ($database !== null) ? " on {$database}" : "";
 
-		if (!$this -> option("force") && !$this -> confirm("Drop the last {$step} batch(es) of layers? This deletes data.")) {
+		if (!$this -> option("force") && !$this -> confirm("Drop the last {$step} batch(es) of layers{$where}? This deletes data.")) {
 			$this -> comment("Nothing was changed.");
 			return Console::EXIT_OK;
 		}
 
-		$dropped = Terra::revert($step);
+		$dropped = Terra::revert($step, $database);
 
 		if (empty($dropped)) {
 			$this -> info("Nothing to drop.");

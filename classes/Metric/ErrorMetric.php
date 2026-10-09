@@ -46,7 +46,8 @@ class ErrorMetric extends MetricInstance {
 		$this -> hash = substr(md5($error . $source), 0, 7);
 		$this -> time = microtime(true);
 
-		\Blink\Metric::$errors[] = $this;
+		if (\Blink\Metric::captures(\Blink\Metric::ERRORS))
+			\Blink\Metric::$errors[] = $this;
 	}
 
 	public function time(int $stat = 0): static {

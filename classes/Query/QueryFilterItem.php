@@ -68,10 +68,16 @@ class QueryFilterItem {
 				$value = null;
 				break;
 
-			case "isEmpty":
-				$condition = "IN";
-				$value = [null, ""];
-				break;
+			case "isEmpty": {
+				// `IN (NULL, '')` never matches a NULL, so the two cases are
+				// spelled out.
+				$query -> whereWith([function (QueryBuilder $group) {
+					$group -> where($this -> column, null)
+						-> whereOr($this -> column, Expr::value(""));
+				}], $flip, $or);
+
+				return $query;
+			}
 
 			case "equal":
 				$condition = "=";
@@ -115,7 +121,9 @@ class QueryFilterItem {
 				else if ($this -> comparator === "endWith")
 					$value = "%{$this -> value}";
 
-				$query -> where(Expr::processValue($this -> column, resolveAsColumn: true), "LIKE", strtolower($value));
+				// The needle is lowercased, so the haystack has to be too: a
+				// plain LIKE is case-sensitive under some engines and collations.
+				$query -> whereWith([Expr::lower(Expr::processValue($this -> column, resolveAsColumn: true)), "LIKE", mb_strtolower($value)], $flip, $or);
 				return $query;
 			}
 

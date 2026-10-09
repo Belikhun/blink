@@ -3,6 +3,7 @@
 namespace Blink\Query\Expression;
 
 use Exception;
+use Blink\DB\Database;
 use Blink\Query;
 use Blink\Exception\CodingError;
 use Blink\DB\Exception\DatabaseColumnNotFound;
@@ -36,6 +37,11 @@ class PartialColumn implements Sequelizable {
 
 	public ?string $tableAlias = null;
 
+	/**
+	 * The instance of the query this column was validated against.
+	 */
+	protected ?Database $database = null;
+
 	public function __construct(string $column) {
 		$this -> id = "[pc:{$column}]";
 		$this -> original = $column;
@@ -65,6 +71,7 @@ class PartialColumn implements Sequelizable {
 	 * @return	bool
 	 */
 	public function validate(Query $query) {
+		$this -> database = $query -> getDatabase();
 		$queryTable = $query -> getQueryingTable();
 
 		if (!empty($this -> table) && $alias = $query -> getObjectByAlias($this -> table)) {
@@ -110,8 +117,6 @@ class PartialColumn implements Sequelizable {
 	}
 
 	public function validateColumn(bool $throw = true, ?Query $query = null) {
-		global $DB;
-
 		if (empty($this -> table))
 			throw new CodingError("Column <code>{$this -> column}</code> does not have table name to perform validation");
 
@@ -124,11 +129,12 @@ class PartialColumn implements Sequelizable {
 			if (!$query -> haveColumn($this -> column))
 				throw new DatabaseColumnNotFound($this -> column, $this -> table);
 		} else {
-			$cols = $DB -> getColumns($this -> table);
+			$database = $this -> database ?? $query ?-> getDatabase() ?? Database::default();
+			$cols = $database -> getColumns($this -> table);
 
 			if (empty($cols)) {
 				if ($throw)
-					throw new DatabaseTableNotFound($this -> table);
+					throw new DatabaseTableNotFound($this -> table, "Database instance: {$database -> name}");
 
 				return false;
 			}

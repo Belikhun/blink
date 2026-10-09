@@ -16,6 +16,13 @@ use Attribute;
  * public static function onInvoiceSaved(ModelSaved $event): void { ... }
  * ```
  *
+ * A list of values means any of them, and a keyed array is a nested context
+ * matched the same way:
+ *
+ * ```php
+ * #[Context(["model" => [Invoice::class, Receipt::class]])]
+ * ```
+ *
  * @author		Belikhun
  * @since		2.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT

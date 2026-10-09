@@ -58,6 +58,14 @@ class CoreModule extends Module {
 			-> alone()
 			-> name("lightrail.flush-stale");
 
+		// The trail of a dispatch that went well has told its story within
+		// the hour; the rest stays a week. Often enough that the tables stay
+		// small on a busy site.
+		$orbit -> command("lightrail:purge --force")
+			-> everyTenMinutes()
+			-> alone()
+			-> name("lightrail.purge");
+
 		// Audit entries past the retention window, in the small hours.
 		$orbit -> command("trace:purge --force")
 			-> everyDay("03:30")
@@ -83,6 +91,8 @@ class CoreModule extends Module {
 			Command\TerraReset::class,
 			Command\TerraRebuild::class,
 			Command\TerraMake::class,
+			Command\TerraForget::class,
+			Command\DatabaseList::class,
 
 			Command\TickerRun::class,
 			Command\TickerTick::class,

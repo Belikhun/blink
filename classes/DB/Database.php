@@ -3,7 +3,8 @@
 namespace Blink\DB;
 
 use Blink\Cache;
-use Blink\DB;
+use Blink\DB\Exception\DatabaseConnectionFailed;
+use Blink\DB\Exception\DatabaseNotRegistered;
 use Blink\DB\Exception\InvalidSQLDriver;
 use Blink\DB\Exception\SQLDriverNotFound;
 use Blink\DB\Exception\SQLMissingParam;
@@ -11,19 +12,54 @@ use Blink\DB\Exception\SQLParamCountMismatch;
 use Blink\Exception\CodingError;
 use Blink\Metric\QueryMetric;
 use Blink\Metric\TimingMetric;
+use Blink\Model;
+use Blink\Query;
+use Blink\Query\Expression\Column;
+use Blink\Query\Expression\Table;
 use CONFIG;
 
 /**
- * Abstract class for Database drivers.
+ * One database: a driver, the connection it holds, and the name code reaches
+ * it by.
+ *
+ * The instance bootstrap opens from `CONFIG::$DB_*` is the default, and is
+ * what every query runs on unless told otherwise. More are declared in
+ * `CONFIG::$DATABASES` or registered by a module, and connect the first time
+ * something asks for them:
+ *
+ * ```php
+ * DB::table("orders") -> count();                      // the default instance
+ * DB::database("archive") -> table("orders") -> count(); // a registered one
+ * ```
+ *
+ * A model names the instance its table lives on in `Model::$database`, and a
+ * Terra layer in `Layer::database()`. The name has to be registered: a model
+ * or a layer never quietly lands on the default in its place.
  *
  * @author		Belikhun
  * @since		1.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
  *
- * Copyright (C) 2018-2023 Belikhun. All right reserved
+ * Copyright (C) 2018-2026 Belikhun. All right reserved
  * See LICENSE in the project root for license information.
  */
 abstract class Database {
+	const DEFAULT = "default";
+
+	/**
+	 * Settings every instance is declared with, spelled like the `DB_*`
+	 * settings: the driver, then whatever that driver reads.
+	 */
+	const OPTIONS = array( "driver", "host", "port", "user", "pass", "name", "path", "file" );
+
+	/**
+	 * The name this instance was registered as. Bootstrap's is
+	 * {@see Database::DEFAULT}.
+	 *
+	 * @var string
+	 */
+	public string $name = self::DEFAULT;
+
 	/**
 	 * DB connection state
 	 * @var bool
@@ -37,6 +73,22 @@ abstract class Database {
 	 * @var int
 	 */
 	protected int $transactionDepth = 0;
+
+	/**
+	 * Instances that have connected, keyed by name.
+	 *
+	 * @var array<string, Database>
+	 */
+	protected static array $instances = array();
+
+	/**
+	 * Settings of instances registered but not connected yet, keyed by name.
+	 * A site may declare a database nothing in this request touches, and
+	 * connecting to it anyway would make every request pay for it.
+	 *
+	 * @var array<string, array>
+	 */
+	protected static array $registered = array();
 
 	/**
 	 * Return variable type from `gettype()` to
@@ -72,6 +124,19 @@ abstract class Database {
 	 * way back from that is a fresh connection.
 	 */
 	abstract public function reconnect(): void;
+
+	/**
+	 * Close the connection. The next statement is an error until
+	 * {@see Database::reconnect()}; this is for an instance being dropped.
+	 */
+	abstract public function disconnect(): void;
+
+	/**
+	 * Where this instance points, in words safe to print: no password.
+	 *
+	 * @return	array{driver: string, target: string}
+	 */
+	abstract public function describe(): array;
 
 	/**
 	 * Whether the error came from a unique index rejecting a row. This is what
@@ -136,6 +201,284 @@ abstract class Database {
 	 */
 	abstract public function fetchColumns(string $table): array;
 
+
+	//* ===========================================================
+	//*  Instances
+	//* ===========================================================
+
+	/**
+	 * Open the default instance from config, and take note of the others.
+	 *
+	 * Called once during bootstrap. Calling it again is free, so a console
+	 * command that needs a connection earlier than usual can ask for one.
+	 */
+	public static function initialize(): void {
+		/**
+		 * Global Database Instance. The default one, kept as a global for
+		 * the code that only ever means that one.
+		 *
+		 * @var	\Blink\DB\Database	$DB
+		 */
+		global $DB;
+
+		if (!empty($DB))
+			return;
+
+		$timing = new TimingMetric("database");
+
+		$DB = static::open(static::DEFAULT, array(
+			"driver" => CONFIG::$DB_DRIVER,
+			"host" => CONFIG::$DB_HOST,
+			"port" => CONFIG::$DB_PORT,
+			"user" => CONFIG::$DB_USER,
+			"pass" => CONFIG::$DB_PASS,
+			"name" => CONFIG::$DB_NAME,
+			"path" => CONFIG::$DB_PATH
+		));
+
+		static::$instances[static::DEFAULT] = $DB;
+
+		foreach (CONFIG::$DATABASES as $name => $config)
+			static::register((string) $name, (array) $config);
+
+		$timing -> time();
+	}
+
+	/**
+	 * The instance bootstrap opened from `CONFIG::$DB_*`.
+	 */
+	public static function default(): Database {
+		if (!isset(static::$instances[static::DEFAULT]))
+			static::initialize();
+
+		return static::$instances[static::DEFAULT];
+	}
+
+	/**
+	 * Declare an instance. It connects the first time {@see Database::get()}
+	 * asks for it. Registering a name again replaces what was there, closing
+	 * its connection if one was open.
+	 *
+	 * @param	string	$name		How code will reach it, ex. `archive`.
+	 * @param	array	$config		Keys from {@see Database::OPTIONS}. The driver
+	 * 								defaults to the one the default instance uses.
+	 */
+	public static function register(string $name, array $config): void {
+		if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $name) || $name === static::DEFAULT)
+			throw new CodingError("Database::register(): <code>{$name}</code> is not a usable instance name.");
+
+		if (isset(static::$instances[$name])) {
+			static::$instances[$name] -> disconnect();
+			unset(static::$instances[$name]);
+		}
+
+		static::$registered[$name] = $config;
+	}
+
+	/**
+	 * Whether an instance of this name is registered, connected or not.
+	 */
+	public static function has(string $name): bool {
+		return $name === static::DEFAULT
+			|| isset(static::$instances[$name])
+			|| isset(static::$registered[$name]);
+	}
+
+	/**
+	 * A registered instance, connecting it on the way if this is its first
+	 * use.
+	 *
+	 * @throws	DatabaseNotRegistered
+	 */
+	public static function get(string $name): Database {
+		if ($name === static::DEFAULT)
+			return static::default();
+
+		if (isset(static::$instances[$name]))
+			return static::$instances[$name];
+
+		if (!isset(static::$registered[$name]))
+			throw new DatabaseNotRegistered($name);
+
+		$instance = static::open($name, static::$registered[$name]);
+		static::$instances[$name] = $instance;
+		unset(static::$registered[$name]);
+
+		return $instance;
+	}
+
+	/**
+	 * The instance a name means. `null` and the default's own name mean the
+	 * default; anything else has to be registered.
+	 *
+	 * @throws	DatabaseNotRegistered
+	 */
+	public static function resolve(?string $name): Database {
+		if ($name === null || $name === static::DEFAULT)
+			return static::default();
+
+		return static::get($name);
+	}
+
+	/**
+	 * Every instance name, the default first. Nothing is connected to answer
+	 * this.
+	 *
+	 * @return	string[]
+	 */
+	public static function names(): array {
+		static::default();
+
+		$names = array_merge(array_keys(static::$instances), array_keys(static::$registered));
+		$names = array_values(array_unique(array_diff($names, array( static::DEFAULT ))));
+		sort($names);
+
+		return array_merge(array( static::DEFAULT ), $names);
+	}
+
+	/**
+	 * Every instance, connected, keyed by name. The default comes first.
+	 *
+	 * @return	array<string, Database>
+	 */
+	public static function all(): array {
+		$all = array();
+
+		foreach (static::names() as $name)
+			$all[$name] = static::get($name);
+
+		return $all;
+	}
+
+	/**
+	 * Close and drop a registered instance. The default cannot be dropped.
+	 */
+	public static function forget(string $name): void {
+		if ($name === static::DEFAULT)
+			throw new CodingError("Database::forget(): the default instance cannot be dropped.");
+
+		if (isset(static::$instances[$name])) {
+			static::$instances[$name] -> disconnect();
+			unset(static::$instances[$name]);
+		}
+
+		unset(static::$registered[$name]);
+		Table::forget(null, $name);
+		Column::forget(null, $name);
+	}
+
+	/**
+	 * Connect a driver with the given settings.
+	 *
+	 * @throws	DatabaseConnectionFailed
+	 */
+	protected static function open(string $name, array $config): Database {
+		$driver = (string) ($config["driver"] ?? CONFIG::$DB_DRIVER);
+		$path = CORE_ROOT . "/classes/DB/Driver/{$driver}.php";
+
+		if (!file_exists($path))
+			throw new SQLDriverNotFound($driver);
+
+		require_once $path;
+		$className = "Blink\\DB\\Driver\\{$driver}";
+
+		if (!class_exists($className) || !in_array(Database::class, class_parents($className)))
+			throw new InvalidSQLDriver($driver);
+
+		/** @var Database $instance */
+		$instance = new $className();
+		$instance -> name = $name;
+
+		$options = ($driver === "SQLite3")
+			? array(
+				"path" => (string) ($config["path"] ?? CONFIG::$DB_PATH),
+				"file" => (string) ($config["file"] ?? "database.db")
+			)
+			: array(
+				"host" => (string) ($config["host"] ?? "127.0.0.1"),
+				"port" => (int) ($config["port"] ?? 0),
+				"username" => (string) ($config["user"] ?? ""),
+				"password" => (string) ($config["pass"] ?? ""),
+				"database" => (string) ($config["name"] ?? "")
+			);
+
+		try {
+			$instance -> connect($options);
+		} catch (\Throwable $e) {
+			throw new DatabaseConnectionFailed($name, $e);
+		}
+
+		return $instance;
+	}
+
+	public function isDefault(): bool {
+		return $this -> name === static::DEFAULT;
+	}
+
+
+	//* ===========================================================
+	//*  Querying this instance
+	//* ===========================================================
+
+	/**
+	 * Create a new query on this instance.
+	 *
+	 * @param	Query|Table|string|array	$table		Table to query from
+	 * @return	Query<\stdClass>
+	 */
+	public function table(Query|Table|string|array $table): Query {
+		if (is_string($table) && class_exists($table) && is_subclass_of($table, Model::class))
+			$table = $table::$table;
+
+		return new Query("stdClass", $table, $this);
+	}
+
+	/**
+	 * Create a raw SQL query on this instance. Read it with `all()` or
+	 * `first()`, or run it with `exec()`.
+	 *
+	 * @return	Query<\stdClass>
+	 */
+	public function sql(string $sql, array $params = array()): Query {
+		return (new Query("stdClass", "", $this)) -> sql($sql, $params);
+	}
+
+	/**
+	 * Run a callable inside a transaction on this instance.
+	 *
+	 * Committed when the callable returns, rolled back when it throws, and the
+	 * error is re-thrown either way so the caller still sees what happened.
+	 *
+	 * @template	T
+	 * @param		callable():T	$callback
+	 * @return		T
+	 */
+	public function transaction(callable $callback) {
+		$this -> beginTransaction();
+
+		try {
+			$result = $callback();
+		} catch (\Throwable $e) {
+			$this -> rollback();
+			throw $e;
+		}
+
+		$this -> commit();
+		return $result;
+	}
+
+	/**
+	 * Whether a table exists on this instance.
+	 *
+	 * @param	string	$table		Table name or model class name.
+	 */
+	public function tableExist(string $table): bool {
+		if (class_exists($table) && is_subclass_of($table, Model::class))
+			$table = $table::$table;
+
+		return !empty($this -> getColumns($table));
+	}
+
 	/**
 	 * Run a statement under a query metric.
 	 *
@@ -147,7 +490,7 @@ abstract class Database {
 	 * 							for a number.
 	 */
 	protected function measure(string $sql, array $params, \Closure $statement, ?int $rows = null) {
-		$metric = new QueryMetric($sql, $params);
+		$metric = new QueryMetric($sql, $params, $this);
 
 		try {
 			$result = $statement();
@@ -213,7 +556,7 @@ abstract class Database {
 	 * @return	\Blink\DB\ColumnInfo[]	Column array, mapped by column name.
 	 */
 	public function getColumns(string $table, bool $cache = true) {
-		$store = Cache::instance("database.columns.{$table}");
+		$store = Cache::instance($this -> columnCacheKey($table));
 
 		if ($cache && $store -> fetch() && $store -> validate())
 			return $store -> content();
@@ -231,12 +574,20 @@ abstract class Database {
 	 */
 	public function forgetColumns(string $table = null): void {
 		if (!empty($table)) {
-			Cache::remove("database.columns.{$table}");
+			Cache::remove($this -> columnCacheKey($table));
 			return;
 		}
 
 		foreach ($this -> tables() as $name)
-			Cache::remove("database.columns.{$name}");
+			Cache::remove($this -> columnCacheKey($name));
+	}
+
+	/**
+	 * Keyed by instance as well as table: two instances can each hold a table
+	 * of the same name with different columns.
+	 */
+	protected function columnCacheKey(string $table): string {
+		return "database.columns.{$this -> name}.{$table}";
 	}
 
 	/**
@@ -614,52 +965,5 @@ abstract class Database {
 		$sql = "DELETE FROM `$table` $select";
 
 		return $this -> measure($sql,$params, fn () => $this -> execute($sql, $params));
-	}
-
-	/**
-	 * Connect the global `$DB` instance to the driver named in config.
-	 *
-	 * Called once during bootstrap. Calling it again is free, so a console
-	 * command that needs a connection earlier than usual can ask for one.
-	 */
-	public static function initialize(): void {
-		/**
-		 * Global Database Instance. Initialized based on type of
-		 * SQL driver specified in config.
-		 *
-		 * @var	\Blink\DB\Database	$DB
-		 */
-		global $DB;
-
-		if (!empty($DB))
-			return;
-
-		$driver = CONFIG::$DB_DRIVER;
-		$path = CORE_ROOT . "/classes/DB/Driver/{$driver}.php";
-
-		if (!file_exists($path))
-			throw new SQLDriverNotFound($driver);
-
-		$timing = new TimingMetric("database");
-		require_once $path;
-		$className = "Blink\\DB\\Driver\\{$driver}";
-
-		if (!class_exists($className) || !in_array(Database::class, class_parents($className)))
-			throw new InvalidSQLDriver($driver);
-
-		$DB = new $className();
-
-		$DB -> connect(($driver === "SQLite3")
-			? array( "path" => CONFIG::$DB_PATH )
-			: array(
-				"host" => CONFIG::$DB_HOST,
-				"port" => CONFIG::$DB_PORT,
-				"username" => CONFIG::$DB_USER,
-				"password" => CONFIG::$DB_PASS,
-				"database" => CONFIG::$DB_NAME
-			));
-
-		DB::$instance = $DB;
-		$timing -> time();
 	}
 }

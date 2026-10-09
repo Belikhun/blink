@@ -53,8 +53,22 @@ class QueryMetric extends MetricInstance {
 
 	public int $rows = -1;
 
-	public function __construct(string $query, array|object|null $params = null) {
+	/**
+	 * Name of the database instance the statement ran on.
+	 */
+	public string $database = \Blink\DB\Database::DEFAULT;
+
+	/**
+	 * Engine family of that instance.
+	 */
+	public string $family = "";
+
+	public function __construct(string $query, array|object|null $params = null, ?\Blink\DB\Database $database = null) {
 		parent::__construct();
+
+		$database = $database ?? \Blink\DB\Database::default();
+		$this -> database = $database -> name;
+		$this -> family = $database -> family();
 
 		$clean = trim($query);
 		$clean = preg_replace('/^\s*(?:\/\*.*?\*\/\s*)+/s', '', $clean);
@@ -66,14 +80,22 @@ class QueryMetric extends MetricInstance {
 		if (!empty($params))
 			$this -> params = (array) $params;
 
-		$this -> hash = substr(md5($this -> query), 0, 12);
+		// A statement on a named instance hashes with the instance name, so
+		// the same text run against two databases is two queries, while the
+		// default's hashes stay as they were before there were instances.
+		$hashSource = ($this -> database === \Blink\DB\Database::DEFAULT)
+			? $this -> query
+			: "{$this -> database}\n{$this -> query}";
+
+		$this -> hash = substr(md5($hashSource), 0, 12);
 		$this -> command = preg_match('/^\s*([a-z]+)/i', $this -> query, $match)
 			? strtoupper($match[1])
 			: "UNKNOWN";
 
 		$this -> table = static::tableOf($this -> command, $this -> query);
 
-		\Blink\Metric::$queries[] = $this;
+		if (\Blink\Metric::captures(\Blink\Metric::QUERIES))
+			\Blink\Metric::$queries[] = $this;
 	}
 
 	/**

@@ -27,6 +27,21 @@ namespace Blink\Terra;
  * The file name is the identifier, so blink and an application can both carry
  * a `create_users_table` without colliding.
  *
+ * A layer runs on one database instance, the one `database()` names, and its
+ * schema calls need no instance of their own. Work that reaches another
+ * instance, such as moving a table's rows from the default to this one, is
+ * done through `Schema::on()` and `Schema::copy()`:
+ *
+ * ```php
+ * public function database(): ?string { return "archive"; }
+ *
+ * public function raise(): void {
+ * 	Schema::create("logs", ...);                       // on the archive
+ * 	Schema::copy("logs", from: null, to: "archive");   // the default's rows
+ * 	Schema::on(null, fn () => Schema::drop("logs"));   // and the default's table
+ * }
+ * ```
+ *
  * @author		Belikhun
  * @since		2.0.0
  * @license		https://tldrlegal.com/license/mit-license MIT
@@ -48,6 +63,16 @@ abstract class Layer {
 	 * worked.
 	 */
 	public function drop(): void {}
+
+	/**
+	 * Name of the database instance this layer changes, or null for the
+	 * default. The layer runs there and nowhere else. While the site has no
+	 * instance of that name the layer waits, and the rest of the stack goes
+	 * on without it; it runs once the instance is registered.
+	 */
+	public function database(): ?string {
+		return null;
+	}
 
 	/**
 	 * Whether this layer applies to the current site at all. A layer that only

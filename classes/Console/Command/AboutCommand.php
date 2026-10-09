@@ -74,6 +74,7 @@ class AboutCommand extends Command {
 		$this -> table(array(), array(
 			array( "  driver", \CONFIG::$DB_DRIVER ),
 			array( "  family", $DB -> family() ),
+			array( "  instances", implode(", ", \Blink\DB\Database::names()) ),
 			array( "  layers applied", $applied ),
 			array( "  layers pending", $pending ),
 			array( "  auto apply", \CONFIG::$TERRA_AUTO_APPLY ? "on" : "off" )

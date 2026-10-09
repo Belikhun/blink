@@ -46,6 +46,41 @@ class ModelAuditObserver {
 		"Blink\\Trace\\"
 	);
 
+	/**
+	 * Models kept out of the generic trail, keyed by class name. Modules add
+	 * theirs from `attach()` through {@see ignore()}.
+	 *
+	 * A model belongs here when its rows are storage detail of another entity
+	 * or are rebuilt wholesale by a sync, so a "created" line per row records
+	 * nothing a reader can act on.
+	 *
+	 * @var array<string, true>
+	 */
+	protected static array $ignored = array();
+
+	/**
+	 * Keep models out of the generic create, update and delete trail. Class
+	 * names are matched exactly, with no inheritance.
+	 */
+	public static function ignore(string ...$classes): void {
+		foreach ($classes as $class)
+			static::$ignored[ltrim($class, "\\")] = true;
+	}
+
+	public static function isIgnored(string $class): bool {
+		$class = ltrim($class, "\\");
+
+		if (isset(static::$ignored[$class]) || $class === Entry::class)
+			return true;
+
+		foreach (static::SILENT_PREFIXES as $prefix) {
+			if (str_starts_with($class, $prefix))
+				return true;
+		}
+
+		return false;
+	}
+
 	#[Observe(ModelCreated::class)]
 	public static function onModelCreated(ModelCreated $event, Writer $writer): void {
 		static::record($event, $writer, Mode::CREATE, "trace.model.created");
@@ -74,13 +109,8 @@ class ModelAuditObserver {
 		if ($modelClass === "" || $instanceID <= 0)
 			return;
 
-		if ($modelClass === Entry::class)
+		if (static::isIgnored($modelClass))
 			return;
-
-		foreach (static::SILENT_PREFIXES as $prefix) {
-			if (str_starts_with($modelClass, $prefix))
-				return;
-		}
 
 		$writer -> write(array(
 			"component" => static::componentForModel($modelClass),

@@ -2,6 +2,7 @@
 
 namespace Blink\Terra;
 
+use Blink\DB\Database;
 use Blink\Terra\Exception\TerraUnsupported;
 
 /**
@@ -40,7 +41,7 @@ abstract class Dialect {
 	/**
 	 * Whether an index exists, asked of the engine's own catalogue.
 	 */
-	abstract public function hasIndex(string $table, string $index): bool;
+	abstract public function hasIndex(string $table, string $index, Database $database): bool;
 
 	/**
 	 * Statements that drop every table, in an order that satisfies whatever

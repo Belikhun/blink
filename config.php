@@ -125,6 +125,27 @@ class CoreConfig {
 	#[FromEnv("DB_PATH")]
 	public static string	$DB_PATH = BASE_PATH . "/db";
 
+	/**
+	 * Databases besides the one above, keyed by the name code reaches them
+	 * by: `DB::database("archive")`, a model's `$database`, a layer's
+	 * `database()`. Each entry names a `driver` and the settings that driver
+	 * reads, spelled like the `DB_*` settings: `host`, `port`, `user`,
+	 * `pass` and `name` for MySQLi, `path` and `file` for SQLite3. A module
+	 * can register more at runtime with `Database::register()`. A model or
+	 * a layer naming an instance that is not here is refused, never sent to
+	 * the database above in its place.
+	 *
+	 * ```php
+	 * CONFIG::$DATABASES = array(
+	 * 	"archive" => array( "driver" => "SQLite3", "file" => "archive.db" )
+	 * );
+	 * ```
+	 *
+	 * @var array<string, array>
+	 */
+	#[Secret]
+	public static array		$DATABASES = array();
+
 
 	//* ===========================================================
 	//*  Paths

@@ -2,6 +2,7 @@
 
 namespace Blink\Terra\Dialect;
 
+use Blink\DB\Database;
 use Blink\Terra\Column;
 use Blink\Terra\Dialect;
 use Blink\Terra\Table;
@@ -105,10 +106,8 @@ class MySQLDialect extends Dialect {
 		return "DROP INDEX {$this -> wrap($name)} ON {$this -> wrap($table)}";
 	}
 
-	public function hasIndex(string $table, string $index): bool {
-		global $DB;
-
-		$rows = $DB -> raw(
+	public function hasIndex(string $table, string $index, Database $database): bool {
+		$rows = $database -> raw(
 			"SELECT 1 FROM information_schema.STATISTICS
 				WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?
 				LIMIT 1",

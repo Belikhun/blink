@@ -39,7 +39,8 @@ class FileMetric extends MetricInstance {
 		$this -> type = $type;
 		$this -> file = $file;
 
-		Metric::$files[] = $this;
+		if (Metric::captures(Metric::FILES))
+			Metric::$files[] = $this;
 	}
 
 	public function time(int $size): static {

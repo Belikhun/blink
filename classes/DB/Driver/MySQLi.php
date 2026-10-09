@@ -70,6 +70,30 @@ class MySQLi extends Database {
 		$this -> connected = true;
 	}
 
+	public function disconnect(): void {
+		if (!$this -> connected)
+			return;
+
+		try {
+			$this -> mysqli -> close();
+		} catch (\Throwable) {
+			// Already gone.
+		}
+
+		$this -> connected = false;
+		$this -> transactionDepth = 0;
+	}
+
+	public function describe(): array {
+		$port = (int) ($this -> options["port"] ?? 0);
+
+		return array(
+			"driver" => "MySQLi",
+			"target" => ($this -> options["username"] ?? "") . "@" . ($this -> options["host"] ?? "")
+				. ($port > 0 ? ":{$port}" : "") . "/" . ($this -> options["database"] ?? "")
+		);
+	}
+
 	public function reconnect(): void {
 		if (empty($this -> options))
 			throw new CodingError("\$DB -> reconnect(): the connection was never opened.");

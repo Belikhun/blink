@@ -20,6 +20,7 @@ use Blink\Trace\Entry;
 class TracePurge extends Command {
 	public static string $usage = "trace:purge {--days= : Delete entries older than this; defaults to CONFIG::\$TRACE_RETENTION_DAYS}"
 		. " {--batch= : Entries per pass; defaults to CONFIG::\$TRACE_PURGE_BATCH}"
+		. " {--budget=20 : Minutes one run may spend deleting; 0 for no limit}"
 		. " {--f|force : Skip the confirmation}";
 
 	public static string $description = "Delete old audit entries";
@@ -40,6 +41,12 @@ class TracePurge extends Command {
 			? max((int) $this -> option("batch"), 1)
 			: max(\CONFIG::$TRACE_PURGE_BATCH, 1);
 
+		// The first purge after retention is reached, or after it is
+		// shortened, faces the whole backlog at once. A bounded run works it
+		// off over several nights instead of holding the orbit for hours.
+		$budget = max((int) $this -> option("budget"), 0);
+		$deadline = time() + ($budget * 60);
+
 		$cutoff = time() - ($days * 86400);
 		$query = Entry::query() -> where(Entry::col("created"), "<", $cutoff);
 		$total = $query -> count();
@@ -55,14 +62,17 @@ class TracePurge extends Command {
 		}
 
 		$deleted = 0;
+		$exhausted = false;
 
 		// In passes, so a table holding a year of entries never becomes one
 		// statement holding locks for the duration.
-		while (true) {
+		while ($budget === 0 || time() < $deadline) {
 			$ids = $query -> ids("#", 0, $batch);
 
-			if (empty($ids))
+			if (empty($ids)) {
+				$exhausted = true;
 				break;
+			}
 
 			DB::table(Entry::$table) -> where("id", $ids) -> delete();
 			$deleted += count($ids);
@@ -72,6 +82,10 @@ class TracePurge extends Command {
 		}
 
 		$this -> success("Deleted {$deleted} audit entr" . ($deleted === 1 ? "y" : "ies") . ".");
+
+		if (!$exhausted)
+			$this -> comment("Time budget reached; the rest is purged on the next run.");
+
 		return Console::EXIT_OK;
 	}
 }

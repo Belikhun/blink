@@ -249,6 +249,28 @@ abstract class QueryConditionBuilder {
 	}
 
 	/**
+	 * Fold every condition added so far into one nested AND group.
+	 *
+	 * Root conditions are emitted as a flat `(a) OR (b) AND (c)` chain, which
+	 * SQL reads as `a OR (b AND c)`: a condition appended after an OR-joined
+	 * set only binds to its last member. After nesting, anything appended is
+	 * ANDed against the whole of what was there before. Nothing changes when
+	 * there are fewer than two conditions to nest.
+	 *
+	 * @return	static<B>
+	 */
+	public function nestConditions() {
+		if (count($this -> conditions) < 2)
+			return $this;
+
+		$group = new QueryBuilder();
+		$group -> conditions = $this -> conditions;
+		$this -> conditions = array( $group );
+
+		return $this;
+	}
+
+	/**
 	 * Build query for this query builder.
 	 *
 	 * @return array An array contain `[$query, $params]`.

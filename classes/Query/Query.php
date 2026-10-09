@@ -3,8 +3,10 @@
 namespace Blink;
 
 use Exception;
+use Blink\DB\Database;
 use Blink\DB\Exception\DatabaseColumnNotFound;
 use Blink\DB\Exception\DatabaseInvalidColumn;
+use Blink\DB\Exception\DatabaseMismatch;
 use Blink\Ether;
 use Blink\Ether\Query\QueryContext;
 use Blink\Exception\CodingError;
@@ -72,6 +74,14 @@ class Query extends QueryConditionBuilder {
 	 * @psalm-var class-string<G>
 	 */
 	protected string $class;
+
+	/**
+	 * The instance this query runs on. Every table, join and subquery in it
+	 * has to live there too: a statement runs on one connection.
+	 *
+	 * @var Database
+	 */
+	protected Database $database;
 
 	/**
 	 * Target table of this query.
@@ -224,12 +234,37 @@ class Query extends QueryConditionBuilder {
 	/**
 	 * Create a new query.
 	 *
+	 * A model query runs on the model's instance. Any other runs on
+	 * `$database`, or, left out, on the instance of the Table or subquery
+	 * it was given, or the default.
+	 *
 	 * @param	class-string<G>					$class		Class to create new instance to.
 	 * @param	Query|Table|string|array		$table		Table name or subquery to fetch data from.
+	 * @param	?Database						$database	The instance to run on.
 	 */
-	public function __construct(string $class, Query|Table|string|array $table) {
+	public function __construct(string $class, Query|Table|string|array $table, ?Database $database = null) {
 		$this -> query = $this;
 		$this -> class = $class;
+
+		if ($this -> isModelQuery()) {
+			$modelDatabase = $class::database();
+
+			if ($database !== null && $database !== $modelDatabase)
+				throw new DatabaseMismatch($modelDatabase -> name, $database -> name, "Model <code>{$class}</code> is stored on instance <code>{$modelDatabase -> name}</code>.");
+
+			$database = $modelDatabase;
+		}
+
+		if ($database === null) {
+			$source = is_array($table) ? ($table[0] ?? null) : $table;
+
+			if ($source instanceof Table)
+				$database = $source -> database;
+			else if ($source instanceof Query)
+				$database = $source -> getDatabase();
+		}
+
+		$this -> database = $database ?? Database::default();
 
 		if (!empty($table)) {
 			$alias = null;
@@ -256,6 +291,30 @@ class Query extends QueryConditionBuilder {
 	}
 
 	/**
+	 * The instance this query runs on.
+	 */
+	public function getDatabase(): Database {
+		return $this -> database;
+	}
+
+	/**
+	 * Refuse a table or subquery from another instance.
+	 *
+	 * @throws	DatabaseMismatch
+	 */
+	protected function assertSameDatabase(Table|Query $object): void {
+		$database = ($object instanceof Table)
+			? $object -> database
+			: $object -> getDatabase();
+
+		if ($database === $this -> database)
+			return;
+
+		$what = ($object instanceof Table) ? "table <code>{$object -> getName()}</code>" : "subquery";
+		throw new DatabaseMismatch($this -> database -> name, $database -> name, "The {$what} belongs to another instance.");
+	}
+
+	/**
 	 * Set target table to perform querying.
 	 *
 	 * @param	string|Table|Query	$table		Table name or subquery to fetch data from.
@@ -264,7 +323,9 @@ class Query extends QueryConditionBuilder {
 	 */
 	public function table(string|Table|Query $table, string $alias = null) {
 		if (is_string($table))
-			$table = Table::instance($table);
+			$table = Table::instance($table, $this -> database);
+		else
+			$this -> assertSameDatabase($table);
 
 		$this -> table = new SelectTable($table, $alias);
 
@@ -338,7 +399,7 @@ class Query extends QueryConditionBuilder {
 		if (isset($this -> tables[$table]))
 			return $this -> tables[$table] -> table;
 
-		return Table::instance($table);
+		return Table::instance($table, $this -> database);
 	}
 
 	/**
@@ -369,7 +430,7 @@ class Query extends QueryConditionBuilder {
 			$c = $column;
 		}
 
-		return Column::instance($t, $c, fallbackPartial: true);
+		return Column::instance($t, $c, fallbackPartial: true, database: $this -> database);
 	}
 
 	public function getObjectByAlias(string $alias): ?Sequelizable {
@@ -496,6 +557,8 @@ class Query extends QueryConditionBuilder {
 
 		if (is_string($table))
 			$table = $this -> getTable($table);
+		else
+			$this -> assertSameDatabase($table);
 
 		$join = new JoinTable($table, $alias);
 		$join -> type = $type;
@@ -612,10 +675,14 @@ class Query extends QueryConditionBuilder {
 	 * @param	string				$query
 	 * @param	string[]|Column[]	$columns		Columns where normal search query will apply.
 	 * @param	bool				$fulltext		Perform fulltext search. All columns MUST have `FULLTEXT` index enabled.
+	 * @param	?callable			$extend			Receives the keyword condition group once built, to OR
+	 * 												further matches into it, such as ids resolved elsewhere,
+	 * 												without them leaking past the search into the rest of
+	 * 												the query.
 	 * @return	static<G>
 	 * @see		https://dev.mysql.com/doc/refman/8.4/en/fulltext-search.html
 	 */
-	public function search(string $query, array $columns, bool $fulltext = false) {
+	public function search(string $query, array $columns, bool $fulltext = false, ?callable $extend = null) {
 		$query = trim($query);
 
 		if (empty($query))
@@ -673,6 +740,13 @@ class Query extends QueryConditionBuilder {
 			$group -> where(new MatchAgainst($columns, implode(" ", $leftover)), ">", 0);
 		}
 
+		if ($extend !== null) {
+			if (empty($group))
+				$group = $this -> builder();
+
+			$extend($group);
+		}
+
 		return $this;
 	}
 
@@ -724,6 +798,16 @@ class Query extends QueryConditionBuilder {
 	 */
 	public function order(Column|Sequelizable|string $column, string $direction = "ASC") {
 		$this -> sortBy[] = new QueryOrder($column, $direction);
+		return $this;
+	}
+
+	/**
+	 * Drop every ORDER BY set on this query so far.
+	 *
+	 * @return	static<G>
+	 */
+	public function resetOrder() {
+		$this -> sortBy = array();
 		return $this;
 	}
 
@@ -790,7 +874,16 @@ class Query extends QueryConditionBuilder {
 		return $sql;
 	}
 
-	public function makeSQLCall(?array $selects = null, bool $limit = true, bool $distinct = false) {
+	/**
+	 * @param	?Sequelizable[]		$selects	Columns to select in place of the query's own.
+	 * @param	bool				$limit		Render the builder's LIMIT.
+	 * @param	bool				$distinct	Force `SELECT DISTINCT`.
+	 * @param	bool				$orders		Render ORDER BY. An aggregate has one row to order,
+	 * 											and an engine may reject ordering it by a column the
+	 * 											aggregate does not group.
+	 * @return	array{0: string, 1: array}
+	 */
+	public function makeSQLCall(?array $selects = null, bool $limit = true, bool $distinct = false, bool $orders = true) {
 		// Raw mode
 		if (!empty($this -> sql))
 			return [$this -> sql, $this -> sqlParams];
@@ -898,7 +991,7 @@ class Query extends QueryConditionBuilder {
 		//* ---------------------------------------------
 		//* SORT
 		//* ---------------------------------------------
-		if (!empty($this -> sortBy)) {
+		if ($orders && !empty($this -> sortBy)) {
 			$bys = array();
 
 			foreach ($this -> sortBy as $by) {
@@ -1074,12 +1167,10 @@ class Query extends QueryConditionBuilder {
 	 * @return	object[]|int
 	 */
 	protected function executeRawStatement(string $sql, array $params = array(), int $from = 0, int $count = 0) {
-		global $DB;
-
-		$metric = new QueryMetric($sql, $params);
+		$metric = new QueryMetric($sql, $params, $this -> database);
 
 		try {
-			$result = $DB -> execute($sql, $params, $from, $count);
+			$result = $this -> database -> execute($sql, $params, $from, $count);
 		} catch (\Throwable $e) {
 			$metric -> errored = true;
 			$metric -> time(-1);
@@ -1166,8 +1257,6 @@ class Query extends QueryConditionBuilder {
 	 * @return	G
 	 */
 	public function firstOrCreate(callable|array|object $fill = null) {
-		global $DB;
-
 		if ($this -> table -> table instanceof Query)
 			throw new CodingError("Cannot perform <code>Query::firstOrCreate()</code> on virtual table/subquery!");
 
@@ -1185,8 +1274,8 @@ class Query extends QueryConditionBuilder {
 
 		if (!$this -> isModelQuery()) {
 			// Not a model query, so a plain insert into the table will do.
-			// `$DB -> insert()` records the metric.
-			$fill -> id = $DB -> insert($table, $fill);
+			// `insert()` records the metric.
+			$fill -> id = $this -> database -> insert($table, $fill);
 			return $fill;
 		}
 
@@ -1221,12 +1310,10 @@ class Query extends QueryConditionBuilder {
 	 * @return bool
 	 */
 	public function delete() {
-		global $DB;
-
 		if ($this -> table -> table instanceof Query)
 			throw new CodingError("Cannot perform DELETE operation on subquery!");
 
-		if (!empty($this -> joins) && $DB -> family() !== "mysql") {
+		if (!empty($this -> joins) && $this -> database -> family() !== "mysql") {
 			throw new CodingError(
 				"Cannot perform a joined DELETE on this database.",
 				"Only MySQL supports the multi-table <code>DELETE table FROM table JOIN ...</code> form. "
@@ -1235,8 +1322,6 @@ class Query extends QueryConditionBuilder {
 		}
 
 		return $this -> executeOperation("delete", QueryContext::KIND_WRITE, function (QueryContext $context) {
-			global $DB;
-
 			$this -> disableAlias = true;
 
 			try {
@@ -1445,18 +1530,31 @@ class Query extends QueryConditionBuilder {
 
 		return $this -> executeOperation("count", QueryContext::KIND_READ, function (QueryContext $context) use ($column, $distinct, $over) {
 			// A windowed count over a grouped query counts result rows, which
-			// are groups, so its argument has to be grouped or aggregated. A
-			// constant is both, and gives the group count whichever column was
-			// asked for.
+			// are groups. It is taken as `COUNT(*)` over the grouped query as
+			// a subquery rather than as `COUNT(*) OVER()` on the query itself:
+			// the windowed form has to be read with a limit of one row, since
+			// every group row carries the same count, and that limit makes a
+			// planner abandon the aggregate for a full sort of the joined
+			// rows in group order so it can stop after the first group. The
+			// subquery form keeps the aggregate plan and returns one row with
+			// no limit to misjudge.
 			if ($over && !empty($this -> groupBy)) {
-				$column = Expr::value("x");
-				$distinct = false;
+				list($inner, $params) = $this -> makeSQLCall(
+					[ new SelectColumn(Expr::value("x"), "x") ],
+					limit: false,
+					orders: false
+				);
+
+				$sql = !empty($inner)
+					? "SELECT COUNT(*) AS `count` FROM ({$inner}) `grouped_rows`"
+					: $inner;
+			} else {
+				$select = new SelectColumn(Expr::count($column, distinct: $distinct), "count");
+				$select -> over = $over;
+
+				list($sql, $params) = $this -> makeSQLCall([$select], orders: false);
 			}
 
-			$select = new SelectColumn(Expr::count($column, distinct: $distinct), "count");
-			$select -> over = $over;
-
-			list($sql, $params) = $this -> makeSQLCall([$select]);
 			$context -> sql = $sql;
 			$context -> params = $params;
 
@@ -1486,7 +1584,7 @@ class Query extends QueryConditionBuilder {
 			$select = new SelectColumn(Expr::sum($column), "sum");
 			$select -> over = $over;
 
-			list($sql, $params) = $this -> makeSQLCall([$select], distinct: $distinct);
+			list($sql, $params) = $this -> makeSQLCall([$select], distinct: $distinct, orders: false);
 			$context -> sql = $sql;
 			$context -> params = $params;
 

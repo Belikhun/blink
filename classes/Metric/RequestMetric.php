@@ -34,7 +34,8 @@ class RequestMetric extends MetricInstance {
 		$this -> hash = substr(md5($this -> endpoint), 0, 12);
 		$this -> method = strtoupper($method);
 
-		\Blink\Metric::$requests[] = $this;
+		if (\Blink\Metric::captures(\Blink\Metric::REQUESTS))
+			\Blink\Metric::$requests[] = $this;
 	}
 
 	public function time(int $status): static {

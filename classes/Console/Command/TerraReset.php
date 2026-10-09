@@ -17,17 +17,20 @@ use Blink\Terra;
  * See LICENSE in the project root for license information.
  */
 class TerraReset extends Command {
-	public static string $usage = "terra:reset {--f|force : Skip the confirmation}";
+	public static string $usage = "terra:reset {--database= : Only this instance's ledger} {--f|force : Skip the confirmation}";
 
 	public static string $description = "Drop every schema layer";
 
 	public function run() {
-		if (!$this -> option("force") && !$this -> confirm("Drop every layer? This deletes all data.")) {
+		$database = $this -> option("database") ?: null;
+		$where = ($database !== null) ? " on {$database}" : "";
+
+		if (!$this -> option("force") && !$this -> confirm("Drop every layer{$where}? This deletes all data.")) {
 			$this -> comment("Nothing was changed.");
 			return Console::EXIT_OK;
 		}
 
-		$dropped = Terra::reset();
+		$dropped = Terra::reset($database);
 
 		if (empty($dropped)) {
 			$this -> info("Nothing to drop.");

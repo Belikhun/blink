@@ -2,6 +2,7 @@
 
 namespace Blink\Query\Expression;
 
+use Blink\DB\Database;
 use Blink\DB\Exception\DatabaseColumnNotFound;
 use Blink\DB\Exception\DatabaseInvalidColumn;
 use Exception;
@@ -32,7 +33,7 @@ class Column implements Sequelizable {
 	protected static array $instances = array();
 
 	protected function __construct(Table $table, string $column) {
-		$this -> id = "[c:{$table -> table}.{$column}]";
+		$this -> id = "[c:{$table -> database -> name}:{$table -> table}.{$column}]";
 		$this -> table = $table;
 		$this -> column = $column;
 		$this -> validate();
@@ -43,8 +44,6 @@ class Column implements Sequelizable {
 	}
 
 	public function validate(bool $throw = true) {
-		global $DB;
-
 		if ($this -> column == "*")
 			return true;
 
@@ -94,19 +93,24 @@ class Column implements Sequelizable {
 	 * @param	Table|string			$table				Table
 	 * @param	string					$column				Column name
 	 * @param	bool					$fallbackPartial	Fallback as a partial column if the table is not found
+	 * @param	?Database				$database			The instance a table name is looked up on. A Table
+	 * 														object carries its own, and this is ignored for it.
 	 * @return	Column|PartialColumn
 	 */
-	public static function instance(Table|string $table, string $column, bool $fallbackPartial = false): Column|PartialColumn {
-		$id = ($table instanceof Table)
-			? "[c:{$table -> table}.{$column}]"
-			: "[c:{$table}.{$column}]";
+	public static function instance(Table|string $table, string $column, bool $fallbackPartial = false, ?Database $database = null): Column|PartialColumn {
+		$database = ($table instanceof Table)
+			? $table -> database
+			: ($database ?? Database::default());
+
+		$tableName = ($table instanceof Table) ? $table -> table : $table;
+		$id = "[c:{$database -> name}:{$tableName}.{$column}]";
 
 		if (isset(static::$instances[$id]))
 			return static::$instances[$id];
 
 		try {
 			if (is_string($table))
-				$table = Table::instance($table);
+				$table = Table::instance($table, $database);
 		} catch (Exception $e) {
 			if (!$fallbackPartial)
 				throw $e;
@@ -123,5 +127,30 @@ class Column implements Sequelizable {
 		static::$instances[$id] = $instance;
 
 		return $instance;
+	}
+
+	/**
+	 * Drop cached column instances. See {@see Table::forget()}.
+	 *
+	 * @param	?string[]				$tables		Only columns of these tables, or every column when omitted.
+	 * @param	Database|string|null	$database	Only this instance, or every instance when omitted.
+	 */
+	public static function forget(?array $tables = null, Database|string|null $database = null): void {
+		if ($tables === null && $database === null) {
+			static::$instances = array();
+			return;
+		}
+
+		$name = ($database instanceof Database) ? $database -> name : $database;
+
+		foreach (static::$instances as $key => $instance) {
+			if ($name !== null && $instance -> table -> database -> name !== $name)
+				continue;
+
+			if ($tables !== null && !in_array($instance -> table -> table, $tables, true))
+				continue;
+
+			unset(static::$instances[$key]);
+		}
 	}
 }
